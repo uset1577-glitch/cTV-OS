@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Shield } from 'lucide-react';
+import { CreatorAdminPanel } from './components/CreatorAdminPanel';
 import { GoogleTvHome } from './components/GoogleTvHome';
 import { LivePlatformsView } from './components/LivePlatformsView';
 import { MaintenanceNoticeModal } from './components/MaintenanceNoticeModal';
@@ -91,6 +93,39 @@ export default function App() {
   const lastCatalogFetchRef = useRef<number>(0);
   const lastRemoteStatusFetchRef = useRef<number>(0);
   const hasAutoPromptedUpdateRef = useRef(false);
+
+  // Estado del Panel de Control de Creador (Exclusivo para PC / Navegador)
+  const [showCreatorAdmin, setShowCreatorAdmin] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('admin') === 'true' || window.location.hash.toLowerCase() === '#admin';
+  });
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('admin') === 'true' || window.location.hash.toLowerCase() === '#admin') {
+        setShowCreatorAdmin(true);
+      }
+    };
+
+    const handleKeyShortcuts = (e: KeyboardEvent) => {
+      // Atajo para PC: Ctrl + Shift + A abre el panel de control del creador
+      if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setShowCreatorAdmin((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('keydown', handleKeyShortcuts);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('keydown', handleKeyShortcuts);
+    };
+  }, []);
 
   // Estado global de mantenimiento / próxima actualización (controlado remotamente)
   const [remoteStatus, setRemoteStatus] = useState<LauncherRemoteStatus>({
@@ -559,6 +594,10 @@ export default function App() {
       ? { backgroundColor: currentBackground.value }
       : { backgroundImage: currentBackground.value };
 
+  if (showCreatorAdmin) {
+    return <CreatorAdminPanel onExit={() => setShowCreatorAdmin(false)} />;
+  }
+
   return (
     <div
       id="gtv-home-shell"
@@ -717,6 +756,19 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Botón flotante para el creador en PC (SOLO en navegador web de escritorio, NUNCA en Android TV) */}
+      {!isNative && (
+        <button
+          type="button"
+          onClick={() => setShowCreatorAdmin(true)}
+          title="Panel de Control del Creador (Solo PC - Atajo: Ctrl+Shift+A)"
+          className="fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/85 dark:bg-zinc-900/85 backdrop-blur-md border border-amber-500/35 text-amber-400 hover:text-zinc-950 hover:bg-amber-400 text-xs font-bold shadow-xl transition-all active:scale-95 cursor-pointer"
+        >
+          <Shield className="w-3.5 h-3.5" />
+          <span>Panel Creador (PC)</span>
+        </button>
+      )}
     </div>
   );
 }

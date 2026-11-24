@@ -4,23 +4,16 @@ import {
   Check,
   Download,
   Home,
-  KeyRound,
-  Lock,
   Moon,
   RotateCcw,
   Settings,
-  ShieldCheck,
   Sun,
-  Unlock,
   Wifi,
   X,
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
 import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import { setGlobalLauncherStatus } from '../services/firebase';
 import type { AppVersionInfo, LauncherSettings } from '../types/launcher';
-
-const CREATOR_PIN = '2026';
 
 interface NavaSettingsDrawerProps {
   isOpen: boolean;
@@ -47,10 +40,6 @@ export function NavaSettingsDrawer({
 }: NavaSettingsDrawerProps) {
   const [repoInput, setRepoInput] = useState(settings.updateRepo || '');
   const [repoSaved, setRepoSaved] = useState(false);
-  const [isCreatorUnlocked, setIsCreatorUnlocked] = useState(false);
-  const [showPinPrompt, setShowPinPrompt] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,42 +50,11 @@ export function NavaSettingsDrawer({
     }
   }, [isOpen, settings.updateRepo]);
 
-  useEffect(() => {
-    if (showPinPrompt) {
-      window.requestAnimationFrame(() => {
-        focusElementById('creator-pin-input');
-      });
-    }
-  }, [showPinPrompt]);
-
   useSpatialNavigation({
     enabled: isOpen,
-    onBack: () => {
-      if (showPinPrompt) {
-        setShowPinPrompt(false);
-        setPinInput('');
-        setPinError(false);
-        window.requestAnimationFrame(() => {
-          focusElementById('settings-creator-access');
-        });
-        return;
-      }
-      onClose();
-    },
-    scopeSelector: showPinPrompt ? '#creator-pin-modal' : '#nava-settings-scroll-container',
+    onBack: onClose,
+    scopeSelector: '#nava-settings-scroll-container',
   });
-
-  const handleVerifyPin = () => {
-    if (pinInput.trim() === CREATOR_PIN) {
-      setIsCreatorUnlocked(true);
-      setShowPinPrompt(false);
-      setPinInput('');
-      setPinError(false);
-    } else {
-      setPinError(true);
-      window.setTimeout(() => setPinError(false), 2000);
-    }
-  };
 
   const handleSaveRepo = () => {
     onUpdateSettings({ updateRepo: repoInput.trim() });
@@ -124,7 +82,7 @@ export function NavaSettingsDrawer({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={(e) => {
-            if (e.target === e.currentTarget && !showPinPrompt) {
+            if (e.target === e.currentTarget) {
               onClose();
             }
           }}
@@ -133,7 +91,6 @@ export function NavaSettingsDrawer({
           <motion.div
             id="nava-settings-scroll-container"
             data-tv-scroll-container="true"
-            data-tv-hidden={showPinPrompt ? 'true' : undefined}
             onClick={(e) => e.stopPropagation()}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -169,19 +126,9 @@ export function NavaSettingsDrawer({
               <button
                 type="button"
                 data-tv-focusable="true"
-                data-tv-id="settings-nav-creator"
-                onClick={() => scrollToSection('section-creator')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold text-xs border border-amber-500/35 hover:bg-amber-500 hover:text-zinc-950 focus:bg-amber-500 focus:text-zinc-950 focus:scale-105 shrink-0 transition-colors"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                <span>Panel Creador</span>
-              </button>
-              <button
-                type="button"
-                data-tv-focusable="true"
                 data-tv-id="settings-nav-appearance"
                 onClick={() => scrollToSection('section-appearance')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
+                className="tv-focusable inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
               >
                 <span>🎨 Apariencia</span>
               </button>
@@ -374,118 +321,6 @@ export function NavaSettingsDrawer({
               </button>
             </div>
 
-            {/* Panel de Creador protegido por PIN */}
-            <div id="section-creator" className="space-y-2.5 pt-2">
-              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-amber-500" />
-                <span>Panel de Creador (Mantenimiento Global)</span>
-              </h3>
-
-              {!isCreatorUnlocked ? (
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="settings-creator-access"
-                  onClick={() => setShowPinPrompt(true)}
-                  className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border-2 border-amber-500/40 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">
-                        Administración Remota de Mantenimiento
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                        PIN por defecto: <strong>2026</strong> · Solo tú puedes activar el modo para todos
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 shrink-0 shadow-xs">
-                    Desbloquear
-                  </span>
-                </button>
-              ) : (
-                <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border-2 border-amber-500 p-4 space-y-3 shadow-md">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                          Panel de Creador (Sincronizado vía Firebase)
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-zinc-400 truncate">
-                          Activa el aviso obligatorio &ldquo;El modo solo apps será activado&rdquo; para TODOS los usuarios
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        data-tv-focusable="true"
-                        data-tv-id="settings-maint-toggle"
-                        onClick={() => {
-                          const nextVal = !settings.maintenanceMode;
-                          onUpdateSettings({
-                            maintenanceMode: nextVal,
-                            appsOnlyMode: nextVal ? true : settings.appsOnlyMode,
-                          });
-                          void setGlobalLauncherStatus({
-                            maintenanceMode: nextVal,
-                            appsOnlyMode: nextVal,
-                            title: settings.maintenanceTitle,
-                            message: settings.maintenanceMessage,
-                          });
-                        }}
-                        className={`tv-focusable px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                          settings.maintenanceMode
-                            ? 'bg-amber-500 text-zinc-950 shadow-md'
-                            : 'bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300'
-                        } focus:scale-105`}
-                      >
-                        {settings.maintenanceMode ? 'ACTIVADO PARA TODOS' : 'DESACTIVADO'}
-                      </button>
-                      <button
-                        type="button"
-                        data-tv-focusable="true"
-                        data-tv-id="settings-creator-lock"
-                        onClick={() => setIsCreatorUnlocked(false)}
-                        title="Bloquear panel de creador"
-                        className="tv-focusable p-2 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300 focus:scale-105"
-                      >
-                        <Lock className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-1 border-t border-slate-900/8 dark:border-white/8">
-                    <label htmlFor="settings-maint-msg" className="block text-xs text-slate-500 dark:text-zinc-400">
-                      Mensaje del cartel para todos los usuarios:
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="settings-maint-msg"
-                        type="text"
-                        defaultValue={settings.maintenanceMessage}
-                        onBlur={(e) => {
-                          const msg = e.target.value;
-                          onUpdateSettings({ maintenanceMessage: msg });
-                          void setGlobalLauncherStatus({
-                            maintenanceMode: settings.maintenanceMode,
-                            appsOnlyMode: settings.appsOnlyMode,
-                            title: settings.maintenanceTitle,
-                            message: msg,
-                          });
-                        }}
-                        data-tv-focusable="true"
-                        data-tv-id="settings-maint-msg-input"
-                        className="tv-focusable flex-1 px-3 py-2 rounded-xl bg-[#DCE3EE] dark:bg-[#090B10] border border-slate-900/12 dark:border-white/12 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Sistema Android TV */}
             <div id="section-system" className="space-y-2.5">
               <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
@@ -592,91 +427,6 @@ export function NavaSettingsDrawer({
               VORA TV OS · Ajustes listos para mando y pantalla de Android TV
             </div>
           </motion.div>
-
-          {/* Modal para introducir el PIN de Creador */}
-          {showPinPrompt && (
-            <div
-              id="creator-pin-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Introducir PIN de Creador"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setShowPinPrompt(false);
-                  setPinInput('');
-                  setPinError(false);
-                  window.requestAnimationFrame(() => {
-                    focusElementById('settings-creator-access');
-                  });
-                }
-              }}
-              className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6"
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-sm rounded-3xl bg-[#E6ECF4] dark:bg-[#12151E] border border-slate-900/15 dark:border-white/15 p-7 shadow-2xl flex flex-col items-center gap-4 text-center"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
-                    PIN de Creador
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 leading-relaxed">
-                    Introduce tu PIN de administrador (por defecto: <strong>2026</strong>) para gestionar el modo mantenimiento de todas las TVs.
-                  </p>
-                </div>
-
-                <div className="w-full space-y-2">
-                  <input
-                    type="password"
-                    maxLength={10}
-                    autoFocus
-                    value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleVerifyPin();
-                    }}
-                    placeholder="PIN (2026)"
-                    data-tv-focusable="true"
-                    data-tv-id="creator-pin-input"
-                    className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0A0D14] border border-slate-900/15 dark:border-white/15 text-center font-mono-tabular text-lg font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500"
-                  />
-                  {pinError && (
-                    <div className="text-xs font-semibold text-rose-500">
-                      PIN incorrecto. Inténtalo de nuevo.
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-center gap-2.5 w-full pt-1">
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="creator-pin-submit"
-                    onClick={handleVerifyPin}
-                    className="tv-focusable flex-1 py-2.5 rounded-xl bg-amber-500 text-zinc-950 font-bold text-xs focus:scale-105"
-                  >
-                    Acceder
-                  </button>
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="creator-pin-cancel"
-                    onClick={() => {
-                      setShowPinPrompt(false);
-                      setPinInput('');
-                      setPinError(false);
-                    }}
-                    className="tv-focusable flex-1 py-2.5 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300 font-semibold text-xs focus:scale-105"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </motion.div>
       )}
     </AnimatePresence>
