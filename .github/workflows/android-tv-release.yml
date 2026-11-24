@@ -38,7 +38,7 @@ jobs:
 
       - name: Instalar dependencias y compilar frontend
         run: |
-          npm ci
+          npm install --legacy-peer-deps
           npm run build
 
       - name: Sincronizar proyecto Capacitor Android
