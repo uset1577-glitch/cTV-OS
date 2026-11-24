@@ -1,0 +1,6 @@
+{
+  "name": "CgamesTV Launcher",
+  "description": "Launcher nativo para Android TV optimizado para control remoto con acceso directo a CgamesTVPARTY, lista real de apps instaladas y actualizaciones OTA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
