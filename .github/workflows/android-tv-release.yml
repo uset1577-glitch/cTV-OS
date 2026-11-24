@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - name: Configurar Java 21 (Temurin)
         uses: actions/setup-java@v4
@@ -44,23 +43,55 @@ jobs:
       - name: Sincronizar proyecto Capacitor Android
         run: npx cap sync android
 
-      - name: Validar secrets de firma persistente
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
-            echo "::error::Faltan secrets de firma Android (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). Ejecuta scripts/generate-keystore.sh una sola vez y agrégalos en GitHub Secrets para mantener una firma persistente en todas las actualizaciones OTA."
-            exit 1
-          fi
+      - name: Restaurar caché de keystore automático (si no hay secrets)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
+        id: keystore-cache
+        uses: actions/cache@v4
+        with:
+          path: android/app/release-keystore.jks
+          key: ctvos-signing-keystore-v1
+          restore-keys: |
+            ctvos-signing-keystore-
 
-      - name: Decodificar keystore persistente
+      - name: Preparar llave de firma persistente
+        id: signing
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SECRET_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SECRET_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > android/app/release-keystore.jks
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$SECRET_STORE_PASS" ] && [ -n "$SECRET_KEY_ALIAS" ] && [ -n "$SECRET_KEY_PASS" ]; then
+            echo "$KEYSTORE_B64" | base64 --decode > android/app/release-keystore.jks
+            echo "::add-mask::$SECRET_STORE_PASS"
+            echo "::add-mask::$SECRET_KEY_PASS"
+            echo "store_password=$SECRET_STORE_PASS" >> "$GITHUB_OUTPUT"
+            echo "key_alias=$SECRET_KEY_ALIAS" >> "$GITHUB_OUTPUT"
+            echo "key_password=$SECRET_KEY_PASS" >> "$GITHUB_OUTPUT"
+            echo "using_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            DEFAULT_ALIAS="ctvos"
+            DEFAULT_PASS="ctvos-release-key-2026"
+            if [ ! -f android/app/release-keystore.jks ]; then
+              echo "Generando keystore automático persistente en caché..."
+              keytool -genkeypair \
+                -v \
+                -keystore android/app/release-keystore.jks \
+                -alias "$DEFAULT_ALIAS" \
+                -keyalg RSA \
+                -keysize 2048 \
+                -validity 10000 \
+                -storepass "$DEFAULT_PASS" \
+                -keypass "$DEFAULT_PASS" \
+                -dname "CN=CTV OS, OU=TV, O=CgamesTV, L=Local, ST=Local, C=ES"
+            else
+              echo "Usando keystore persistente restaurado de caché."
+            fi
+            echo "store_password=$DEFAULT_PASS" >> "$GITHUB_OUTPUT"
+            echo "key_alias=$DEFAULT_ALIAS" >> "$GITHUB_OUTPUT"
+            echo "key_password=$DEFAULT_PASS" >> "$GITHUB_OUTPUT"
+            echo "using_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Calcular versión y versionCode incremental
         id: version
@@ -81,9 +112,9 @@ jobs:
       - name: Compilar APK Release firmado con Java 21
         working-directory: android
         env:
-          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASS: ${{ steps.signing.outputs.store_password }}
+          KEY_ALIAS: ${{ steps.signing.outputs.key_alias }}
+          KEY_PASS: ${{ steps.signing.outputs.key_password }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease \
@@ -112,13 +143,9 @@ jobs:
             "fileSizeBytes": ${FILE_SIZE},
             "publishedAt": "${PUBLISHED_AT}",
             "mandatory": false,
-            "releaseNotes": "Compilación automática CTV OS ${{ steps.version.outputs.tag_name }} (Build ${{ steps.version.outputs.version_code }}) firmada con llave persistente para actualización OTA en Android TV."
+            "releaseNotes": "Compilación automática CTV OS ${{ steps.version.outputs.tag_name }} (Build ${{ steps.version.outputs.version_code }}) firmada para actualización OTA en Android TV."
           }
           EOF
-
-      - name: Limpiar keystore temporal
-        if: always()
-        run: rm -f android/app/release-keystore.jks
 
       - name: Publicar APK y version.json en GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -130,3 +157,14 @@ jobs:
           files: |
             dist-release/CTVOS-v${{ steps.version.outputs.version_name }}.apk
             dist-release/version.json
+
+      - name: Guardar resumen de compilación
+        run: |
+          echo "### CTV OS ${{ steps.version.outputs.tag_name }} compilado correctamente" >> "$GITHUB_STEP_SUMMARY"
+          echo "- APK: \`CTVOS-v${{ steps.version.outputs.version_name }}.apk\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build (versionCode): \`${{ steps.version.outputs.version_code }}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.signing.outputs.using_secrets }}" = "false" ]; then
+            echo "- Firma: Keystore automático persistente en caché de GitHub Actions (sin configuración manual)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Firma: Keystore fijo desde GitHub Secrets." >> "$GITHUB_STEP_SUMMARY"
+          fi

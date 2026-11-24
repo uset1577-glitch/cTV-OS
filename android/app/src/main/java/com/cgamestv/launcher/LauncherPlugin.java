@@ -449,11 +449,15 @@ public class LauncherPlugin extends Plugin {
         Bitmap bitmap;
         if (drawable instanceof BitmapDrawable && ((BitmapDrawable) drawable).getBitmap() != null) {
             Bitmap src = ((BitmapDrawable) drawable).getBitmap();
-            bitmap = Bitmap.createScaledBitmap(src, targetSizePx, targetSizePx, true);
+            int width = Math.max(1, src.getWidth());
+            int height = Math.max(1, src.getHeight());
+            float scale = Math.min((float) targetSizePx / width, (float) targetSizePx / height);
+            int w = Math.max(1, Math.round(width * scale));
+            int h = Math.max(1, Math.round(height * scale));
+            bitmap = Bitmap.createScaledBitmap(src, w, h, true);
         } else {
             int width = drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : targetSizePx;
             int height = drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : targetSizePx;
-            // Mantener proporción si es un banner panorámico o cuadrado
             float scale = Math.min((float) targetSizePx / width, (float) targetSizePx / height);
             int w = Math.max(1, Math.round(width * scale));
             int h = Math.max(1, Math.round(height * scale));

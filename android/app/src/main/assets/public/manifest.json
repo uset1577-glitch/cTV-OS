@@ -1,0 +1,17 @@
+{
+  "name": "CTV OS",
+  "short_name": "CTV OS",
+  "description": "CTV OS: Launcher fluido para Android TV optimizado para control remoto.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090B10",
+  "theme_color": "#090B10",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/src/assets/images/cgames_tv_party_banner_1795483246737.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
