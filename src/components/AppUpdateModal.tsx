@@ -18,6 +18,7 @@ import type {
   AppUpdateModalStatus,
   AppVersionInfo,
 } from '../types/launcher';
+import { BrandLogo } from './BrandLogo';
 
 interface AppUpdateModalProps {
   isOpen: boolean;
@@ -104,22 +105,20 @@ export function AppUpdateModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 8 }}
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-            className="w-full max-w-xl rounded-3xl bg-[#F4F6F9] dark:bg-[#12151E] border border-zinc-900/10 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar"
+            className="w-full max-w-xl rounded-3xl bg-[#E6ECF4] dark:bg-[#12151E] border border-slate-900/12 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar"
           >
             {/* Cabecera estilo Xuper TV / Google TV */}
             <div className="flex items-start justify-between gap-6 mb-6">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-zinc-950 flex items-center justify-center font-display font-bold text-lg shadow-lg shrink-0">
-                  CTV
-                </div>
+                <BrandLogo size="lg" showWordmark={false} />
                 <div>
                   <h2
                     id="app-update-modal-title"
-                    className="font-display text-2xl font-bold text-zinc-900 dark:text-white leading-tight"
+                    className="font-display text-2xl font-bold text-slate-900 dark:text-white leading-tight"
                   >
                     Actualización de la app
                   </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
                     Versión actual: v{currentVersion.versionName} (Build {currentVersion.versionCode})
                   </p>
                 </div>
@@ -132,7 +131,7 @@ export function AppUpdateModal({
                 data-tv-id="update-close-x"
                 onClick={onClose}
                 aria-label="Cerrar ventana"
-                className="tv-focusable p-2.5 rounded-full bg-zinc-900/8 dark:bg-white/10 text-zinc-700 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -171,15 +170,20 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Estado 3: Nueva versión encontrada (estilo Xuper TV) */}
+            {/* Estado 3: Nueva versión encontrada (opcional al entrar a la app) */}
             {status === 'update_available' && remoteManifest && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-amber-500/40 p-6 mb-6">
-                <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>¡Nueva versión encontrada!</span>
+              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-amber-500/40 p-6 mb-6 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                    <Sparkles className="w-4 h-4" />
+                    <span>¡Nueva actualización disponible!</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">
+                    No es obligatoria
+                  </span>
                 </div>
 
-                <div className="flex items-baseline justify-between gap-4 mb-3">
+                <div className="flex items-baseline justify-between gap-4">
                   <div className="font-display text-3xl font-bold text-zinc-900 dark:text-white">
                     v{remoteManifest.versionName}
                   </div>
@@ -190,9 +194,15 @@ export function AppUpdateModal({
                   )}
                 </div>
 
+                {/* Cartel informativo sobre mejora de calidad */}
+                <div className="rounded-xl bg-amber-500/12 border border-amber-500/35 px-4 py-3 text-sm font-medium text-amber-900 dark:text-amber-200 leading-snug">
+                  Actualización opcional: puedes omitirla si prefieres, pero esto podría mejorar tu
+                  calidad del launcher.
+                </div>
+
                 <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.04] p-4 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed">
                   {remoteManifest.releaseNotes ||
-                    '• Mejoras de fluidez y estabilidad en Android TV.\n• Corrección de errores y nueva experiencia Google TV 2025.'}
+                    '• Mejoras de fluidez y estabilidad en Android TV.\n• Corrección de errores y nueva experiencia en tu televisor.'}
                 </div>
               </div>
             )}
@@ -237,7 +247,7 @@ export function AppUpdateModal({
                   </div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
                     Para instalar la actualización, activa el permiso &ldquo;Instalar aplicaciones
-                    desconocidas&rdquo; para CTV OS en los ajustes de tu TV.
+                    desconocidas&rdquo; para VORA TV OS en los ajustes de tu TV.
                   </p>
                 </div>
               </div>
@@ -274,7 +284,7 @@ export function AppUpdateModal({
                       type="text"
                       value={repoInput}
                       onChange={(e) => setRepoInput(e.target.value)}
-                      placeholder="usuario/cTV-OS"
+                      placeholder="usuario/vora-tv-os"
                       data-tv-focusable="true"
                       data-tv-id="update-repo-input"
                       className="tv-focusable flex-1 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-xs font-mono-tabular text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"

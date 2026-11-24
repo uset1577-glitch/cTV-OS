@@ -46,7 +46,10 @@ export function AppTile({
       onClick={() => onLaunch(app)}
       className="tv-focusable group relative w-full py-3 px-2 rounded-3xl flex flex-col items-center justify-start gap-3 text-center focus:scale-[1.08]"
     >
-      <div className="relative w-24 h-24 rounded-full bg-zinc-200 dark:bg-zinc-800 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden flex items-center justify-center shrink-0 transition-all shadow-lg">
+      <div
+        data-tv-focus-box="true"
+        className="relative w-24 h-24 rounded-full bg-zinc-200 dark:bg-zinc-800 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden flex items-center justify-center shrink-0 transition-all duration-200 shadow-lg"
+      >
         {app.icon && !iconError ? (
           <img
             src={app.icon}

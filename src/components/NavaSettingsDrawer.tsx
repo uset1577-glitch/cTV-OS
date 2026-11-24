@@ -64,7 +64,7 @@ export function NavaSettingsDrawer({
           id="nava-settings-drawer"
           role="dialog"
           aria-modal="true"
-          aria-label="Ajustes de CgamesTV"
+          aria-label="Ajustes de VORA TV OS"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -76,15 +76,15 @@ export function NavaSettingsDrawer({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-            className="w-full max-w-2xl h-full bg-[#F4F5F7] dark:bg-[#0D1017] border-l border-zinc-900/10 dark:border-white/10 p-9 overflow-y-auto no-scrollbar flex flex-col gap-7"
+            className="w-full max-w-2xl h-full bg-[#DCE3EE] dark:bg-[#0D1017] border-l border-slate-900/12 dark:border-white/10 p-9 overflow-y-auto no-scrollbar flex flex-col gap-7"
           >
             {/* Cabecera */}
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-display text-2xl font-bold text-zinc-900 dark:text-white">
-                  Ajustes de CTV OS
+                <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
+                  Ajustes de VORA TV OS
                 </h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-sm text-slate-600 dark:text-zinc-400 mt-0.5">
                   Personalización, apariencia y sistema Android TV
                 </p>
               </div>
@@ -95,7 +95,7 @@ export function NavaSettingsDrawer({
                 data-tv-id="settings-close"
                 onClick={onClose}
                 aria-label="Cerrar ajustes"
-                className="tv-focusable p-2.5 rounded-full bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -103,7 +103,7 @@ export function NavaSettingsDrawer({
 
             {/* Apariencia Día / Noche y Fondos */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Apariencia y fondo limpio
               </h3>
 
@@ -116,7 +116,7 @@ export function NavaSettingsDrawer({
                     themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
                   })
                 }
-                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015] group"
+                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
               >
                 <div className="flex items-center gap-3.5">
                   {settings.themeMode === 'dark' ? (
@@ -126,8 +126,8 @@ export function NavaSettingsDrawer({
                   )}
                   <div>
                     <div className="font-semibold text-sm">Modo de tema</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                      Alterna entre modo Día claro y Noche oscuro
+                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                      Alterna entre modo Día suave y Noche oscuro
                     </div>
                   </div>
                 </div>
@@ -148,9 +148,9 @@ export function NavaSettingsDrawer({
                       onClick={() => onUpdateSettings({ backgroundId: preset.id })}
                       className={`tv-focusable rounded-2xl p-2.5 text-left border ${
                         selected
-                          ? 'border-amber-500 bg-white dark:bg-white/10'
-                          : 'border-zinc-900/8 dark:border-white/10 bg-white/70 dark:bg-white/[0.04]'
-                      } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.03]`}
+                          ? 'border-amber-500 bg-[#EEF2F7] dark:bg-white/10'
+                          : 'border-slate-900/10 dark:border-white/10 bg-[#E6ECF4] dark:bg-white/[0.04]'
+                      } focus:ring-2 focus:ring-amber-500 focus:scale-[1.03]`}
                     >
                       <div
                         className="h-12 w-full rounded-xl mb-2 relative overflow-hidden border border-black/10"
@@ -167,7 +167,7 @@ export function NavaSettingsDrawer({
                           </span>
                         )}
                       </div>
-                      <div className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
+                      <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                         {preset.name}
                       </div>
                     </button>
@@ -178,7 +178,7 @@ export function NavaSettingsDrawer({
 
             {/* Preferencias rápidas */}
             <div className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Preferencias
               </h3>
 
@@ -187,9 +187,9 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-suggestions"
                 onClick={() => onUpdateSettings({ showSuggestions: !settings.showSuggestions })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015]"
+                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
               >
-                <span className="text-sm font-semibold">Sugerencias de YouTube, Netflix, Max y Prime</span>
+                <span className="text-sm font-semibold">Sugerencias de películas y series</span>
                 <span className="text-sm font-semibold">
                   {settings.showSuggestions ? 'Visibles' : 'Ocultas'}
                 </span>
@@ -200,7 +200,7 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-clock"
                 onClick={() => onUpdateSettings({ use24HourClock: !settings.use24HourClock })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015]"
+                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
               >
                 <span className="text-sm font-semibold">Formato de reloj</span>
                 <span className="font-mono-tabular text-sm font-semibold">
@@ -213,7 +213,7 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-pkg"
                 onClick={() => onUpdateSettings({ showPackageNames: !settings.showPackageNames })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015]"
+                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
               >
                 <span className="text-sm font-semibold">Mostrar nombre de paquete Android</span>
                 <span className="text-sm font-semibold">
@@ -226,7 +226,7 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-reset-favs"
                 onClick={() => onUpdateSettings({ favoritePackages: DEFAULT_FAVORITES })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015]"
+                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
               >
                 <span className="text-sm font-semibold">Restaurar fila de favoritos inicial</span>
                 <RotateCcw className="w-4 h-4" />
@@ -235,7 +235,7 @@ export function NavaSettingsDrawer({
 
             {/* Sistema Android TV */}
             <div className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Sistema Android TV
               </h3>
 
@@ -244,11 +244,11 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-home"
                 onClick={() => onOpenAndroidSettings('home')}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.015] group"
+                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
               >
                 <div>
                   <div className="text-sm font-semibold">Definir como Launcher principal</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                  <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
                     {isNative ? 'Selector de pantalla de inicio' : 'Disponible en Android TV'}
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export function NavaSettingsDrawer({
                   data-tv-focusable="true"
                   data-tv-id="settings-wifi"
                   onClick={() => onOpenAndroidSettings('wifi')}
-                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-sm font-semibold focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02]"
+                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-sm font-semibold focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02]"
                 >
                   <span>Wi-Fi</span>
                   <Wifi className="w-4 h-4" />
@@ -271,7 +271,7 @@ export function NavaSettingsDrawer({
                   data-tv-focusable="true"
                   data-tv-id="settings-android"
                   onClick={() => onOpenAndroidSettings('settings')}
-                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 text-sm font-semibold focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02]"
+                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-sm font-semibold focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02]"
                 >
                   <span>Ajustes TV</span>
                   <Settings className="w-4 h-4" />
@@ -280,18 +280,18 @@ export function NavaSettingsDrawer({
             </div>
 
             {/* Actualización de la aplicación estilo Xuper TV */}
-            <div className="rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 p-5 space-y-4">
+            <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                     Actualización de la aplicación
                   </h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Comprueba e instala nuevas versiones de CTV OS
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Comprueba e instala nuevas versiones de VORA TV OS
                   </p>
                 </div>
-                <span className="font-mono-tabular text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-900/8 dark:bg-white/10 text-zinc-700 dark:text-zinc-300">
-                  v{appVersion.versionName} ({appVersion.versionCode})
+                <span className="font-mono-tabular text-xs font-semibold text-slate-600 dark:text-zinc-300">
+                  v{appVersion.versionName} · {appVersion.versionCode}
                 </span>
               </div>
 
@@ -300,14 +300,14 @@ export function NavaSettingsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="settings-update-check"
                 onClick={onOpenUpdateModal}
-                className="tv-focusable w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-sm focus:bg-white focus:text-zinc-950 focus:scale-[1.02] shadow-sm"
+                className="tv-focusable w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-sm focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02] shadow-sm"
               >
                 <Download className="w-4 h-4 shrink-0" />
                 <span>Buscar actualizaciones</span>
               </button>
 
-              <div className="pt-2 border-t border-zinc-900/6 dark:border-white/6 space-y-2">
-                <label htmlFor="settings-update-repo-input" className="block text-xs text-zinc-400">
+              <div className="pt-2 border-t border-slate-900/8 dark:border-white/8 space-y-2">
+                <label htmlFor="settings-update-repo-input" className="block text-xs text-slate-500 dark:text-zinc-400">
                   Servidor o repositorio de descargas (opcional)
                 </label>
                 <div className="flex items-center gap-2">
@@ -318,15 +318,15 @@ export function NavaSettingsDrawer({
                     onChange={(e) => setRepoInput(e.target.value)}
                     data-tv-focusable="true"
                     data-tv-id="settings-update-repo"
-                    placeholder="ej: usuario/cTV-OS o vacío por defecto"
-                    className="tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-100 dark:bg-[#090B10] border border-zinc-900/10 dark:border-white/12 text-sm font-mono-tabular text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-500"
+                    placeholder="ej: usuario/vora-tv-os o vacío por defecto"
+                    className="tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-[#DCE3EE] dark:bg-[#090B10] border border-slate-900/12 dark:border-white/12 text-sm font-mono-tabular text-slate-900 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-amber-500"
                   />
                   <button
                     type="button"
                     data-tv-focusable="true"
                     data-tv-id="settings-update-save"
                     onClick={handleSaveRepo}
-                    className="tv-focusable px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
+                    className="tv-focusable px-4 py-2.5 rounded-xl bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
                   >
                     {repoSaved ? 'Guardado' : 'Guardar'}
                   </button>

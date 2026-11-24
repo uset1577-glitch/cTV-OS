@@ -49,6 +49,7 @@ function loadSavedSettings(): LauncherSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      updateRepo: parsed.updateRepo?.trim() ? parsed.updateRepo : DEFAULT_SETTINGS.updateRepo,
       favoritePackages: Array.isArray(parsed.favoritePackages)
         ? parsed.favoritePackages
         : DEFAULT_SETTINGS.favoritePackages,
@@ -75,6 +76,10 @@ export default function App() {
     versionCode: 100,
     packageName: 'com.cgamestv.launcher',
   });
+  const [isVersionLoaded, setIsVersionLoaded] = useState(false);
+  const [topBarVisible, setTopBarVisible] = useState(true);
+  const lastCatalogFetchRef = useRef<number>(0);
+  const hasAutoPromptedUpdateRef = useRef(false);
 
   // Notificación sutil
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -119,8 +124,10 @@ export default function App() {
     });
   }, []);
 
-  const loadLauncherData = useCallback(async () => {
-    setIsLoadingApps(true);
+  const loadLauncherData = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoadingApps(true);
+    }
     try {
       const [appsResult, versionInfo] = await Promise.all([
         getInstalledApps(),
@@ -129,8 +136,11 @@ export default function App() {
       setApps(appsResult.apps);
       setIsNative(appsResult.isNative);
       setAppVersion(versionInfo);
+      setIsVersionLoaded(true);
     } finally {
-      setIsLoadingApps(false);
+      if (!silent) {
+        setIsLoadingApps(false);
+      }
     }
   }, []);
 
@@ -138,6 +148,7 @@ export default function App() {
     setIsLoadingCatalog(true);
     try {
       const catalog = await fetchGoogleTvLiveCatalog(force);
+      lastCatalogFetchRef.current = Date.now();
       setLiveCatalog(catalog);
     } finally {
       setIsLoadingCatalog(false);
@@ -145,18 +156,57 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void loadLauncherData();
-    void loadLiveCatalog(false);
+    void loadLauncherData(false);
+    void loadLiveCatalog(true);
   }, [loadLauncherData, loadLiveCatalog]);
 
-  // Verificación de actualización en segundo plano
+  // Refrescar recomendaciones y apps automáticamente cada vez que sales/entras de una app o enciendes la TV
   useEffect(() => {
+    const refreshOnReturn = () => {
+      if (document.visibilityState === 'hidden') return;
+      const elapsed = Date.now() - lastCatalogFetchRef.current;
+      // Solo evitar duplicados simultáneos en el mismo instante (2.5s)
+      if (elapsed > 2_500) {
+        void loadLiveCatalog(true);
+        void loadLauncherData(true);
+      }
+    };
+
+    const periodicId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void loadLiveCatalog(true);
+      }
+    }, 30 * 60_000);
+
+    document.addEventListener('visibilitychange', refreshOnReturn);
+    window.addEventListener('focus', refreshOnReturn);
+    window.addEventListener('pageshow', refreshOnReturn);
+    window.addEventListener('voraTvResume', refreshOnReturn);
+    return () => {
+      window.clearInterval(periodicId);
+      document.removeEventListener('visibilitychange', refreshOnReturn);
+      window.removeEventListener('focus', refreshOnReturn);
+      window.removeEventListener('pageshow', refreshOnReturn);
+      window.removeEventListener('voraTvResume', refreshOnReturn);
+    };
+  }, [loadLiveCatalog, loadLauncherData]);
+
+  // Verificación automática al entrar a la app: muestra pantalla opcional si hay nueva versión
+  useEffect(() => {
+    if (!isVersionLoaded) return;
     if (!settings.updateRepo || settings.updateRepo.startsWith('tu-usuario/')) return;
     let cancelled = false;
     checkAppUpdate(settings.updateRepo, appVersion.versionCode)
       .then((res) => {
-        if (!cancelled && res.hasUpdate && res.manifest) {
+        if (cancelled) return;
+        if (res.hasUpdate && res.manifest) {
           setRemoteManifest(res.manifest);
+          if (!hasAutoPromptedUpdateRef.current) {
+            hasAutoPromptedUpdateRef.current = true;
+            setUpdateStatus('update_available');
+            setUpdateMessage(res.message);
+            setOverlay((curr) => (curr === 'none' ? 'update' : curr));
+          }
         }
       })
       .catch(() => {
@@ -165,7 +215,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [settings.updateRepo, appVersion.versionCode]);
+  }, [isVersionLoaded, settings.updateRepo, appVersion.versionCode]);
 
   const closeOverlayToHome = useCallback(
     (focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
@@ -184,14 +234,15 @@ export default function App() {
   useSpatialNavigation({
     enabled: overlay === 'none',
     onBack: () => {
+      setTopBarVisible(true);
+      const scrollEl = document.querySelector<HTMLElement>('[data-tv-scroll-container="true"]');
+      scrollEl?.scrollTo({ top: 0, behavior: 'smooth' });
       if (activeTab !== 'inicio') {
         setActiveTab('inicio');
-        window.requestAnimationFrame(() => {
-          focusElementById(`row-app-${FEATURED_GAME.packageName}`);
-        });
-      } else {
-        focusElementById(`row-app-${FEATURED_GAME.packageName}`);
       }
+      window.requestAnimationFrame(() => {
+        focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+      });
     },
     scopeSelector: '#gtv-home-shell',
   });
@@ -201,6 +252,7 @@ export default function App() {
       setOverlay('apps');
       return;
     }
+    setTopBarVisible(true);
     setActiveTab(tab);
   }, []);
 
@@ -365,22 +417,21 @@ export default function App() {
   return (
     <div
       id="gtv-home-shell"
-      className="relative w-screen h-screen overflow-hidden flex flex-col bg-[#F4F6F9] dark:bg-[#0E1015] text-zinc-900 dark:text-zinc-100 transition-colors duration-300"
+      className="relative w-screen h-screen overflow-hidden flex flex-col bg-[#DCE3EE] dark:bg-[#0E1015] text-slate-900 dark:text-zinc-100 transition-colors duration-300"
       style={backgroundStyle}
     >
-      <motion.div
-        animate={{
-          scale: overlay !== 'none' ? 0.975 : 1,
-          opacity: overlay !== 'none' ? 0.35 : 1,
-        }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 flex flex-col h-full min-h-0"
+      <div
+        className={`relative z-10 flex flex-col h-full min-h-0 transition-opacity duration-150 ${
+          overlay !== 'none' ? 'opacity-35 pointer-events-none' : 'opacity-100'
+        }`}
       >
         <NavaTopBar
           activeTab={overlay === 'apps' ? 'apps' : activeTab}
           themeMode={settings.themeMode}
           use24HourClock={settings.use24HourClock}
           hasAvailableUpdate={hasAvailableUpdate}
+          isVisible={topBarVisible}
+          isOverHero={activeTab === 'inicio'}
           onSelectTab={handleSelectTab}
           onToggleTheme={() =>
             updateSettings({
@@ -397,10 +448,10 @@ export default function App() {
             allApps={apps}
             favoriteApps={favoriteApps}
             liveCatalog={liveCatalog}
-            isLoadingCatalog={isLoadingCatalog}
             isNative={isNative}
             showSuggestions={settings.showSuggestions}
-            onRefreshCatalog={() => void loadLiveCatalog(true)}
+            heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
+            onScrollTopChange={setTopBarVisible}
             onLaunchFeatured={() =>
               void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name)
             }
@@ -414,11 +465,12 @@ export default function App() {
             allApps={apps}
             series={liveCatalog.series}
             isLoading={isLoadingCatalog}
+            onScrollTopChange={setTopBarVisible}
             onRefreshFeed={() => void loadLiveCatalog(true)}
             onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
           />
         )}
-      </motion.div>
+      </div>
 
       {/* Animación limpia al abrir una aplicación */}
       <AnimatePresence>
@@ -428,7 +480,7 @@ export default function App() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.04 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 bg-[#F4F6F9] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
+            className="fixed inset-0 z-50 bg-[#DCE3EE] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
           >
             {launchingApp.icon && (
               <img

@@ -6,32 +6,79 @@ const PACKAGE_ALIASES: Record<string, string[]> = {
   'com.amazon.amazonvideo.livingroom': ['com.amazon.avod.thirdpartyclient'],
 };
 
-const LIVE_FEED_CACHE_KEY = 'ctvos_gtv_live_feed_v2';
+const LIVE_FEED_CACHE_KEY = 'ctvos_gtv_live_feed_v3';
+
+interface CinemetaMeta {
+  id?: string;
+  imdb_id?: string;
+  name?: string;
+  type?: 'movie' | 'series';
+  description?: string;
+  imdbRating?: string;
+  releaseInfo?: string;
+  year?: string;
+  genres?: string[];
+  genre?: string[];
+  poster?: string;
+  background?: string;
+  logo?: string;
+  trailers?: Array<{ source?: string; type?: string }>;
+  trailerStreams?: Array<{ title?: string; ytId?: string }>;
+}
 
 interface ITunesEntry {
   id?: { attributes?: { 'im:id'?: string } };
   'im:name'?: { label?: string };
-  'im:collection'?: { 'im:name'?: { label?: string } };
   'im:image'?: Array<{ label?: string }>;
   'im:releaseDate'?: { attributes?: { label?: string } };
   category?: { attributes?: { label?: string } };
   summary?: { label?: string };
-  link?: Array<{ attributes?: { href?: string } }>;
 }
 
 interface TvMazeScheduleItem {
+  name?: string;
+  image?: { medium?: string; original?: string } | null;
   _embedded?: {
     show?: {
       id: number;
       name: string;
-      language?: string;
       genres?: string[];
-      summary?: string;
       rating?: { average?: number | null };
-      image?: { medium?: string; original?: string } | null;
       webChannel?: { name?: string } | null;
+      network?: { name?: string } | null;
     };
   };
+}
+
+const GENRE_ES: Record<string, string> = {
+  Action: 'Acción',
+  Adventure: 'Aventura',
+  Animation: 'Animación',
+  Biography: 'Biografía',
+  Comedy: 'Comedia',
+  Crime: 'Crimen',
+  Documentary: 'Documental',
+  Drama: 'Drama',
+  Family: 'Familiar',
+  Fantasy: 'Fantasía',
+  History: 'Historia',
+  Horror: 'Terror',
+  Music: 'Música',
+  Mystery: 'Misterio',
+  Romance: 'Romance',
+  'Sci-Fi': 'Ciencia ficción',
+  'Science Fiction': 'Ciencia ficción',
+  Thriller: 'Suspenso',
+  War: 'Bélica',
+  Western: 'Western',
+};
+
+function translateGenres(genres?: string[]): string {
+  if (!genres || genres.length === 0) return 'Estreno destacado';
+  return genres
+    .slice(0, 2)
+    .map((g) => GENRE_ES[g] || g)
+    .join(' · ');
 }
 
 function stripHtml(text?: string): string {
@@ -41,6 +88,19 @@ function stripHtml(text?: string): string {
 
 function upscaleAppleImage(url: string, size = '600x900bb'): string {
   return url.replace(/\/\d+x\d+bb\.(png|jpg|jpeg)/i, `/${size}.$1`);
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number): T[] {
+  const arr = [...items];
+  let s = seed || 1;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) % 4294967296;
+    const j = s % (i + 1);
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
 }
 
 function mapPlatformToPackage(channelName: string): {
@@ -99,7 +159,40 @@ function mapPlatformToPackage(channelName: string): {
   return null;
 }
 
-// Respaldo limpio sin imágenes IA por si el TV está completamente sin internet
+const STREAMING_ROTATION = [
+  {
+    appName: 'Netflix',
+    packageName: 'com.netflix.ninja',
+    deepLinkUrl: 'https://www.netflix.com/browse',
+    accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
+  },
+  {
+    appName: 'Max',
+    packageName: 'com.wbd.stream',
+    deepLinkUrl: 'https://play.max.com/',
+    accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
+  },
+  {
+    appName: 'Prime Video',
+    packageName: 'com.amazon.amazonvideo.livingroom',
+    deepLinkUrl: 'https://app.primevideo.com/',
+    accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
+  },
+  {
+    appName: 'Disney+',
+    packageName: 'com.disney.disneyplus',
+    deepLinkUrl: 'https://www.disneyplus.com/home',
+    accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
+  },
+  {
+    appName: 'YouTube',
+    packageName: 'com.google.android.youtube.tv',
+    deepLinkUrl: 'https://www.youtube.com/tv#/explore',
+    accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
+  },
+];
+
+// Respaldo limpio sin imágenes rotas si el TV está completamente sin internet
 export const OFFLINE_FALLBACK_CATALOG: GoogleTvLiveCatalog = {
   spotlight: [
     {
@@ -180,85 +273,122 @@ export const OFFLINE_FALLBACK_CATALOG: GoogleTvLiveCatalog = {
       mediaKind: 'series',
     },
   ],
-  updatedAt: new Date().toISOString().slice(0, 10),
+  updatedAt: new Date().toISOString(),
 };
 
-// Consulta catálogos públicos reales actualizados hoy (sin imágenes IA, sin API key)
-export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<GoogleTvLiveCatalog> {
-  const todayKey = new Date().toISOString().slice(0, 10);
+let refreshNonce = 0;
 
-  if (!forceRefresh) {
-    try {
-      const cachedRaw = localStorage.getItem(LIVE_FEED_CACHE_KEY);
-      if (cachedRaw) {
-        const parsed = JSON.parse(cachedRaw) as GoogleTvLiveCatalog;
-        if (parsed.updatedAt === todayKey && parsed.movies.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {
-      // Ignorar error de lectura de caché
-    }
-  }
+// Siempre consulta catálogos reales actualizados en vivo (16:9 horizontal para banners/series y 2:3 vertical para películas)
+export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<GoogleTvLiveCatalog> {
+  refreshNonce += 1;
+  const seed = Math.floor(Date.now() / 1000) + refreshNonce * 97 + (forceRefresh ? 503 : 0);
 
   const movies: AppSuggestion[] = [];
   const series: AppSuggestion[] = [];
+  const spotlightCandidates: AppSuggestion[] = [];
 
   try {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 7000);
-
+    const timer = window.setTimeout(() => controller.abort(), 8500);
     const todayStr = new Date().toISOString().slice(0, 10);
-    const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
-    const [mxMoviesRes, usTvRes, tvMazeTodayRes, tvMazeYestRes] = await Promise.allSettled([
-      fetch('https://itunes.apple.com/mx/rss/topmovies/limit=25/json', {
+    const [cineMoviesRes, cineSeriesRes, mxMoviesRes, tvMazeWebRes] = await Promise.allSettled([
+      fetch('https://cinemeta-catalogs.strem.io/top/catalog/movie/top.json', {
         signal: controller.signal,
+        cache: 'no-store',
       }).then((r) => (r.ok ? r.json() : null)),
-      fetch('https://itunes.apple.com/us/rss/toptvepisodes/limit=25/json', {
+      fetch('https://cinemeta-catalogs.strem.io/top/catalog/series/top.json', {
         signal: controller.signal,
+        cache: 'no-store',
+      }).then((r) => (r.ok ? r.json() : null)),
+      fetch('https://itunes.apple.com/mx/rss/topmovies/limit=20/json', {
+        signal: controller.signal,
+        cache: 'no-store',
       }).then((r) => (r.ok ? r.json() : null)),
       fetch(`https://api.tvmaze.com/schedule/web?date=${todayStr}`, {
         signal: controller.signal,
-      }).then((r) => (r.ok ? r.json() : null)),
-      fetch(`https://api.tvmaze.com/schedule/web?date=${yesterdayStr}`, {
-        signal: controller.signal,
+        cache: 'no-store',
       }).then((r) => (r.ok ? r.json() : null)),
     ]);
 
     window.clearTimeout(timer);
 
-    // 1. Películas reales actuales (Apple / iTunes MX Top Movies en español)
-    if (mxMoviesRes.status === 'fulfilled' && mxMoviesRes.value?.feed?.entry) {
-      const entries = mxMoviesRes.value.feed.entry as ITunesEntry[];
-      const seenTitles = new Set<string>();
+    const seenMovieTitles = new Set<string>();
+    const seenSeriesTitles = new Set<string>();
 
+    // 1. Películas reales actuales (Cinemeta Top Movies: póster 2:3 vertical + fondo 16:9 horizontal real)
+    if (cineMoviesRes.status === 'fulfilled' && Array.isArray(cineMoviesRes.value?.metas)) {
+      const metas = cineMoviesRes.value.metas as CinemetaMeta[];
+      for (const meta of metas) {
+        const imdbId = meta.imdb_id || meta.id;
+        const title = meta.name?.trim();
+        if (!imdbId || !title) continue;
+        const norm = title.toLowerCase();
+        if (seenMovieTitles.has(norm)) continue;
+        seenMovieTitles.add(norm);
+
+        const posterUrl = `https://images.metahub.space/poster/medium/${imdbId}/img`;
+        const backdropUrl = `https://images.metahub.space/background/large/${imdbId}/img`;
+        const logoUrl = meta.logo || `https://images.metahub.space/logo/medium/${imdbId}/img`;
+        const genreText = translateGenres(meta.genres || meta.genre);
+        const year = (meta.releaseInfo || meta.year || '').slice(0, 4);
+        const ytTrailer = meta.trailerStreams?.[0]?.ytId || meta.trailers?.[0]?.source;
+        const deepLinkUrl = ytTrailer
+          ? `https://www.youtube.com/watch?v=${ytTrailer}`
+          : `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer español`)}`;
+
+        const item: AppSuggestion = {
+          id: `cm-${imdbId}`,
+          appName: 'YouTube',
+          packageName: 'com.google.android.youtube.tv',
+          title,
+          subtitle: meta.description?.trim() || `${genreText} · En tendencia hoy`,
+          deepLinkUrl,
+          posterUrl,
+          backdropUrl,
+          logoUrl,
+          imdbRating: meta.imdbRating,
+          accentGradient: 'linear-gradient(135deg, #161C29 0%, #27344A 100%)',
+          tag: genreText,
+          genre: genreText,
+          releaseDate: year,
+          mediaKind: 'movie',
+        };
+
+        movies.push(item);
+        spotlightCandidates.push(item);
+      }
+    }
+
+    // 2. Enriquecer películas con cartelera Apple MX en español (solo pósteres 2:3 verticales)
+    if (mxMoviesRes.status === 'fulfilled' && Array.isArray(mxMoviesRes.value?.feed?.entry)) {
+      const entries = mxMoviesRes.value.feed.entry as ITunesEntry[];
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         const title = entry['im:name']?.label?.trim();
         const rawImg = entry['im:image']?.[entry['im:image'].length - 1]?.label;
-        if (!title || !rawImg || seenTitles.has(title)) continue;
-        seenTitles.add(title);
+        if (!title || !rawImg) continue;
+        const norm = title.toLowerCase();
+        if (seenMovieTitles.has(norm)) continue;
+        seenMovieTitles.add(norm);
 
         const posterUrl = upscaleAppleImage(rawImg, '600x900bb');
-        const backdropUrl = upscaleAppleImage(rawImg, '900x1350bb');
         const genre = entry.category?.attributes?.label || 'Cine';
-        const releaseDate = entry['im:releaseDate']?.attributes?.label || '';
+        const releaseDate = (entry['im:releaseDate']?.attributes?.label || '').slice(-4);
         const synopsis =
-          stripHtml(entry.summary?.label) || `${genre} disponible en cartelera digital.`;
-        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-          `${title} trailer español`
-        )}`;
+          stripHtml(entry.summary?.label) || `${genre} popular en cartelera digital.`;
 
         movies.push({
-          id: `mov-${entry.id?.attributes?.['im:id'] || i}`,
+          id: `itunes-${entry.id?.attributes?.['im:id'] || i}`,
           appName: 'YouTube',
           packageName: 'com.google.android.youtube.tv',
           title,
           subtitle: synopsis,
-          deepLinkUrl: searchUrl,
+          deepLinkUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(
+            `${title} trailer español`
+          )}`,
           posterUrl,
-          backdropUrl,
+          // No asignamos póster vertical como backdrop horizontal para evitar recortes
           accentGradient: 'linear-gradient(135deg, #141923 0%, #273244 100%)',
           tag: genre,
           genre,
@@ -268,43 +398,35 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
       }
     }
 
-    // 2. Programas reales transmitidos hoy en plataformas (TVMaze live schedule)
-    const seenShows = new Set<string>();
-    const scheduleArrays = [
-      tvMazeTodayRes.status === 'fulfilled' && Array.isArray(tvMazeTodayRes.value)
-        ? (tvMazeTodayRes.value as TvMazeScheduleItem[])
-        : [],
-      tvMazeYestRes.status === 'fulfilled' && Array.isArray(tvMazeYestRes.value)
-        ? (tvMazeYestRes.value as TvMazeScheduleItem[])
-        : [],
-    ];
-
-    for (const list of scheduleArrays) {
-      for (const item of list) {
-        const show = item._embedded?.show;
-        const channel = show?.webChannel?.name;
-        const img = show?.image?.original || show?.image?.medium;
-        if (!show?.name || !channel || !img) continue;
-
-        const mapped = mapPlatformToPackage(channel);
+    // 3. Emisiones de HOY en plataformas con imagen horizontal real (TVMaze episode landscape still)
+    if (tvMazeWebRes.status === 'fulfilled' && Array.isArray(tvMazeWebRes.value)) {
+      const schedule = tvMazeWebRes.value as TvMazeScheduleItem[];
+      for (const ep of schedule) {
+        const show = ep._embedded?.show;
+        const epImg = ep.image?.original || ep.image?.medium;
+        // Solo aceptar imágenes landscape de episodio (16:9), nunca póster vertical
+        if (!show?.name || !epImg || !epImg.includes('landscape')) continue;
+        const channelName = show.webChannel?.name || show.network?.name || '';
+        const mapped = mapPlatformToPackage(channelName);
         if (!mapped) continue;
 
-        const dedupeKey = `${mapped.packageName}:${show.name}`;
-        if (seenShows.has(dedupeKey)) continue;
-        seenShows.add(dedupeKey);
+        const norm = show.name.toLowerCase();
+        if (seenSeriesTitles.has(norm)) continue;
+        seenSeriesTitles.add(norm);
 
-        const genres = show.genres?.slice(0, 2).join(' · ') || 'Emisión de hoy';
-        const score = show.rating?.average ? ` · ★ ${show.rating.average}` : '';
+        const landscapeUrl = epImg.replace(/^http:\/\//i, 'https://');
+        const genres = translateGenres(show.genres);
 
         series.push({
           id: `tvm-${show.id}`,
           appName: mapped.appName,
           packageName: mapped.packageName,
           title: show.name,
-          subtitle: `${genres}${score}`,
+          subtitle: ep.name ? `Hoy: ${ep.name} · ${genres}` : genres,
           deepLinkUrl: mapped.deepLinkUrl,
-          posterUrl: img.replace(/^http:\/\//i, 'https://'),
-          backdropUrl: (show.image?.original || img).replace(/^http:\/\//i, 'https://'),
+          posterUrl: landscapeUrl,
+          backdropUrl: landscapeUrl,
+          imdbRating: show.rating?.average ? String(show.rating.average) : undefined,
           accentGradient: mapped.accentGradient,
           tag: mapped.tag,
           genre: genres,
@@ -313,74 +435,103 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
       }
     }
 
-    // 3. Series top actuales (Apple / iTunes Top TV) para enriquecer la fila de series
-    if (usTvRes.status === 'fulfilled' && usTvRes.value?.feed?.entry) {
-      const entries = usTvRes.value.feed.entry as ITunesEntry[];
-      const platformCycle = [
-        { appName: 'Max', pkg: 'com.wbd.stream', url: 'https://play.max.com/' },
-        { appName: 'Prime Video', pkg: 'com.amazon.amazonvideo.livingroom', url: 'https://app.primevideo.com/' },
-        { appName: 'Netflix', pkg: 'com.netflix.ninja', url: 'https://www.netflix.com/browse' },
-        { appName: 'Disney+', pkg: 'com.disney.disneyplus', url: 'https://www.disneyplus.com/home' },
-      ];
+    // 4. Series populares actuales con fondos 16:9 horizontales reales (Cinemeta Top Series)
+    if (cineSeriesRes.status === 'fulfilled' && Array.isArray(cineSeriesRes.value?.metas)) {
+      const metas = cineSeriesRes.value.metas as CinemetaMeta[];
+      let platIndex = 0;
+      for (const meta of metas) {
+        const imdbId = meta.imdb_id || meta.id;
+        const title = meta.name?.trim();
+        if (!imdbId || !title) continue;
+        const norm = title.toLowerCase();
+        if (seenSeriesTitles.has(norm)) continue;
+        seenSeriesTitles.add(norm);
 
-      let cycleIdx = 0;
-      for (const entry of entries) {
-        const showTitle = entry['im:collection']?.['im:name']?.label?.trim();
-        const rawImg = entry['im:image']?.[entry['im:image'].length - 1]?.label;
-        if (!showTitle || !rawImg) continue;
+        const target = STREAMING_ROTATION[platIndex % STREAMING_ROTATION.length];
+        platIndex++;
 
-        const cleanTitle = showTitle.replace(/,\s*Season\s*\d+/i, '').trim();
-        if (seenShows.has(`top:${cleanTitle}`)) continue;
-        seenShows.add(`top:${cleanTitle}`);
+        const backdrop16x9 = `https://images.metahub.space/background/medium/${imdbId}/img`;
+        const heroBackdrop16x9 = `https://images.metahub.space/background/large/${imdbId}/img`;
+        const logoUrl = meta.logo || `https://images.metahub.space/logo/medium/${imdbId}/img`;
+        const genreText = translateGenres(meta.genres || meta.genre);
+        const year = (meta.releaseInfo || meta.year || '').replace(/[–-]$/, '');
+        const ytTrailer = meta.trailerStreams?.[0]?.ytId || meta.trailers?.[0]?.source;
 
-        const target = platformCycle[cycleIdx % platformCycle.length];
-        cycleIdx++;
-
-        series.push({
-          id: `tv-${entry.id?.attributes?.['im:id'] || cycleIdx}`,
+        const seriesItem: AppSuggestion = {
+          id: `cms-${imdbId}`,
           appName: target.appName,
-          packageName: target.pkg,
-          title: showTitle,
-          subtitle: `${entry.category?.attributes?.label || 'Serie'} · Tendencia`,
-          deepLinkUrl: target.url,
-          posterUrl: upscaleAppleImage(rawImg, '600x600bb'),
-          backdropUrl: upscaleAppleImage(rawImg, '800x800bb'),
-          accentGradient: 'linear-gradient(135deg, #161B26 0%, #242E42 100%)',
+          packageName: target.packageName,
+          title,
+          subtitle: `${genreText}${meta.imdbRating ? ` · ★ ${meta.imdbRating}` : ''}`,
+          deepLinkUrl:
+            target.packageName === 'com.google.android.youtube.tv' && ytTrailer
+              ? `https://www.youtube.com/watch?v=${ytTrailer}`
+              : target.deepLinkUrl,
+          posterUrl: backdrop16x9,
+          backdropUrl: heroBackdrop16x9,
+          logoUrl,
+          imdbRating: meta.imdbRating,
+          accentGradient: target.accentGradient,
           tag: target.appName,
-          genre: entry.category?.attributes?.label,
+          genre: genreText,
+          releaseDate: year,
           mediaKind: 'series',
-        });
+        };
+
+        series.push(seriesItem);
+        if (platIndex <= 6) {
+          spotlightCandidates.push({
+            ...seriesItem,
+            subtitle: meta.description?.trim() || seriesItem.subtitle,
+          });
+        }
       }
     }
 
-    // Construir Hero Spotlight con los mejores estrenos 2026 + CgamesTVPARTY
-    const spotlightMovies = [...movies]
-      .sort((a, b) => {
-        const aRecent = (a.releaseDate || '').includes('2026') || (a.releaseDate || '').includes('2025') ? 1 : 0;
-        const bRecent = (b.releaseDate || '').includes('2026') || (b.releaseDate || '').includes('2025') ? 1 : 0;
-        return bRecent - aRecent;
-      })
-      .slice(0, 5);
+    // Rotar/mezclar en cada actualización para mostrar novedades frescas al volver al inicio o encender la TV
+    const rotatedSpotlight = shuffleWithSeed(spotlightCandidates.slice(0, 14), seed).slice(0, 6);
+    const rotatedMovies = [
+      ...shuffleWithSeed(movies.slice(0, 8), seed + 5).slice(0, 3),
+      ...shuffleWithSeed(movies.slice(3, 28), seed + 11),
+    ].filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx);
+    const rotatedSeries = [
+      ...shuffleWithSeed(series.slice(0, 8), seed + 17).slice(0, 3),
+      ...shuffleWithSeed(series.slice(3, 28), seed + 23),
+    ].filter((s, idx, arr) => arr.findIndex((x) => x.id === s.id) === idx);
 
-    const catalog: GoogleTvLiveCatalog = {
-      spotlight: spotlightMovies.length > 0 ? spotlightMovies : OFFLINE_FALLBACK_CATALOG.spotlight,
-      movies,
-      series: series.length > 0 ? series : OFFLINE_FALLBACK_CATALOG.series,
-      updatedAt: todayKey,
-    };
+    if (rotatedMovies.length > 0 || rotatedSeries.length > 0) {
+      const catalog: GoogleTvLiveCatalog = {
+        spotlight:
+          rotatedSpotlight.length > 0 ? rotatedSpotlight : OFFLINE_FALLBACK_CATALOG.spotlight,
+        movies: rotatedMovies,
+        series: rotatedSeries.length > 0 ? rotatedSeries : OFFLINE_FALLBACK_CATALOG.series,
+        updatedAt: new Date().toISOString(),
+      };
 
-    if (movies.length > 0 || series.length > 0) {
       try {
         localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(catalog));
       } catch {
-        // Ignorar si almacenamiento lleno
+        // Ignorar si almacenamiento está lleno
+      }
+      return catalog;
+    }
+  } catch {
+    // Si falla la red, intentar usar la última copia guardada antes de caer al respaldo offline
+  }
+
+  try {
+    const cachedRaw = localStorage.getItem(LIVE_FEED_CACHE_KEY);
+    if (cachedRaw) {
+      const parsed = JSON.parse(cachedRaw) as GoogleTvLiveCatalog;
+      if (parsed.movies.length > 0 || parsed.series.length > 0) {
+        return parsed;
       }
     }
-
-    return catalog;
   } catch {
-    return OFFLINE_FALLBACK_CATALOG;
+    // Ignorar
   }
+
+  return OFFLINE_FALLBACK_CATALOG;
 }
 
 export function resolvePackageAlias(

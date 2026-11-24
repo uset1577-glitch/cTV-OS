@@ -22,6 +22,8 @@ export interface BackgroundPreset {
   type: 'solid' | 'gradient';
   value: string;
   lightValue: string;
+  fadeDark: string;
+  fadeLight: string;
   swatch: string;
 }
 
@@ -34,6 +36,8 @@ export interface AppSuggestion {
   deepLinkUrl: string;
   posterUrl: string;
   backdropUrl?: string;
+  logoUrl?: string;
+  imdbRating?: string;
   accentGradient: string;
   tag: string;
   genre?: string;

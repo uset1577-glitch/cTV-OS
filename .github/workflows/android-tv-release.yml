@@ -36,6 +36,8 @@ jobs:
           java-version: '21'
 
       - name: Instalar dependencias y compilar frontend
+        env:
+          VITE_UPDATE_REPO: ${{ github.repository }}
         run: |
           npm install --legacy-peer-deps
           npm run build
@@ -142,7 +144,7 @@ jobs:
             find android/app/build/outputs -type f || true
             exit 1
           fi
-          APK_NAME="CTVOS-v${VERSION_NAME}.apk"
+          APK_NAME="VORA-TV-OS-v${VERSION_NAME}.apk"
           cp "$APK_SRC" "dist-release/${APK_NAME}"
           FILE_SIZE=$(stat -c%s "dist-release/${APK_NAME}")
           APK_URL="https://github.com/${GITHUB_REPO}/releases/download/${TAG_NAME}/${APK_NAME}"
@@ -156,7 +158,7 @@ jobs:
             "fileSizeBytes": ${FILE_SIZE},
             "publishedAt": "${PUBLISHED_AT}",
             "mandatory": false,
-            "releaseNotes": "Compilación automática CTV OS ${TAG_NAME} (Build ${VERSION_CODE}) firmada para actualización OTA en Android TV."
+            "releaseNotes": "Nueva versión VORA TV OS ${TAG_NAME} (Build ${VERSION_CODE}) con mejoras de fluidez y rendimiento para Android TV."
           }
           EOF
 
@@ -164,12 +166,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
-          name: "CTV OS ${{ steps.version.outputs.tag_name }}"
+          name: "VORA TV OS ${{ steps.version.outputs.tag_name }}"
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            dist-release/CTVOS-v${{ steps.version.outputs.version_name }}.apk
+            dist-release/VORA-TV-OS-v${{ steps.version.outputs.version_name }}.apk
             dist-release/version.json
 
       - name: Guardar resumen de compilación
