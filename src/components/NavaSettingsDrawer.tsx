@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Check,
@@ -38,6 +38,12 @@ export function NavaSettingsDrawer({
 }: NavaSettingsDrawerProps) {
   const [repoInput, setRepoInput] = useState(settings.otaRepo);
   const [repoSaved, setRepoSaved] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setRepoInput(settings.otaRepo);
+    }
+  }, [isOpen, settings.otaRepo]);
 
   useSpatialNavigation({
     enabled: isOpen,

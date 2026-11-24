@@ -1,16 +1,21 @@
+import cgamesBannerImg from '../assets/images/cgames_tv_party_banner_1795483246737.jpg';
+import posterDuneImg from '../assets/images/poster_dune_max_1795485086679.jpg';
+import posterInterstellarImg from '../assets/images/poster_interstellar_prime_1795485087463.jpg';
+import posterStrangerThingsImg from '../assets/images/poster_stranger_things_netflix_1795485087498.jpg';
+import posterTheBatmanImg from '../assets/images/poster_the_batman_max_1795485087113.jpg';
 import type { AppSuggestion, InstalledApp } from '../types/launcher';
 
-// Catálogo enriquecido con portadas reales de cine/streaming y rotación diaria
+// Catálogo base offline (empaquetado localmente en el APK sin dependencias externas rotas)
 export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
   // --- Netflix ---
   {
     id: 'nf-1',
     appName: 'Netflix',
     packageName: 'com.netflix.ninja',
-    title: 'Stranger Things 5',
-    subtitle: 'El capítulo final de la serie revelación',
+    title: 'Stranger Things',
+    subtitle: 'Ciencia ficción y misterio en Hawkins',
     deepLinkUrl: 'https://www.netflix.com/title/80057281',
-    posterUrl: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterStrangerThingsImg,
     accentGradient: 'linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)',
     tag: 'Netflix',
   },
@@ -18,22 +23,11 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'nf-2',
     appName: 'Netflix',
     packageName: 'com.netflix.ninja',
-    title: 'El Juego del Calamar 2',
-    subtitle: 'Nuevos juegos mortales y reglas extremas',
+    title: 'El Juego del Calamar',
+    subtitle: 'Suspenso coreano de alto impacto en 4K',
     deepLinkUrl: 'https://www.netflix.com/title/81040344',
-    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterStrangerThingsImg,
     accentGradient: 'linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%)',
-    tag: 'Netflix',
-  },
-  {
-    id: 'nf-3',
-    appName: 'Netflix',
-    packageName: 'com.netflix.ninja',
-    title: 'Merlina · Temporada 2',
-    subtitle: 'Nuevos misterios oscuros en Nevermore',
-    deepLinkUrl: 'https://www.netflix.com/title/81231974',
-    posterUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #311033 0%, #7E22CE 100%)',
     tag: 'Netflix',
   },
 
@@ -42,32 +36,21 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'max-1',
     appName: 'Max (HBO)',
     packageName: 'com.wbd.stream',
-    title: 'The Last of Us · T2',
-    subtitle: 'La supervivencia continúa en un mundo colapsado',
+    title: 'Duna: Parte Dos',
+    subtitle: 'Épica cinematográfica de Denis Villeneuve',
     deepLinkUrl: 'https://play.max.com/',
-    posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)',
+    posterUrl: posterDuneImg,
+    accentGradient: 'linear-gradient(135deg, #451A03 0%, #D97706 100%)',
     tag: 'Max · HBO',
   },
   {
     id: 'max-2',
     appName: 'Max (HBO)',
     packageName: 'com.wbd.stream',
-    title: 'La Casa del Dragón',
-    subtitle: 'La guerra civil de los Targaryen en 4K',
-    deepLinkUrl: 'https://play.max.com/show',
-    posterUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #451A03 0%, #D97706 100%)',
-    tag: 'Max · HBO',
-  },
-  {
-    id: 'max-3',
-    appName: 'Max (HBO)',
-    packageName: 'com.wbd.stream',
-    title: 'The Batman: Parte II',
-    subtitle: 'El caballero de la noche en Gotham',
+    title: 'The Batman',
+    subtitle: 'Suspenso nocturno en Gotham City',
     deepLinkUrl: 'https://play.max.com/movies',
-    posterUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterTheBatmanImg,
     accentGradient: 'linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)',
     tag: 'Max · HBO',
   },
@@ -77,10 +60,10 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'pv-1',
     appName: 'Prime Video',
     packageName: 'com.amazon.amazonvideo.livingroom',
-    title: 'The Boys · Temporada Final',
-    subtitle: 'El enfrentamiento definitivo contra Vought',
+    title: 'Interestelar',
+    subtitle: 'Viaje espacial épico en Ultra HD',
     deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterInterstellarImg,
     accentGradient: 'linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)',
     tag: 'Prime Video',
   },
@@ -88,22 +71,11 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'pv-2',
     appName: 'Prime Video',
     packageName: 'com.amazon.amazonvideo.livingroom',
-    title: 'Fallout · T2',
-    subtitle: 'Nuevos refugios y peligros en el Yermo',
+    title: 'Fallout',
+    subtitle: 'Aventura postapocalíptica en 4K HDR',
     deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterDuneImg,
     accentGradient: 'linear-gradient(135deg, #14532D 0%, #16A34A 100%)',
-    tag: 'Prime Video',
-  },
-  {
-    id: 'pv-3',
-    appName: 'Prime Video',
-    packageName: 'com.amazon.amazonvideo.livingroom',
-    title: 'El Señor de los Anillos: Los Anillos de Poder',
-    subtitle: 'La forja de los anillos en la Tierra Media',
-    deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #382705 0%, #CA8A04 100%)',
     tag: 'Prime Video',
   },
 
@@ -112,22 +84,11 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'yt-1',
     appName: 'YouTube',
     packageName: 'com.google.android.youtube.tv',
-    title: 'Tendencias y directos de hoy',
-    subtitle: 'Los videos más virales en tu pantalla',
+    title: 'Tendencias en tu pantalla',
+    subtitle: 'Explora los estrenos y directos del día',
     deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-    posterUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterInterstellarImg,
     accentGradient: 'linear-gradient(135deg, #881337 0%, #E11D48 100%)',
-    tag: 'YouTube',
-  },
-  {
-    id: 'yt-2',
-    appName: 'YouTube',
-    packageName: 'com.google.android.youtube.tv',
-    title: 'Música y Sesiones en Vivo',
-    subtitle: 'Conciertos y videoclips en 4K',
-    deepLinkUrl: 'https://www.youtube.com/tv#/music',
-    posterUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #4C1D95 0%, #7C3AED 100%)',
     tag: 'YouTube',
   },
 
@@ -136,22 +97,11 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     id: 'dp-1',
     appName: 'Disney+',
     packageName: 'com.disney.disneyplus',
-    title: 'The Mandalorian & Grogu',
-    subtitle: 'Nuevas misiones en la galaxia Star Wars',
+    title: 'The Mandalorian',
+    subtitle: 'Aventuras en la galaxia Star Wars',
     deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop',
+    posterUrl: posterInterstellarImg,
     accentGradient: 'linear-gradient(135deg, #172554 0%, #1D4ED8 100%)',
-    tag: 'Disney+',
-  },
-  {
-    id: 'dp-2',
-    appName: 'Disney+',
-    packageName: 'com.disney.disneyplus',
-    title: 'Intensa-Mente 2',
-    subtitle: 'Nuevas emociones llegan a la mente de Riley',
-    deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop',
-    accentGradient: 'linear-gradient(135deg, #134E4A 0%, #0D9488 100%)',
     tag: 'Disney+',
   },
 
@@ -163,7 +113,7 @@ export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
     title: 'Torneo Local con Mandos',
     subtitle: 'Minijuegos cooperativos para toda la familia',
     deepLinkUrl: 'cgamestv://party',
-    posterUrl: '/src/assets/images/cgames_tv_party_banner_1795483246737.jpg',
+    posterUrl: cgamesBannerImg,
     accentGradient: 'linear-gradient(135deg, #9A3412 0%, #EA580C 100%)',
     tag: 'CgamesTVPARTY',
   },
@@ -174,6 +124,158 @@ const PACKAGE_ALIASES: Record<string, string[]> = {
   'com.google.android.youtube.tv': ['com.liskovsoft.smarttubetv.beta', 'com.liskovsoft.smarttubetv'],
   'com.amazon.amazonvideo.livingroom': ['com.amazon.avod.thirdpartyclient'],
 };
+
+const LIVE_CACHE_KEY = 'ctvos_daily_catalog_v1';
+
+interface TvMazeShow {
+  id: number;
+  name: string;
+  genres?: string[];
+  rating?: { average?: number | null };
+  image?: { medium?: string; original?: string } | null;
+  network?: { name?: string } | null;
+  webChannel?: { name?: string } | null;
+}
+
+function getDailySeed(): number {
+  const now = new Date();
+  return now.getFullYear() * 1000 + now.getMonth() * 40 + now.getDate();
+}
+
+function mapPlatformToPackage(channelName: string): {
+  appName: string;
+  packageName: string;
+  deepLinkUrl: string;
+  accentGradient: string;
+  tag: string;
+} | null {
+  const lower = channelName.toLowerCase();
+  if (lower.includes('netflix')) {
+    return {
+      appName: 'Netflix',
+      packageName: 'com.netflix.ninja',
+      deepLinkUrl: 'https://www.netflix.com/browse',
+      accentGradient: 'linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)',
+      tag: 'Netflix',
+    };
+  }
+  if (lower.includes('hbo') || lower.includes('max')) {
+    return {
+      appName: 'Max (HBO)',
+      packageName: 'com.wbd.stream',
+      deepLinkUrl: 'https://play.max.com/',
+      accentGradient: 'linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)',
+      tag: 'Max · HBO',
+    };
+  }
+  if (lower.includes('amazon') || lower.includes('prime')) {
+    return {
+      appName: 'Prime Video',
+      packageName: 'com.amazon.amazonvideo.livingroom',
+      deepLinkUrl: 'https://app.primevideo.com/',
+      accentGradient: 'linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)',
+      tag: 'Prime Video',
+    };
+  }
+  if (lower.includes('disney')) {
+    return {
+      appName: 'Disney+',
+      packageName: 'com.disney.disneyplus',
+      deepLinkUrl: 'https://www.disneyplus.com/home',
+      accentGradient: 'linear-gradient(135deg, #172554 0%, #1D4ED8 100%)',
+      tag: 'Disney+',
+    };
+  }
+  if (lower.includes('youtube')) {
+    return {
+      appName: 'YouTube',
+      packageName: 'com.google.android.youtube.tv',
+      deepLinkUrl: 'https://www.youtube.com/tv#/explore',
+      accentGradient: 'linear-gradient(135deg, #881337 0%, #E11D48 100%)',
+      tag: 'YouTube',
+    };
+  }
+  return null;
+}
+
+// Consulta catálogo real público (TVMaze API sin clave) con rotación diaria y caché local
+export async function fetchDailyStreamingCatalog(): Promise<AppSuggestion[]> {
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  try {
+    const cachedRaw = localStorage.getItem(LIVE_CACHE_KEY);
+    if (cachedRaw) {
+      const cached = JSON.parse(cachedRaw) as { date: string; items: AppSuggestion[] };
+      if (cached.date === todayKey && Array.isArray(cached.items) && cached.items.length > 0) {
+        return cached.items;
+      }
+    }
+  } catch {
+    // Ignorar error de caché
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+    const page = getDailySeed() % 4;
+    const res = await fetch(`https://api.tvmaze.com/shows?page=${page}`, {
+      signal: controller.signal,
+    });
+    window.clearTimeout(timeoutId);
+
+    if (!res.ok) return ALL_REAL_SUGGESTIONS;
+    const shows = (await res.json()) as TvMazeShow[];
+    if (!Array.isArray(shows)) return ALL_REAL_SUGGESTIONS;
+
+    const perService = new Map<string, AppSuggestion[]>();
+    for (const show of shows) {
+      const channel = show.webChannel?.name || show.network?.name || '';
+      const poster = show.image?.original || show.image?.medium;
+      if (!channel || !poster) continue;
+
+      const mapped = mapPlatformToPackage(channel);
+      if (!mapped) continue;
+
+      const list = perService.get(mapped.packageName) || [];
+      if (list.length >= 6) continue;
+
+      const genreText =
+        show.genres && show.genres.length > 0 ? show.genres.slice(0, 2).join(' · ') : 'Serie destacada';
+      const scoreText = show.rating?.average ? `★ ${show.rating.average}` : '';
+
+      list.push({
+        id: `tvm-${show.id}`,
+        appName: mapped.appName,
+        packageName: mapped.packageName,
+        title: show.name,
+        subtitle: [genreText, scoreText].filter(Boolean).join(' · '),
+        deepLinkUrl: mapped.deepLinkUrl,
+        posterUrl: poster.replace(/^http:\/\//i, 'https://'),
+        accentGradient: mapped.accentGradient,
+        tag: mapped.tag,
+      });
+      perService.set(mapped.packageName, list);
+    }
+
+    const merged: AppSuggestion[] = [
+      ...Array.from(perService.values()).flat(),
+      ...ALL_REAL_SUGGESTIONS.filter((s) => !perService.has(s.packageName)),
+    ];
+
+    if (merged.length > 0) {
+      try {
+        localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({ date: todayKey, items: merged }));
+      } catch {
+        // Ignorar cuota llena
+      }
+      return merged;
+    }
+  } catch {
+    // Sin conexión: usar catálogo local incluido en el APK
+  }
+
+  return ALL_REAL_SUGGESTIONS;
+}
 
 export function resolvePackageAlias(
   preferredPkg: string,
@@ -190,23 +292,23 @@ export function resolvePackageAlias(
 
 export function getContextualSuggestions(
   focusedPackage: string | null,
-  installedApps: InstalledApp[]
+  _installedApps: InstalledApp[],
+  catalog: AppSuggestion[] = ALL_REAL_SUGGESTIONS
 ): AppSuggestion[] {
-  // Rotación diaria basada en el día del mes para ofrecer variedad actualizada cada día
-  const daySeed = new Date().getDate();
+  const daySeed = getDailySeed();
 
   if (focusedPackage) {
-    const matching = ALL_REAL_SUGGESTIONS.filter((s) => {
+    const matching = catalog.filter((s) => {
       if (s.packageName === focusedPackage) return true;
       const aliases = PACKAGE_ALIASES[s.packageName] || [];
       return aliases.includes(focusedPackage);
     });
     if (matching.length > 0) {
-      return matching;
+      return matching.slice(0, 6);
     }
   }
 
-  // Organizar sin mezclar, agrupando por servicio y rotando un elemento diario
+  // Organizar sin mezclar, tomando una sugerencia diaria rotativa por plataforma
   const servicesOrder = [
     'com.netflix.ninja',
     'com.wbd.stream',
@@ -218,7 +320,7 @@ export function getContextualSuggestions(
 
   const curated: AppSuggestion[] = [];
   for (const pkg of servicesOrder) {
-    const list = ALL_REAL_SUGGESTIONS.filter((s) => s.packageName === pkg);
+    const list = catalog.filter((s) => s.packageName === pkg);
     if (list.length > 0) {
       const index = (daySeed + curated.length) % list.length;
       curated.push(list[index]);

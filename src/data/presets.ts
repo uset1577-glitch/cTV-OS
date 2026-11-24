@@ -1,10 +1,13 @@
+import cgamesBannerImg from '../assets/images/cgames_tv_party_banner_1795483246737.jpg';
+import bgMidnightSlateImg from '../assets/images/tv_bg_midnight_slate_1795483247067.jpg';
+import bgObsidianImg from '../assets/images/tv_bg_obsidian_1795483246355.jpg';
 import type { BackgroundPreset, InstalledApp, LauncherSettings } from '../types/launcher';
 
 export const FEATURED_GAME = {
   name: 'CgamesTVPARTY',
   packageName: 'com.mandoparty.tv',
   tagline: 'Juego multijugador local para tu TV',
-  bannerImage: '/src/assets/images/cgames_tv_party_banner_1795483246737.jpg',
+  bannerImage: cgamesBannerImg,
 };
 
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
@@ -22,7 +25,7 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
     name: 'Obsidiana Estudio',
     description: 'Carbón mate con luz cálida lateral',
     type: 'image',
-    value: '/src/assets/images/tv_bg_obsidian_1795483246355.jpg',
+    value: bgObsidianImg,
     lightValue: 'linear-gradient(160deg, #F6F4F0 0%, #EAE5DD 100%)',
     swatch: 'linear-gradient(135deg, #101216 0%, #261B12 100%)',
   },
@@ -31,7 +34,7 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
     name: 'Pizarra Nocturna',
     description: 'Gris azulado profundo con brillo tenue',
     type: 'image',
-    value: '/src/assets/images/tv_bg_midnight_slate_1795483247067.jpg',
+    value: bgMidnightSlateImg,
     lightValue: 'linear-gradient(160deg, #F2F5F8 0%, #E2E8F0 100%)',
     swatch: 'linear-gradient(135deg, #0E131A 0%, #1B333B 100%)',
   },
@@ -80,7 +83,7 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   use24HourClock: false,
   showPackageNames: false,
   showSuggestions: true,
-  otaRepo: 'tu-usuario/cgamestv-launcher',
+  otaRepo: 'tu-usuario/cTV-OS',
   favoritePackages: DEFAULT_FAVORITES,
 };
 

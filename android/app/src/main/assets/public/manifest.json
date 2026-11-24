@@ -9,9 +9,9 @@
   "orientation": "landscape",
   "icons": [
     {
-      "src": "/src/assets/images/cgames_tv_party_banner_1795483246737.jpg",
+      "src": "/icon.svg",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/svg+xml"
     }
   ]
 }

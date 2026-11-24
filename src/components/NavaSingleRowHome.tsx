@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AppWindow, ArrowUpRight, Gamepad2, LayoutGrid, Play, Sparkles, Star } from 'lucide-react';
 import { FEATURED_GAME } from '../data/presets';
-import { getContextualSuggestions, resolvePackageAlias } from '../data/suggestions';
+import {
+  ALL_REAL_SUGGESTIONS,
+  fetchDailyStreamingCatalog,
+  getContextualSuggestions,
+  resolvePackageAlias,
+} from '../data/suggestions';
 import type { AppSuggestion, InstalledApp } from '../types/launcher';
 
 interface NavaSingleRowHomeProps {
@@ -107,8 +112,30 @@ export function NavaSingleRowHome({
   onOpenAllApps,
 }: NavaSingleRowHomeProps) {
   const [spotlight, setSpotlight] = useState<SpotlightTarget>({ kind: 'featured' });
-  const [bannerErr, setBannerErr] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [lastFocusedPkg, setLastFocusedPkg] = useState<string | null>(FEATURED_GAME.packageName);
+  const [catalog, setCatalog] = useState<AppSuggestion[]>(ALL_REAL_SUGGESTIONS);
+
+  useEffect(() => {
+    if (!showSuggestions) return;
+    let cancelled = false;
+    fetchDailyStreamingCatalog()
+      .then((items) => {
+        if (!cancelled && items.length > 0) {
+          setCatalog(items);
+        }
+      })
+      .catch(() => {
+        // Mantener catálogo base local
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showSuggestions]);
+
+  const markImageFailed = (url: string) => {
+    setFailedImages((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
+  };
 
   const rowFavorites = favoriteApps.filter(
     (app) => app.packageName !== FEATURED_GAME.packageName
@@ -116,17 +143,21 @@ export function NavaSingleRowHome({
 
   const suggestions = useMemo(() => {
     if (!showSuggestions) return [];
-    return getContextualSuggestions(lastFocusedPkg, allApps);
-  }, [showSuggestions, lastFocusedPkg, allApps]);
+    return getContextualSuggestions(lastFocusedPkg, allApps, catalog);
+  }, [showSuggestions, lastFocusedPkg, allApps, catalog]);
 
   const isFeaturedFocused = spotlight.kind === 'featured';
   const isAllAppsFocused = spotlight.kind === 'all_apps';
+  const activeHeroImage =
+    spotlight.kind === 'suggestion'
+      ? spotlight.suggestion.posterUrl
+      : FEATURED_GAME.bannerImage;
 
   return (
     <div className="relative flex-1 flex flex-col justify-end pb-9 overflow-hidden">
       {/* Fondo cinemático dinámico basado en la sugerencia o juego enfocado */}
       <AnimatePresence>
-        {(isFeaturedFocused || spotlight.kind === 'suggestion') && !bannerErr && (
+        {(isFeaturedFocused || spotlight.kind === 'suggestion') && !failedImages[activeHeroImage] && (
           <motion.div
             key={
               spotlight.kind === 'suggestion'
@@ -141,14 +172,10 @@ export function NavaSingleRowHome({
             className="pointer-events-none absolute top-0 right-0 w-[68%] h-[72%] overflow-hidden"
           >
             <img
-              src={
-                spotlight.kind === 'suggestion'
-                  ? spotlight.suggestion.posterUrl
-                  : FEATURED_GAME.bannerImage
-              }
+              src={activeHeroImage}
               alt=""
               referrerPolicy="no-referrer"
-              onError={() => setBannerErr(true)}
+              onError={() => markImageFailed(activeHeroImage)}
               className="w-full h-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#ECEEF2] via-[#ECEEF2]/70 to-transparent dark:from-[#090B10] dark:via-[#090B10]/70 dark:to-transparent" />
@@ -309,12 +336,21 @@ export function NavaSingleRowHome({
                   }`}
                 >
                   {/* Portada / Vista previa cinemática */}
-                  <img
-                    src={sug.posterUrl}
-                    alt={sug.title}
-                    referrerPolicy="no-referrer"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
+                  {!failedImages[sug.posterUrl] ? (
+                    <img
+                      src={sug.posterUrl}
+                      alt={sug.title}
+                      referrerPolicy="no-referrer"
+                      onError={() => markImageFailed(sug.posterUrl)}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0"
+                      style={{ background: sug.accentGradient }}
+                    />
+                  )}
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"
@@ -322,10 +358,10 @@ export function NavaSingleRowHome({
 
                   <div className="relative z-10 h-full flex flex-col justify-between p-3.5">
                     <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-amber-300">
-                      <span className="px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm">
+                      <span className="px-2.5 py-0.5 rounded-full bg-black/75">
                         {sug.tag}
                       </span>
-                      <span className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                      <span className="w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white">
                         {!isNative || isInstalled ? (
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         ) : (
@@ -379,12 +415,12 @@ export function NavaSingleRowHome({
                 : 'border-zinc-900/12 dark:border-white/15'
             }`}
           >
-            {!bannerErr ? (
+            {!failedImages[FEATURED_GAME.bannerImage] ? (
               <img
                 src={FEATURED_GAME.bannerImage}
                 alt={FEATURED_GAME.name}
                 referrerPolicy="no-referrer"
-                onError={() => setBannerErr(true)}
+                onError={() => markImageFailed(FEATURED_GAME.bannerImage)}
                 className="absolute inset-0 w-full h-full object-cover object-right"
               />
             ) : (

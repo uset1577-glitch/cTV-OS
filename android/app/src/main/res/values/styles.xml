@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base application theme for Android TV -->
+    <!-- Tema base de CTV OS para Android TV -->
     <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="colorPrimary">#080A0E</item>
-        <item name="colorPrimaryDark">#080A0E</item>
+        <item name="colorPrimary">#090B10</item>
+        <item name="colorPrimaryDark">#090B10</item>
         <item name="colorAccent">#F59E0B</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:windowFullscreen">true</item>
@@ -15,10 +15,12 @@
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
         <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
     </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">#080A0E</item>
-        <item name="android:windowFullscreen">true</item>
+        <item name="windowSplashScreenBackground">#090B10</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

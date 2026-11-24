@@ -47,7 +47,12 @@ public class LauncherPlugin extends Plugin {
     public void getInstalledApps(PluginCall call) {
         executor.execute(() -> {
             try {
-                Context context = getContext();
+                Context rawContext = getContext();
+                if (rawContext == null) {
+                    call.reject("Contexto Android no disponible");
+                    return;
+                }
+                Context context = rawContext.getApplicationContext();
                 PackageManager pm = context.getPackageManager();
                 String selfPackage = context.getPackageName();
 
@@ -265,7 +270,12 @@ public class LauncherPlugin extends Plugin {
             return;
         }
 
-        Context context = getContext();
+        Context rawContext = getContext();
+        if (rawContext == null) {
+            call.reject("Contexto Android no disponible");
+            return;
+        }
+        Context context = rawContext.getApplicationContext();
         PackageManager pm = context.getPackageManager();
 
         // Android 8.0+ requiere permiso explícito para instalar APKs desde el propio launcher
@@ -446,32 +456,38 @@ public class LauncherPlugin extends Plugin {
     }
 
     private String drawableToDataUri(Drawable drawable, int targetSizePx) {
-        Bitmap bitmap;
-        if (drawable instanceof BitmapDrawable && ((BitmapDrawable) drawable).getBitmap() != null) {
-            Bitmap src = ((BitmapDrawable) drawable).getBitmap();
-            int width = Math.max(1, src.getWidth());
-            int height = Math.max(1, src.getHeight());
+        Bitmap bitmap = null;
+        try {
+            int rawW = drawable.getIntrinsicWidth();
+            int rawH = drawable.getIntrinsicHeight();
+            if ((rawW <= 0 || rawH <= 0) && drawable instanceof BitmapDrawable) {
+                Bitmap src = ((BitmapDrawable) drawable).getBitmap();
+                if (src != null) {
+                    rawW = src.getWidth();
+                    rawH = src.getHeight();
+                }
+            }
+
+            int width = rawW > 0 ? rawW : targetSizePx;
+            int height = rawH > 0 ? rawH : targetSizePx;
             float scale = Math.min((float) targetSizePx / width, (float) targetSizePx / height);
-            int w = Math.max(1, Math.round(width * scale));
-            int h = Math.max(1, Math.round(height * scale));
-            bitmap = Bitmap.createScaledBitmap(src, w, h, true);
-        } else {
-            int width = drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : targetSizePx;
-            int height = drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : targetSizePx;
-            float scale = Math.min((float) targetSizePx / width, (float) targetSizePx / height);
-            int w = Math.max(1, Math.round(width * scale));
-            int h = Math.max(1, Math.round(height * scale));
+            int w = Math.max(1, Math.min(targetSizePx, Math.round(width * scale)));
+            int h = Math.max(1, Math.min(targetSizePx, Math.round(height * scale)));
 
             bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
             drawable.draw(canvas);
-        }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream);
-        byte[] bytes = stream.toByteArray();
-        return "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream);
+            byte[] bytes = stream.toByteArray();
+            return "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
+        } finally {
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+        }
     }
 
     private static class AppRecord {

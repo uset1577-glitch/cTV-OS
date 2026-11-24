@@ -21789,6 +21789,7 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 						type: "button",
 						"data-tv-focusable": "true",
 						"data-tv-initial": "true",
+						"data-tv-id": "drawer-reset-filter",
 						onClick: () => setFilter("all"),
 						className: "tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105",
 						children: "Ver todas"
@@ -21929,12 +21930,18 @@ function NavaSearchOverlay({ isOpen, apps, onLaunchApp, onClose }) {
 		})
 	}) });
 }
+// src/assets/images/cgames_tv_party_banner_1795483246737.jpg
+var cgames_tv_party_banner_1795483246737_default = "/assets/cgames_tv_party_banner_1795483246737-CaUeovYn.jpg";
+// src/assets/images/tv_bg_midnight_slate_1795483247067.jpg
+var tv_bg_midnight_slate_1795483247067_default = "/assets/tv_bg_midnight_slate_1795483247067-B8c9Cpdl.jpg";
+// src/assets/images/tv_bg_obsidian_1795483246355.jpg
+var tv_bg_obsidian_1795483246355_default = "/assets/tv_bg_obsidian_1795483246355-C-3XWmIh.jpg";
 // src/data/presets.ts
 var FEATURED_GAME = {
 	name: "CgamesTVPARTY",
 	packageName: "com.mandoparty.tv",
 	tagline: "Juego multijugador local para tu TV",
-	bannerImage: "/src/assets/images/cgames_tv_party_banner_1795483246737.jpg"
+	bannerImage: cgames_tv_party_banner_1795483246737_default
 };
 var BACKGROUND_PRESETS = [
 	{
@@ -21951,7 +21958,7 @@ var BACKGROUND_PRESETS = [
 		name: "Obsidiana Estudio",
 		description: "Carbón mate con luz cálida lateral",
 		type: "image",
-		value: "/src/assets/images/tv_bg_obsidian_1795483246355.jpg",
+		value: tv_bg_obsidian_1795483246355_default,
 		lightValue: "linear-gradient(160deg, #F6F4F0 0%, #EAE5DD 100%)",
 		swatch: "linear-gradient(135deg, #101216 0%, #261B12 100%)"
 	},
@@ -21960,7 +21967,7 @@ var BACKGROUND_PRESETS = [
 		name: "Pizarra Nocturna",
 		description: "Gris azulado profundo con brillo tenue",
 		type: "image",
-		value: "/src/assets/images/tv_bg_midnight_slate_1795483247067.jpg",
+		value: tv_bg_midnight_slate_1795483247067_default,
 		lightValue: "linear-gradient(160deg, #F2F5F8 0%, #E2E8F0 100%)",
 		swatch: "linear-gradient(135deg, #0E131A 0%, #1B333B 100%)"
 	},
@@ -22007,7 +22014,7 @@ var DEFAULT_SETTINGS = {
 	use24HourClock: false,
 	showPackageNames: false,
 	showSuggestions: true,
-	otaRepo: "tu-usuario/cgamestv-launcher",
+	otaRepo: "tu-usuario/cTV-OS",
 	favoritePackages: DEFAULT_FAVORITES
 };
 function makeSvgIcon(bg, label, accent = "#FFFFFF") {
@@ -22095,6 +22102,9 @@ var WEB_PREVIEW_APPS = [
 function NavaSettingsDrawer({ isOpen, settings, appVersion, isNative, onUpdateSettings, onOpenAndroidSettings, onOpenOtaModal, onClose }) {
 	const [repoInput, setRepoInput] = (0, import_react.useState)(settings.otaRepo);
 	const [repoSaved, setRepoSaved] = (0, import_react.useState)(false);
+	(0, import_react.useEffect)(() => {
+		if (isOpen) setRepoInput(settings.otaRepo);
+	}, [isOpen, settings.otaRepo]);
 	useSpatialNavigation({
 		enabled: isOpen,
 		onBack: onClose,
@@ -22366,16 +22376,22 @@ function NavaSettingsDrawer({ isOpen, settings, appVersion, isNative, onUpdateSe
 		})
 	}) });
 }
+// src/assets/images/poster_dune_max_1795485086679.jpg
+var poster_dune_max_1795485086679_default = "/assets/poster_dune_max_1795485086679-O4OxIx7c.jpg";
+// src/assets/images/poster_interstellar_prime_1795485087463.jpg
+var poster_interstellar_prime_1795485087463_default = "/assets/poster_interstellar_prime_1795485087463-CS1h8loM.jpg";
+// src/assets/images/poster_stranger_things_netflix_1795485087498.jpg
+var poster_stranger_things_netflix_1795485087498_default = "/assets/poster_stranger_things_netflix_1795485087498-BpG7rhmB.jpg";
 // src/data/suggestions.ts
 var ALL_REAL_SUGGESTIONS = [
 	{
 		id: "nf-1",
 		appName: "Netflix",
 		packageName: "com.netflix.ninja",
-		title: "Stranger Things 5",
-		subtitle: "El capítulo final de la serie revelación",
+		title: "Stranger Things",
+		subtitle: "Ciencia ficción y misterio en Hawkins",
 		deepLinkUrl: "https://www.netflix.com/title/80057281",
-		posterUrl: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_stranger_things_netflix_1795485087498_default,
 		accentGradient: "linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)",
 		tag: "Netflix"
 	},
@@ -22383,54 +22399,32 @@ var ALL_REAL_SUGGESTIONS = [
 		id: "nf-2",
 		appName: "Netflix",
 		packageName: "com.netflix.ninja",
-		title: "El Juego del Calamar 2",
-		subtitle: "Nuevos juegos mortales y reglas extremas",
+		title: "El Juego del Calamar",
+		subtitle: "Suspenso coreano de alto impacto en 4K",
 		deepLinkUrl: "https://www.netflix.com/title/81040344",
-		posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_stranger_things_netflix_1795485087498_default,
 		accentGradient: "linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%)",
-		tag: "Netflix"
-	},
-	{
-		id: "nf-3",
-		appName: "Netflix",
-		packageName: "com.netflix.ninja",
-		title: "Merlina · Temporada 2",
-		subtitle: "Nuevos misterios oscuros en Nevermore",
-		deepLinkUrl: "https://www.netflix.com/title/81231974",
-		posterUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #311033 0%, #7E22CE 100%)",
 		tag: "Netflix"
 	},
 	{
 		id: "max-1",
 		appName: "Max (HBO)",
 		packageName: "com.wbd.stream",
-		title: "The Last of Us · T2",
-		subtitle: "La supervivencia continúa en un mundo colapsado",
+		title: "Duna: Parte Dos",
+		subtitle: "Épica cinematográfica de Denis Villeneuve",
 		deepLinkUrl: "https://play.max.com/",
-		posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)",
+		posterUrl: poster_dune_max_1795485086679_default,
+		accentGradient: "linear-gradient(135deg, #451A03 0%, #D97706 100%)",
 		tag: "Max · HBO"
 	},
 	{
 		id: "max-2",
 		appName: "Max (HBO)",
 		packageName: "com.wbd.stream",
-		title: "La Casa del Dragón",
-		subtitle: "La guerra civil de los Targaryen en 4K",
-		deepLinkUrl: "https://play.max.com/show",
-		posterUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #451A03 0%, #D97706 100%)",
-		tag: "Max · HBO"
-	},
-	{
-		id: "max-3",
-		appName: "Max (HBO)",
-		packageName: "com.wbd.stream",
-		title: "The Batman: Parte II",
-		subtitle: "El caballero de la noche en Gotham",
+		title: "The Batman",
+		subtitle: "Suspenso nocturno en Gotham City",
 		deepLinkUrl: "https://play.max.com/movies",
-		posterUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: "/assets/poster_the_batman_max_1795485087113-CjDWwWBu.jpg",
 		accentGradient: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)",
 		tag: "Max · HBO"
 	},
@@ -22438,10 +22432,10 @@ var ALL_REAL_SUGGESTIONS = [
 		id: "pv-1",
 		appName: "Prime Video",
 		packageName: "com.amazon.amazonvideo.livingroom",
-		title: "The Boys · Temporada Final",
-		subtitle: "El enfrentamiento definitivo contra Vought",
+		title: "Interestelar",
+		subtitle: "Viaje espacial épico en Ultra HD",
 		deepLinkUrl: "https://app.primevideo.com/",
-		posterUrl: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_interstellar_prime_1795485087463_default,
 		accentGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)",
 		tag: "Prime Video"
 	},
@@ -22449,66 +22443,33 @@ var ALL_REAL_SUGGESTIONS = [
 		id: "pv-2",
 		appName: "Prime Video",
 		packageName: "com.amazon.amazonvideo.livingroom",
-		title: "Fallout · T2",
-		subtitle: "Nuevos refugios y peligros en el Yermo",
+		title: "Fallout",
+		subtitle: "Aventura postapocalíptica en 4K HDR",
 		deepLinkUrl: "https://app.primevideo.com/",
-		posterUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_dune_max_1795485086679_default,
 		accentGradient: "linear-gradient(135deg, #14532D 0%, #16A34A 100%)",
-		tag: "Prime Video"
-	},
-	{
-		id: "pv-3",
-		appName: "Prime Video",
-		packageName: "com.amazon.amazonvideo.livingroom",
-		title: "El Señor de los Anillos: Los Anillos de Poder",
-		subtitle: "La forja de los anillos en la Tierra Media",
-		deepLinkUrl: "https://app.primevideo.com/",
-		posterUrl: "https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #382705 0%, #CA8A04 100%)",
 		tag: "Prime Video"
 	},
 	{
 		id: "yt-1",
 		appName: "YouTube",
 		packageName: "com.google.android.youtube.tv",
-		title: "Tendencias y directos de hoy",
-		subtitle: "Los videos más virales en tu pantalla",
+		title: "Tendencias en tu pantalla",
+		subtitle: "Explora los estrenos y directos del día",
 		deepLinkUrl: "https://www.youtube.com/tv#/explore",
-		posterUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_interstellar_prime_1795485087463_default,
 		accentGradient: "linear-gradient(135deg, #881337 0%, #E11D48 100%)",
-		tag: "YouTube"
-	},
-	{
-		id: "yt-2",
-		appName: "YouTube",
-		packageName: "com.google.android.youtube.tv",
-		title: "Música y Sesiones en Vivo",
-		subtitle: "Conciertos y videoclips en 4K",
-		deepLinkUrl: "https://www.youtube.com/tv#/music",
-		posterUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #4C1D95 0%, #7C3AED 100%)",
 		tag: "YouTube"
 	},
 	{
 		id: "dp-1",
 		appName: "Disney+",
 		packageName: "com.disney.disneyplus",
-		title: "The Mandalorian & Grogu",
-		subtitle: "Nuevas misiones en la galaxia Star Wars",
+		title: "The Mandalorian",
+		subtitle: "Aventuras en la galaxia Star Wars",
 		deepLinkUrl: "https://www.disneyplus.com/home",
-		posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
+		posterUrl: poster_interstellar_prime_1795485087463_default,
 		accentGradient: "linear-gradient(135deg, #172554 0%, #1D4ED8 100%)",
-		tag: "Disney+"
-	},
-	{
-		id: "dp-2",
-		appName: "Disney+",
-		packageName: "com.disney.disneyplus",
-		title: "Intensa-Mente 2",
-		subtitle: "Nuevas emociones llegan a la mente de Riley",
-		deepLinkUrl: "https://www.disneyplus.com/home",
-		posterUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop",
-		accentGradient: "linear-gradient(135deg, #134E4A 0%, #0D9488 100%)",
 		tag: "Disney+"
 	},
 	{
@@ -22518,7 +22479,7 @@ var ALL_REAL_SUGGESTIONS = [
 		title: "Torneo Local con Mandos",
 		subtitle: "Minijuegos cooperativos para toda la familia",
 		deepLinkUrl: "cgamestv://party",
-		posterUrl: "/src/assets/images/cgames_tv_party_banner_1795483246737.jpg",
+		posterUrl: cgames_tv_party_banner_1795483246737_default,
 		accentGradient: "linear-gradient(135deg, #9A3412 0%, #EA580C 100%)",
 		tag: "CgamesTVPARTY"
 	}
@@ -22532,6 +22493,105 @@ var PACKAGE_ALIASES = {
 	"com.google.android.youtube.tv": ["com.liskovsoft.smarttubetv.beta", "com.liskovsoft.smarttubetv"],
 	"com.amazon.amazonvideo.livingroom": ["com.amazon.avod.thirdpartyclient"]
 };
+var LIVE_CACHE_KEY = "ctvos_daily_catalog_v1";
+function getDailySeed() {
+	const now = /* @__PURE__ */ new Date();
+	return now.getFullYear() * 1e3 + now.getMonth() * 40 + now.getDate();
+}
+function mapPlatformToPackage(channelName) {
+	const lower = channelName.toLowerCase();
+	if (lower.includes("netflix")) return {
+		appName: "Netflix",
+		packageName: "com.netflix.ninja",
+		deepLinkUrl: "https://www.netflix.com/browse",
+		accentGradient: "linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)",
+		tag: "Netflix"
+	};
+	if (lower.includes("hbo") || lower.includes("max")) return {
+		appName: "Max (HBO)",
+		packageName: "com.wbd.stream",
+		deepLinkUrl: "https://play.max.com/",
+		accentGradient: "linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)",
+		tag: "Max · HBO"
+	};
+	if (lower.includes("amazon") || lower.includes("prime")) return {
+		appName: "Prime Video",
+		packageName: "com.amazon.amazonvideo.livingroom",
+		deepLinkUrl: "https://app.primevideo.com/",
+		accentGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)",
+		tag: "Prime Video"
+	};
+	if (lower.includes("disney")) return {
+		appName: "Disney+",
+		packageName: "com.disney.disneyplus",
+		deepLinkUrl: "https://www.disneyplus.com/home",
+		accentGradient: "linear-gradient(135deg, #172554 0%, #1D4ED8 100%)",
+		tag: "Disney+"
+	};
+	if (lower.includes("youtube")) return {
+		appName: "YouTube",
+		packageName: "com.google.android.youtube.tv",
+		deepLinkUrl: "https://www.youtube.com/tv#/explore",
+		accentGradient: "linear-gradient(135deg, #881337 0%, #E11D48 100%)",
+		tag: "YouTube"
+	};
+	return null;
+}
+async function fetchDailyStreamingCatalog() {
+	const todayKey = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+	try {
+		const cachedRaw = localStorage.getItem(LIVE_CACHE_KEY);
+		if (cachedRaw) {
+			const cached = JSON.parse(cachedRaw);
+			if (cached.date === todayKey && Array.isArray(cached.items) && cached.items.length > 0) return cached.items;
+		}
+	} catch {}
+	try {
+		const controller = new AbortController();
+		const timeoutId = window.setTimeout(() => controller.abort(), 5e3);
+		const page = getDailySeed() % 4;
+		const res = await fetch(`https://api.tvmaze.com/shows?page=${page}`, { signal: controller.signal });
+		window.clearTimeout(timeoutId);
+		if (!res.ok) return ALL_REAL_SUGGESTIONS;
+		const shows = await res.json();
+		if (!Array.isArray(shows)) return ALL_REAL_SUGGESTIONS;
+		const perService = /* @__PURE__ */ new Map();
+		for (const show of shows) {
+			const channel = show.webChannel?.name || show.network?.name || "";
+			const poster = show.image?.original || show.image?.medium;
+			if (!channel || !poster) continue;
+			const mapped = mapPlatformToPackage(channel);
+			if (!mapped) continue;
+			const list = perService.get(mapped.packageName) || [];
+			if (list.length >= 6) continue;
+			const genreText = show.genres && show.genres.length > 0 ? show.genres.slice(0, 2).join(" · ") : "Serie destacada";
+			const scoreText = show.rating?.average ? `★ ${show.rating.average}` : "";
+			list.push({
+				id: `tvm-${show.id}`,
+				appName: mapped.appName,
+				packageName: mapped.packageName,
+				title: show.name,
+				subtitle: [genreText, scoreText].filter(Boolean).join(" · "),
+				deepLinkUrl: mapped.deepLinkUrl,
+				posterUrl: poster.replace(/^http:\/\//i, "https://"),
+				accentGradient: mapped.accentGradient,
+				tag: mapped.tag
+			});
+			perService.set(mapped.packageName, list);
+		}
+		const merged = [...Array.from(perService.values()).flat(), ...ALL_REAL_SUGGESTIONS.filter((s) => !perService.has(s.packageName))];
+		if (merged.length > 0) {
+			try {
+				localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({
+					date: todayKey,
+					items: merged
+				}));
+			} catch {}
+			return merged;
+		}
+	} catch {}
+	return ALL_REAL_SUGGESTIONS;
+}
 function resolvePackageAlias(preferredPkg, installedApps) {
 	const installedSet = new Set(installedApps.map((a) => a.packageName));
 	if (installedSet.has(preferredPkg)) return preferredPkg;
@@ -22539,14 +22599,14 @@ function resolvePackageAlias(preferredPkg, installedApps) {
 	for (const alias of aliases) if (installedSet.has(alias)) return alias;
 	return preferredPkg;
 }
-function getContextualSuggestions(focusedPackage, installedApps) {
-	const daySeed = (/* @__PURE__ */ new Date()).getDate();
+function getContextualSuggestions(focusedPackage, _installedApps, catalog = ALL_REAL_SUGGESTIONS) {
+	const daySeed = getDailySeed();
 	if (focusedPackage) {
-		const matching = ALL_REAL_SUGGESTIONS.filter((s) => {
+		const matching = catalog.filter((s) => {
 			if (s.packageName === focusedPackage) return true;
 			return (PACKAGE_ALIASES[s.packageName] || []).includes(focusedPackage);
 		});
-		if (matching.length > 0) return matching;
+		if (matching.length > 0) return matching.slice(0, 6);
 	}
 	const servicesOrder = [
 		"com.netflix.ninja",
@@ -22558,7 +22618,7 @@ function getContextualSuggestions(focusedPackage, installedApps) {
 	];
 	const curated = [];
 	for (const pkg of servicesOrder) {
-		const list = ALL_REAL_SUGGESTIONS.filter((s) => s.packageName === pkg);
+		const list = catalog.filter((s) => s.packageName === pkg);
 		if (list.length > 0) {
 			const index = (daySeed + curated.length) % list.length;
 			curated.push(list[index]);
@@ -22614,23 +22674,42 @@ function NavaRowAppCard({ app, isFocused, onFocusItem, onLaunch, onToggleFavorit
 }
 function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInstalled, isNative, showPackageNames, showSuggestions, onLaunchFeatured, onLaunchApp, onLaunchSuggestion, onToggleFavorite, onOpenAllApps }) {
 	const [spotlight, setSpotlight] = (0, import_react.useState)({ kind: "featured" });
-	const [bannerErr, setBannerErr] = (0, import_react.useState)(false);
+	const [failedImages, setFailedImages] = (0, import_react.useState)({});
 	const [lastFocusedPkg, setLastFocusedPkg] = (0, import_react.useState)(FEATURED_GAME.packageName);
+	const [catalog, setCatalog] = (0, import_react.useState)(ALL_REAL_SUGGESTIONS);
+	(0, import_react.useEffect)(() => {
+		if (!showSuggestions) return;
+		let cancelled = false;
+		fetchDailyStreamingCatalog().then((items) => {
+			if (!cancelled && items.length > 0) setCatalog(items);
+		}).catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [showSuggestions]);
+	const markImageFailed = (url) => {
+		setFailedImages((prev) => prev[url] ? prev : {
+			...prev,
+			[url]: true
+		});
+	};
 	const rowFavorites = favoriteApps.filter((app) => app.packageName !== FEATURED_GAME.packageName);
 	const suggestions = (0, import_react.useMemo)(() => {
 		if (!showSuggestions) return [];
-		return getContextualSuggestions(lastFocusedPkg, allApps);
+		return getContextualSuggestions(lastFocusedPkg, allApps, catalog);
 	}, [
 		showSuggestions,
 		lastFocusedPkg,
-		allApps
+		allApps,
+		catalog
 	]);
 	const isFeaturedFocused = spotlight.kind === "featured";
 	const isAllAppsFocused = spotlight.kind === "all_apps";
+	const activeHeroImage = spotlight.kind === "suggestion" ? spotlight.suggestion.posterUrl : FEATURED_GAME.bannerImage;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "relative flex-1 flex flex-col justify-end pb-9 overflow-hidden",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: (isFeaturedFocused || spotlight.kind === "suggestion") && !bannerErr && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: (isFeaturedFocused || spotlight.kind === "suggestion") && !failedImages[activeHeroImage] && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
 				initial: {
 					opacity: 0,
 					scale: 1.03
@@ -22653,10 +22732,10 @@ function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInst
 				className: "pointer-events-none absolute top-0 right-0 w-[68%] h-[72%] overflow-hidden",
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-						src: spotlight.kind === "suggestion" ? spotlight.suggestion.posterUrl : FEATURED_GAME.bannerImage,
+						src: activeHeroImage,
 						alt: "",
 						referrerPolicy: "no-referrer",
-						onError: () => setBannerErr(true),
+						onError: () => markImageFailed(activeHeroImage),
 						className: "w-full h-full object-cover object-center"
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-r from-[#ECEEF2] via-[#ECEEF2]/70 to-transparent dark:from-[#090B10] dark:via-[#090B10]/70 dark:to-transparent" }),
@@ -22893,11 +22972,16 @@ function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInst
 							},
 							className: `tv-focusable relative w-[264px] h-[132px] shrink-0 rounded-2xl overflow-hidden text-left border transition-colors ${isSugFocused ? "border-white ring-2 ring-zinc-900 dark:ring-white shadow-2xl" : "border-white/12 opacity-90"}`,
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+								!failedImages[sug.posterUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
 									src: sug.posterUrl,
 									alt: sug.title,
 									referrerPolicy: "no-referrer",
+									onError: () => markImageFailed(sug.posterUrl),
 									className: "absolute inset-0 w-full h-full object-cover"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									"aria-hidden": "true",
+									className: "absolute inset-0",
+									style: { background: sug.accentGradient }
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 									"aria-hidden": "true",
@@ -22908,10 +22992,10 @@ function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInst
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 										className: "flex items-center justify-between gap-2 text-[11px] font-semibold text-amber-300",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm",
+											className: "px-2.5 py-0.5 rounded-full bg-black/75",
 											children: sug.tag
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white",
+											className: "w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white",
 											children: !isNative || isInstalled ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowUpRight, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 												className: "text-[9px]",
 												children: "+"
@@ -22962,11 +23046,11 @@ function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInst
 							},
 							className: `tv-focusable relative w-[264px] h-[142px] shrink-0 rounded-3xl overflow-hidden text-left border transition-colors ${isFeaturedFocused ? "border-zinc-900 dark:border-white ring-2 ring-zinc-900 dark:ring-white shadow-2xl" : "border-zinc-900/12 dark:border-white/15"}`,
 							children: [
-								!bannerErr ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+								!failedImages[FEATURED_GAME.bannerImage] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
 									src: FEATURED_GAME.bannerImage,
 									alt: FEATURED_GAME.name,
 									referrerPolicy: "no-referrer",
-									onError: () => setBannerErr(true),
+									onError: () => markImageFailed(FEATURED_GAME.bannerImage),
 									className: "absolute inset-0 w-full h-full object-cover object-right"
 								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-br from-amber-600 to-zinc-900" }),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {

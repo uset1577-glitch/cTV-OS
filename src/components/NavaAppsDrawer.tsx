@@ -197,6 +197,7 @@ export function NavaAppsDrawer({
                   type="button"
                   data-tv-focusable="true"
                   data-tv-initial="true"
+                  data-tv-id="drawer-reset-filter"
                   onClick={() => setFilter('all')}
                   className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
                 >

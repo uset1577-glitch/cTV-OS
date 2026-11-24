@@ -16,7 +16,7 @@ public class MainActivity extends BridgeActivity {
             public void handleOnBackPressed() {
                 if (getBridge() != null && getBridge().getWebView() != null) {
                     getBridge().getWebView().evaluateJavascript(
-                        "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'BrowserBack', code: 'BrowserBack', keyCode: 4 }));",
+                        "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'BrowserBack', code: 'BrowserBack', keyCode: 4, bubbles: true, cancelable: true }));",
                         null
                     );
                 }
