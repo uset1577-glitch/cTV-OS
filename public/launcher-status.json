@@ -1,5 +1,5 @@
 {
-  "maintenanceMode": false,
+  "maintenanceMode": true,
   "appsOnlyMode": false,
   "title": "Mantenimiento · Próxima actualización",
   "message": "El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS."
