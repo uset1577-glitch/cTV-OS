@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import {
   AppWindow,
   ChevronLeft,
@@ -70,7 +69,7 @@ function CircularAppShortcut({
     >
       <div
         data-tv-focus-box="true"
-        className="w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full overflow-hidden bg-slate-200 dark:bg-zinc-800 border-2 border-white/25 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white transition-transform duration-150 ease-out flex items-center justify-center shadow-md"
+        className="tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full overflow-hidden bg-slate-200 dark:bg-zinc-800 border-2 border-white/25 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white flex items-center justify-center shadow-md"
       >
         {app.icon && !imgErr ? (
           <img
@@ -111,8 +110,11 @@ export function GoogleTvHome({
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const backdropLayerRef = useRef<HTMLDivElement | null>(null);
+  const fadeVeilRef = useRef<HTMLDivElement | null>(null);
   const appsSectionRef = useRef<HTMLElement | null>(null);
   const atTopRef = useRef(true);
+  const scrollRafRef = useRef<number>(0);
 
   const markImageFailed = (url: string) => {
     setFailedImages((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
@@ -138,17 +140,25 @@ export function GoogleTvHome({
   const activeHero = spotlightList[heroIdx % Math.max(1, spotlightList.length)] || spotlightList[0];
 
   const filteredSeries = useMemo(() => {
-    if (platformFilter === 'all') return liveCatalog.series.slice(0, 16);
-    return liveCatalog.series.filter((s) => s.packageName === platformFilter).slice(0, 16);
+    if (platformFilter === 'all') return liveCatalog.series.slice(0, 14);
+    return liveCatalog.series.filter((s) => s.packageName === platformFilter).slice(0, 14);
   }, [liveCatalog.series, platformFilter]);
 
   useEffect(() => {
     if (spotlightList.length <= 1) return;
     const timer = window.setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % spotlightList.length);
-    }, 9500);
+    }, 10500);
     return () => window.clearInterval(timer);
   }, [spotlightList.length]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, []);
 
   const handleHeroLaunch = () => {
     if (!activeHero) return;
@@ -160,24 +170,34 @@ export function GoogleTvHome({
     onLaunchSuggestion({ ...activeHero, packageName: resolvedPkg });
   };
 
-  // Actualización directa por CSS variables y atributo DOM: cero re-renders al hacer scroll en TV
+  // Actualiza únicamente 2 capas compositoras (opacity) sin invalidar estilos del resto del árbol DOM
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    const top = el.scrollTop;
-    const atTop = top <= 18;
-    if (atTop !== atTopRef.current) {
-      atTopRef.current = atTop;
-      onScrollTopChange(atTop);
-    }
+    if (scrollRafRef.current) return;
 
-    const progress = Math.min(1, Math.max(0, top / 320));
-    el.style.setProperty('--hero-scroll', progress.toFixed(3));
-    if (appsSectionRef.current) {
-      appsSectionRef.current.setAttribute(
-        'data-apps-over-hero',
-        activeHero && progress < 0.45 ? 'true' : 'false'
-      );
-    }
+    scrollRafRef.current = window.requestAnimationFrame(() => {
+      scrollRafRef.current = 0;
+      const top = el.scrollTop;
+      const atTop = top <= 18;
+      if (atTop !== atTopRef.current) {
+        atTopRef.current = atTop;
+        onScrollTopChange(atTop);
+      }
+
+      const progress = Math.min(1, Math.max(0, top / 300));
+      if (backdropLayerRef.current) {
+        backdropLayerRef.current.style.opacity = (1 - progress * 0.92).toFixed(2);
+      }
+      if (fadeVeilRef.current) {
+        fadeVeilRef.current.style.opacity = progress.toFixed(2);
+      }
+      if (appsSectionRef.current) {
+        appsSectionRef.current.setAttribute(
+          'data-apps-over-hero',
+          activeHero && progress < 0.45 ? 'true' : 'false'
+        );
+      }
+    });
   };
 
   const formattedUpdatedTime = useMemo(() => {
@@ -195,45 +215,31 @@ export function GoogleTvHome({
       ref={scrollRef}
       data-tv-scroll-container="true"
       onScroll={handleScroll}
-      style={{ '--hero-scroll': '0' } as React.CSSProperties}
       className="relative flex-1 overflow-y-auto no-scrollbar pb-14"
     >
-      {/* Fondo ambiental a PANTALLA COMPLETA optimizado para GPU de TV */}
+      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (solo opacity directa) */}
       {activeHero && (
         <div
           aria-hidden="true"
           className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015]"
         >
-          <div
-            className="absolute inset-0"
-            style={{ opacity: 'calc(1 - var(--hero-scroll, 0) * 0.92)' }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
+          <div ref={backdropLayerRef} className="absolute inset-0">
+            {activeHero.backdropUrl && !failedImages[activeHero.backdropUrl] ? (
+              <img
                 key={activeHero.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="absolute inset-0"
-              >
-                {activeHero.backdropUrl && !failedImages[activeHero.backdropUrl] ? (
-                  <img
-                    src={activeHero.backdropUrl}
-                    alt=""
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={() => markImageFailed(activeHero.backdropUrl!)}
-                    className="w-full h-full object-cover object-center"
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{ background: activeHero.accentGradient }}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+                src={activeHero.backdropUrl}
+                alt=""
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onError={() => markImageFailed(activeHero.backdropUrl!)}
+                className="w-full h-full object-cover object-center"
+              />
+            ) : (
+              <div
+                className="w-full h-full"
+                style={{ background: activeHero.accentGradient }}
+              />
+            )}
 
             {/* Difuminado ligero superior para la barra flotante */}
             <div
@@ -265,11 +271,9 @@ export function GoogleTvHome({
 
           {/* Velo progresivo al hacer scroll */}
           <div
+            ref={fadeVeilRef}
             className="absolute inset-0"
-            style={{
-              backgroundColor: heroFadeColor,
-              opacity: 'var(--hero-scroll, 0)',
-            }}
+            style={{ backgroundColor: heroFadeColor, opacity: 0 }}
           />
         </div>
       )}
@@ -291,55 +295,45 @@ export function GoogleTvHome({
             className="flex items-end justify-between gap-8 max-w-full scroll-mt-24"
           >
             <div className="max-w-2xl">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeHero.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
-                    <span>{activeHero.tag}</span>
-                    {activeHero.releaseDate && (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span className="tabular-nums">{activeHero.releaseDate}</span>
-                      </>
-                    )}
-                    {activeHero.imdbRating && (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span className="tabular-nums text-amber-400 font-semibold">
-                          ★ {activeHero.imdbRating}
-                        </span>
-                      </>
-                    )}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+                <span>{activeHero.tag}</span>
+                {activeHero.releaseDate && (
+                  <>
                     <span aria-hidden="true">·</span>
-                    <span>Actualizado {formattedUpdatedTime}</span>
-                  </div>
+                    <span className="tabular-nums">{activeHero.releaseDate}</span>
+                  </>
+                )}
+                {activeHero.imdbRating && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span className="tabular-nums text-amber-400 font-semibold">
+                      ★ {activeHero.imdbRating}
+                    </span>
+                  </>
+                )}
+                <span aria-hidden="true">·</span>
+                <span>Actualizado {formattedUpdatedTime}</span>
+              </div>
 
-                  <div>
-                    {activeHero.logoUrl && !failedImages[activeHero.logoUrl] ? (
-                      <img
-                        src={activeHero.logoUrl}
-                        alt={activeHero.title}
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                        onError={() => markImageFailed(activeHero.logoUrl!)}
-                        className="max-h-14 lg:max-h-20 w-auto object-contain object-left mb-1"
-                      />
-                    ) : (
-                      <h1 className="font-display text-3xl lg:text-5xl font-bold tracking-tight text-white text-balance line-clamp-2 [text-shadow:0_2px_6px_rgba(0,0,0,0.75)]">
-                        {activeHero.title}
-                      </h1>
-                    )}
-                    <p className="mt-1.5 text-sm lg:text-base text-zinc-100/95 line-clamp-2 max-w-xl leading-relaxed [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
-                      {activeHero.subtitle}
-                    </p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+              <div>
+                {activeHero.logoUrl && !failedImages[activeHero.logoUrl] ? (
+                  <img
+                    src={activeHero.logoUrl}
+                    alt={activeHero.title}
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => markImageFailed(activeHero.logoUrl!)}
+                    className="max-h-14 lg:max-h-20 w-auto object-contain object-left mb-1"
+                  />
+                ) : (
+                  <h1 className="font-display text-3xl lg:text-5xl font-bold tracking-tight text-white text-balance line-clamp-2 [text-shadow:0_2px_6px_rgba(0,0,0,0.75)]">
+                    {activeHero.title}
+                  </h1>
+                )}
+                <p className="mt-1.5 text-sm lg:text-base text-zinc-100/95 line-clamp-2 max-w-xl leading-relaxed [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
+                  {activeHero.subtitle}
+                </p>
+              </div>
 
               <div className="mt-4 flex items-center gap-3">
                 <button
@@ -369,7 +363,7 @@ export function GoogleTvHome({
                       onClick={() =>
                         setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length)
                       }
-                      className="tv-focusable w-9 h-9 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
+                      className="tv-focusable w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -379,7 +373,7 @@ export function GoogleTvHome({
                       data-tv-id="hero-next"
                       aria-label="Siguiente destacado"
                       onClick={() => setHeroIdx((prev) => (prev + 1) % spotlightList.length)}
-                      className="tv-focusable w-9 h-9 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
+                      className="tv-focusable w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -393,7 +387,7 @@ export function GoogleTvHome({
                 {spotlightList.map((item, idx) => (
                   <span
                     key={item.id}
-                    className={`h-1.5 rounded-full transition-all duration-200 ${
+                    className={`h-1.5 rounded-full ${
                       idx === heroIdx % spotlightList.length
                         ? 'w-6 bg-white'
                         : 'w-1.5 bg-white/40'
@@ -422,7 +416,6 @@ export function GoogleTvHome({
 
           <div
             data-tv-row="apps"
-            style={{ contain: 'layout style' }}
             className="flex items-start gap-4 overflow-x-auto no-scrollbar py-2.5 px-3 -mx-3"
           >
             {circularApps.map((app, index) => (
@@ -448,7 +441,7 @@ export function GoogleTvHome({
             >
               <div
                 data-tv-focus-box="true"
-                className="apps-all-circle w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 transition-transform duration-150 ease-out flex items-center justify-center shadow-md"
+                className="apps-all-circle tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
               >
                 <LayoutGrid className="w-7 h-7" />
               </div>
@@ -460,11 +453,11 @@ export function GoogleTvHome({
         </section>
       </div>
 
-      {/* Filas inferiores sobre fondo sólido progresivo */}
+      {/* Filas inferiores con content-visibility para máximo FPS */}
       <div className="relative z-10 px-12 pt-4 space-y-8">
         {/* 3. Películas reales actuales (pósters verticales 2:3) */}
         {showSuggestions && liveCatalog.movies.length > 0 && (
-          <section aria-label="Estrenos y películas populares">
+          <section className="tv-row-offscreen" aria-label="Estrenos y películas populares">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
                 Estrenos y películas populares
@@ -476,10 +469,9 @@ export function GoogleTvHome({
 
             <div
               data-tv-row="movies"
-              style={{ contain: 'layout style' }}
               className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
             >
-              {liveCatalog.movies.slice(0, 16).map((movie) => {
+              {liveCatalog.movies.slice(0, 14).map((movie) => {
                 const resolvedPkg = resolvePackageAlias(movie.packageName, allApps);
                 return (
                   <button
@@ -492,7 +484,7 @@ export function GoogleTvHome({
                   >
                     <div
                       data-tv-focus-box="true"
-                      className="w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06] transition-transform duration-150 ease-out shadow-md"
+                      className="tv-focusable w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06] shadow-md"
                     >
                       {movie.posterUrl && !failedImages[movie.posterUrl] ? (
                         <img
@@ -533,7 +525,7 @@ export function GoogleTvHome({
 
         {/* 4. Series y emisiones en tus plataformas (banners reales 16:9 horizontales) */}
         {showSuggestions && liveCatalog.series.length > 0 && (
-          <section aria-label="En tus plataformas">
+          <section className="tv-row-offscreen" aria-label="En tus plataformas">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
               <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
                 Series y emisiones en tus plataformas
@@ -567,7 +559,6 @@ export function GoogleTvHome({
 
             <div
               data-tv-row="series"
-              style={{ contain: 'layout style' }}
               className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
             >
               {filteredSeries.map((show) => {
@@ -584,7 +575,7 @@ export function GoogleTvHome({
                   >
                     <div
                       data-tv-focus-box="true"
-                      className="w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05] transition-transform duration-150 ease-out shadow-md"
+                      className="tv-focusable w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05] shadow-md"
                     >
                       {landscapeImage && !failedImages[landscapeImage] ? (
                         <img

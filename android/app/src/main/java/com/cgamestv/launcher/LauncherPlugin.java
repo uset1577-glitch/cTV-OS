@@ -37,6 +37,7 @@ import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -48,6 +49,7 @@ import org.json.JSONObject;
 public class LauncherPlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
+    private static final Map<String, String> ICON_CACHE = new ConcurrentHashMap<>();
 
     @PluginMethod
     public void getInstalledApps(PluginCall call) {
@@ -549,23 +551,29 @@ public class LauncherPlugin extends Plugin {
             category = "tv";
         }
 
-        String iconBase64 = "";
-        try {
-            Drawable drawable = null;
-            if (isLeanback && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                drawable = info.activityInfo.loadBanner(pm);
-                if (drawable == null && appInfo != null) {
-                    drawable = pm.getApplicationBanner(appInfo);
-                }
-            }
-            if (drawable == null) {
-                drawable = info.loadIcon(pm);
-            }
-            if (drawable != null) {
-                iconBase64 = drawableToDataUri(drawable, 112);
-            }
-        } catch (Exception ignored) {
+        String iconBase64 = ICON_CACHE.get(pkg);
+        if (iconBase64 == null) {
             iconBase64 = "";
+            try {
+                Drawable drawable = null;
+                if (isLeanback && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                    drawable = info.activityInfo.loadBanner(pm);
+                    if (drawable == null && appInfo != null) {
+                        drawable = pm.getApplicationBanner(appInfo);
+                    }
+                }
+                if (drawable == null) {
+                    drawable = info.loadIcon(pm);
+                }
+                if (drawable != null) {
+                    iconBase64 = drawableToDataUri(drawable, 96);
+                    if (!iconBase64.isEmpty()) {
+                        ICON_CACHE.put(pkg, iconBase64);
+                    }
+                }
+            } catch (Exception ignored) {
+                iconBase64 = "";
+            }
         }
 
         return new AppRecord(pkg, name, iconBase64, isLeanback, isSystem, category);

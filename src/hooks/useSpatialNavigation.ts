@@ -6,10 +6,6 @@ interface SpatialNavigationOptions {
   scopeSelector?: string;
 }
 
-const activeScrollRafs = new WeakMap<HTMLElement, number>();
-let activeGliderRaf = 0;
-let activeGliderEl: HTMLDivElement | null = null;
-
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -17,176 +13,12 @@ function prefersReducedMotion(): boolean {
   );
 }
 
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function easeOutQuart(t: number): number {
-  return 1 - Math.pow(1 - t, 3.6);
-}
-
-function animateScrollAxis(
-  container: HTMLElement,
-  axis: 'top' | 'left',
-  target: number,
-  durationMs: number
-) {
-  const maxScroll =
-    axis === 'top'
-      ? Math.max(0, container.scrollHeight - container.clientHeight)
-      : Math.max(0, container.scrollWidth - container.clientWidth);
-  const clampedTarget = Math.min(maxScroll, Math.max(0, target));
-  const start = axis === 'top' ? container.scrollTop : container.scrollLeft;
-
-  const existingRaf = activeScrollRafs.get(container);
-  if (existingRaf) {
-    window.cancelAnimationFrame(existingRaf);
-    activeScrollRafs.delete(container);
-  }
-
-  if (Math.abs(clampedTarget - start) < 1 || prefersReducedMotion()) {
-    if (axis === 'top') container.scrollTop = clampedTarget;
-    else container.scrollLeft = clampedTarget;
-    return;
-  }
-
-  const startTime = performance.now();
-  const step = (now: number) => {
-    const elapsed = now - startTime;
-    const progress = Math.min(1, elapsed / durationMs);
-    const eased = easeOutQuart(progress);
-    const nextVal = start + (clampedTarget - start) * eased;
-
-    if (axis === 'top') container.scrollTop = nextVal;
-    else container.scrollLeft = nextVal;
-
-    if (progress < 1) {
-      const id = window.requestAnimationFrame(step);
-      activeScrollRafs.set(container, id);
-    } else {
-      activeScrollRafs.delete(container);
-    }
-  };
-
-  const id = window.requestAnimationFrame(step);
-  activeScrollRafs.set(container, id);
-}
-
-function getVisualFocusBox(el: HTMLElement): HTMLElement {
-  return el.querySelector<HTMLElement>('[data-tv-focus-box="true"]') || el;
-}
-
-function parseRadiusPx(radiusStr: string, minSide: number): number {
-  if (!radiusStr) return 14;
-  const first = radiusStr.split(' ')[0] || '14px';
-  if (first.endsWith('%')) {
-    return (parseFloat(first) / 100) * minSide;
-  }
-  const parsed = parseFloat(first);
-  if (Number.isNaN(parsed)) return 14;
-  return Math.min(parsed, minSide / 2);
-}
-
-function stopFocusGlider() {
-  if (activeGliderRaf) {
-    window.cancelAnimationFrame(activeGliderRaf);
-    activeGliderRaf = 0;
-  }
-  if (activeGliderEl) {
-    activeGliderEl.style.opacity = '0';
-  }
-}
-
-function glideFocusRing(fromEl: HTMLElement | null, toEl: HTMLElement) {
-  if (prefersReducedMotion() || !fromEl || fromEl === toEl) return;
-
-  const fromBox = getVisualFocusBox(fromEl);
-  const toBox = getVisualFocusBox(toEl);
-  const fromRect = fromBox.getBoundingClientRect();
-  if (fromRect.width <= 0 || fromRect.height <= 0) return;
-
-  const fromStyle = window.getComputedStyle(fromBox);
-  const toStyle = window.getComputedStyle(toBox);
-  const fromRadius = parseRadiusPx(
-    fromStyle.borderRadius,
-    Math.min(fromRect.width, fromRect.height)
-  );
-
-  if (!activeGliderEl) {
-    const div = document.createElement('div');
-    div.setAttribute('data-tv-focus-glider', 'true');
-    div.style.position = 'fixed';
-    div.style.top = '0';
-    div.style.left = '0';
-    div.style.pointerEvents = 'none';
-    div.style.zIndex = '9999';
-    div.style.border = '2.5px solid rgba(251, 191, 36, 0.95)';
-    div.style.willChange = 'transform, width, height, border-radius, opacity';
-    div.style.opacity = '0';
-    document.body.appendChild(div);
-    activeGliderEl = div;
-  }
-
-  if (activeGliderRaf) {
-    window.cancelAnimationFrame(activeGliderRaf);
-  }
-
-  const glider = activeGliderEl;
-  const startTime = performance.now();
-  const durationMs = 190;
-
-  const step = (now: number) => {
-    const elapsed = now - startTime;
-    const t = Math.min(1, elapsed / durationMs);
-    const eased = easeOutCubic(t);
-
-    const liveToRect = toBox.getBoundingClientRect();
-    if (liveToRect.width <= 0 || liveToRect.height <= 0) {
-      glider.style.opacity = '0';
-      activeGliderRaf = 0;
-      return;
-    }
-
-    const toRadius = parseRadiusPx(
-      toStyle.borderRadius,
-      Math.min(liveToRect.width, liveToRect.height)
-    );
-
-    const x = fromRect.left + (liveToRect.left - fromRect.left) * eased;
-    const y = fromRect.top + (liveToRect.top - fromRect.top) * eased;
-    const w = fromRect.width + (liveToRect.width - fromRect.width) * eased;
-    const h = fromRect.height + (liveToRect.height - fromRect.height) * eased;
-    const r = fromRadius + (toRadius - fromRadius) * eased;
-
-    // Se desvanece con suavidad al llegar y ceder el foco a la tarjeta destino
-    const opacity = t < 0.72 ? 0.95 : Math.max(0, 0.95 * (1 - (t - 0.72) / 0.28));
-
-    glider.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-    glider.style.width = `${w.toFixed(1)}px`;
-    glider.style.height = `${h.toFixed(1)}px`;
-    glider.style.borderRadius = `${r.toFixed(1)}px`;
-    glider.style.opacity = opacity.toFixed(3);
-
-    if (t < 1) {
-      activeGliderRaf = window.requestAnimationFrame(step);
-    } else {
-      glider.style.opacity = '0';
-      activeGliderRaf = 0;
-    }
-  };
-
-  activeGliderRaf = window.requestAnimationFrame(step);
-}
-
 function isHiddenByAncestors(el: HTMLElement): boolean {
-  if (
+  return Boolean(
     el.closest('[data-tv-hidden="true"]') ||
-    el.closest('[aria-hidden="true"]') ||
-    el.closest('[inert]')
-  ) {
-    return true;
-  }
-  return false;
+      el.closest('[aria-hidden="true"]') ||
+      el.closest('[inert]')
+  );
 }
 
 function getFocusableElements(scopeSelector?: string): HTMLElement[] {
@@ -378,7 +210,6 @@ function findNextElement(
         return pickClosestHorizontally(directional, currCx);
       }
 
-      // Vertical: intentar moverse dentro del grid si aplica; si no, pasar estrictamente a la fila adyacente
       if (isGrid) {
         const insideGrid = findNextInGrid(current, direction, currentEntry.items);
         if (insideGrid) return insideGrid;
@@ -413,21 +244,7 @@ function findNextElement(
 }
 
 function findVerticalScrollContainer(el: HTMLElement): HTMLElement | null {
-  const marked = el.closest<HTMLElement>('[data-tv-scroll-container="true"]');
-  if (marked) return marked;
-
-  let parent = el.parentElement;
-  while (parent) {
-    const style = window.getComputedStyle(parent);
-    if (
-      (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-      parent.scrollHeight > parent.clientHeight + 4
-    ) {
-      return parent;
-    }
-    parent = parent.parentElement;
-  }
-  return null;
+  return el.closest<HTMLElement>('[data-tv-scroll-container="true"]');
 }
 
 function findHorizontalRail(el: HTMLElement): HTMLElement | null {
@@ -438,27 +255,32 @@ function findHorizontalRail(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
+// Desplazamiento nativo por compositor de Chromium: cero loops JS ni layout thrashing
 function scrollFocusedElementIntoView(el: HTMLElement) {
-  const visualBox = getVisualFocusBox(el);
+  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+  const visualBox = el.querySelector<HTMLElement>('[data-tv-focus-box="true"]') || el;
   const vParent = findVerticalScrollContainer(el);
 
   if (vParent) {
     if (el.closest('[data-tv-scroll-top="true"]')) {
-      animateScrollAxis(vParent, 'top', 0, 240);
+      if (vParent.scrollTop > 1) {
+        vParent.scrollTo({ top: 0, behavior });
+      }
     } else {
       const parentRect = vParent.getBoundingClientRect();
       const boxRect = visualBox.getBoundingClientRect();
 
-      // Solo desplazar si el elemento queda cerca/fuera del margen cómodo vertical
-      const needsScrollDown = boxRect.bottom > parentRect.bottom - 20;
+      const needsScrollDown = boxRect.bottom > parentRect.bottom - 18;
       const needsScrollUp = boxRect.top < parentRect.top + 84;
 
       if (needsScrollDown || needsScrollUp) {
         const desiredTop =
-          parentRect.top + Math.max(92, Math.min(180, (parentRect.height - boxRect.height) * 0.36));
+          parentRect.top + Math.max(92, Math.min(180, (parentRect.height - boxRect.height) * 0.35));
         const deltaY = boxRect.top - desiredTop;
-        const nextTop = vParent.scrollTop + deltaY;
-        animateScrollAxis(vParent, 'top', nextTop < 72 ? 0 : nextTop, 240);
+        const maxTop = Math.max(0, vParent.scrollHeight - vParent.clientHeight);
+        const rawNext = vParent.scrollTop + deltaY;
+        const clampedTop = Math.min(maxTop, Math.max(0, rawNext < 72 ? 0 : rawNext));
+        vParent.scrollTo({ top: clampedTop, behavior });
       }
     }
   }
@@ -470,19 +292,19 @@ function scrollFocusedElementIntoView(el: HTMLElement) {
     const boxCenter = boxRect.left + boxRect.width / 2;
     const railCenter = railRect.left + railRect.width / 2;
     const deltaX = boxCenter - railCenter;
-    animateScrollAxis(hRail, 'left', hRail.scrollLeft + deltaX, 180);
+    if (Math.abs(deltaX) > 24) {
+      const maxLeft = Math.max(0, hRail.scrollWidth - hRail.clientWidth);
+      const clampedLeft = Math.min(maxLeft, Math.max(0, hRail.scrollLeft + deltaX));
+      hRail.scrollTo({ left: clampedLeft, behavior });
+    }
   }
 }
 
 export function focusElementById(id: string): boolean {
   const el = document.querySelector<HTMLElement>(`[data-tv-id="${id}"]`);
   if (el && !isHiddenByAncestors(el)) {
-    const prev = document.activeElement as HTMLElement | null;
     el.focus({ preventScroll: true });
     scrollFocusedElementIntoView(el);
-    if (prev && prev !== el) {
-      glideFocusRing(prev, el);
-    }
     return true;
   }
   return false;
@@ -499,10 +321,7 @@ export function useSpatialNavigation({
   onBackRef.current = onBack;
 
   useEffect(() => {
-    if (!enabled) {
-      stopFocusGlider();
-      return;
-    }
+    if (!enabled) return;
 
     const ensureFocus = () => {
       const candidates = getFocusableElements(scopeSelector);
@@ -556,10 +375,8 @@ export function useSpatialNavigation({
         const candidates = getFocusableElements(scopeSelector);
         const next = findNextElement(active, direction, candidates, scopeSelector);
         if (next) {
-          const prevActive = active && candidates.includes(active) ? active : null;
           next.focus({ preventScroll: true });
           scrollFocusedElementIntoView(next);
-          glideFocusRing(prevActive, next);
         } else if (candidates.length > 0 && (!active || !candidates.includes(active))) {
           const fallback =
             candidates.find((c) => c.dataset.tvInitial === 'true') || candidates[0];
@@ -623,7 +440,6 @@ export function useSpatialNavigation({
     window.addEventListener('keyup', handleKeyUp);
     return () => {
       window.cancelAnimationFrame(rafId);
-      stopFocusGlider();
       if (longPressTimerRef.current) {
         window.clearTimeout(longPressTimerRef.current);
       }

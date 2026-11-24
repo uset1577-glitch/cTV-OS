@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
 import { ArrowUpRight, RefreshCw, Tv } from 'lucide-react';
 import { resolvePackageAlias } from '../data/suggestions';
 import type { AppSuggestion, InstalledApp } from '../types/launcher';
@@ -130,18 +129,17 @@ export function LivePlatformsView({
             const resolvedPkg = resolvePackageAlias(item.packageName, allApps);
             const landscapeImage = item.backdropUrl || item.posterUrl;
             return (
-              <motion.button
+              <button
                 key={item.id}
                 type="button"
                 data-tv-focusable="true"
                 data-tv-id={`live-card-${item.id}`}
                 onClick={() => onLaunchSuggestion({ ...item, packageName: resolvedPkg })}
-                whileFocus={{ scale: 1.04 }}
-                className="tv-focusable group text-left rounded-2xl focus:outline-none scroll-my-12"
+                className="tv-focusable group text-left rounded-2xl focus:outline-none focus:scale-[1.04] scroll-my-12"
               >
                 <div
                   data-tv-focus-box="true"
-                  className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-amber-500/30 shadow-lg transition-all duration-200"
+                  className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white shadow-md"
                 >
                   {landscapeImage && !failedUrls[landscapeImage] ? (
                     <img
@@ -163,7 +161,7 @@ export function LivePlatformsView({
                       </span>
                     </div>
                   )}
-                  <span className="opacity-0 group-focus:opacity-100 transition-opacity absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 text-white flex items-center justify-center">
+                  <span className="opacity-0 group-focus:opacity-100 absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 text-white flex items-center justify-center">
                     <ArrowUpRight className="w-4 h-4" />
                   </span>
                 </div>
@@ -176,7 +174,7 @@ export function LivePlatformsView({
                     {item.tag} · {item.subtitle}
                   </div>
                 </div>
-              </motion.button>
+              </button>
             );
           })}
         </div>
