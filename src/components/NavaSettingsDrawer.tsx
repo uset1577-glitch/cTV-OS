@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
-import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
+import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
 import { setGlobalLauncherStatus } from '../services/firebase';
 import type { AppVersionInfo, LauncherSettings } from '../types/launcher';
 
@@ -55,8 +55,19 @@ export function NavaSettingsDrawer({
   useEffect(() => {
     if (isOpen) {
       setRepoInput(settings.updateRepo || '');
+      window.requestAnimationFrame(() => {
+        focusElementById('settings-close');
+      });
     }
   }, [isOpen, settings.updateRepo]);
+
+  useEffect(() => {
+    if (showPinPrompt) {
+      window.requestAnimationFrame(() => {
+        focusElementById('creator-pin-input');
+      });
+    }
+  }, [showPinPrompt]);
 
   useSpatialNavigation({
     enabled: isOpen,
@@ -65,11 +76,14 @@ export function NavaSettingsDrawer({
         setShowPinPrompt(false);
         setPinInput('');
         setPinError(false);
+        window.requestAnimationFrame(() => {
+          focusElementById('settings-creator-access');
+        });
         return;
       }
       onClose();
     },
-    scopeSelector: '#nava-settings-drawer',
+    scopeSelector: showPinPrompt ? '#creator-pin-modal' : '#nava-settings-scroll-container',
   });
 
   const handleVerifyPin = () => {
@@ -90,6 +104,13 @@ export function NavaSettingsDrawer({
     window.setTimeout(() => setRepoSaved(false), 2000);
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -101,23 +122,32 @@ export function NavaSettingsDrawer({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.16 }}
-          className="fixed inset-0 z-40 bg-black/55 flex justify-end"
+          transition={{ duration: 0.2 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !showPinPrompt) {
+              onClose();
+            }
+          }}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex justify-end"
         >
           <motion.div
-            initial={{ x: 56, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 40, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-            className="w-full max-w-2xl h-full bg-[#DCE3EE] dark:bg-[#0D1017] border-l border-slate-900/12 dark:border-white/10 p-9 overflow-y-auto no-scrollbar flex flex-col gap-7"
+            id="nava-settings-scroll-container"
+            data-tv-scroll-container="true"
+            data-tv-hidden={showPinPrompt ? 'true' : undefined}
+            onClick={(e) => e.stopPropagation()}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+            className="w-full max-w-2xl h-full min-h-0 bg-[#DCE3EE] dark:bg-[#0D1017] border-l border-slate-900/12 dark:border-white/10 p-8 pb-32 overflow-y-auto overscroll-contain touch-pan-y tv-drawer-scrollbar flex flex-col gap-6 shadow-2xl"
           >
             {/* Cabecera */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 shrink-0 pb-1 border-b border-slate-900/8 dark:border-white/8">
               <div>
                 <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
                   Ajustes de VORA TV OS
                 </h2>
-                <p className="text-sm text-slate-600 dark:text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
                   Personalización, apariencia y sistema Android TV
                 </p>
               </div>
@@ -128,14 +158,64 @@ export function NavaSettingsDrawer({
                 data-tv-id="settings-close"
                 onClick={onClose}
                 aria-label="Cerrar ajustes"
-                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105 shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Accesos rápidos de salto directo entre secciones */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 shrink-0">
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-nav-creator"
+                onClick={() => scrollToSection('section-creator')}
+                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold text-xs border border-amber-500/35 hover:bg-amber-500 hover:text-zinc-950 focus:bg-amber-500 focus:text-zinc-950 focus:scale-105 shrink-0 transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                <span>Panel Creador</span>
+              </button>
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-nav-appearance"
+                onClick={() => scrollToSection('section-appearance')}
+                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
+              >
+                <span>🎨 Apariencia</span>
+              </button>
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-nav-preferences"
+                onClick={() => scrollToSection('section-preferences')}
+                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
+              >
+                <span>⚙️ Preferencias</span>
+              </button>
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-nav-system"
+                onClick={() => scrollToSection('section-system')}
+                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
+              >
+                <span>📺 Sistema TV</span>
+              </button>
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-nav-update"
+                onClick={() => scrollToSection('section-updates')}
+                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
+              >
+                <span>🔄 Actualizaciones</span>
+              </button>
+            </div>
+
             {/* Apariencia Día / Noche y Fondos */}
-            <div className="space-y-4">
+            <div id="section-appearance" className="space-y-4">
               <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Apariencia y fondo limpio
               </h3>
@@ -210,9 +290,9 @@ export function NavaSettingsDrawer({
             </div>
 
             {/* Preferencias rápidas */}
-            <div className="space-y-2.5">
+            <div id="section-preferences" className="space-y-2.5">
               <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
-                Preferencias
+                Preferencias de navegación
               </h3>
 
               <button
@@ -227,11 +307,11 @@ export function NavaSettingsDrawer({
                 className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
               >
                 <div>
-                  <div className="text-sm font-semibold">Modo solo apps</div>
+                  <div className="text-sm font-semibold">Modo solo apps local</div>
                   <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
                     {isMaintenanceForced
                       ? 'Activado de forma obligatoria por mantenimiento'
-                      : 'Muestra únicamente tus aplicaciones sin recomendaciones'}
+                      : 'Muestra únicamente tus aplicaciones sin recomendaciones en esta TV'}
                   </div>
                 </div>
                 <span className="text-sm font-semibold shrink-0">
@@ -242,109 +322,6 @@ export function NavaSettingsDrawer({
                       : 'Desactivado'}
                 </span>
               </button>
-
-              {/* Panel de Creador protegido por PIN */}
-              {!isCreatorUnlocked ? (
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="settings-creator-access"
-                  onClick={() => setShowPinPrompt(true)}
-                  className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Lock className="w-4 h-4 text-slate-500 dark:text-zinc-400 shrink-0" />
-                    <div>
-                      <div className="text-sm font-semibold">Panel de Creador (Mantenimiento Global)</div>
-                      <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                        Protegido por PIN · Solo para el creador del launcher
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300 shrink-0">
-                    Desbloquear
-                  </span>
-                </button>
-              ) : (
-                <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-amber-500/50 p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                          Panel de Creador (Sincronizado vía Firebase)
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-zinc-400 truncate">
-                          Activa el aviso obligatorio &ldquo;El modo solo apps será activado&rdquo; para TODOS los usuarios
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        data-tv-focusable="true"
-                        data-tv-id="settings-maint-toggle"
-                        onClick={() => {
-                          const nextVal = !settings.maintenanceMode;
-                          onUpdateSettings({
-                            maintenanceMode: nextVal,
-                            appsOnlyMode: nextVal ? true : settings.appsOnlyMode,
-                          });
-                          void setGlobalLauncherStatus({
-                            maintenanceMode: nextVal,
-                            appsOnlyMode: nextVal,
-                            title: settings.maintenanceTitle,
-                            message: settings.maintenanceMessage,
-                          });
-                        }}
-                        className={`tv-focusable px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                          settings.maintenanceMode
-                            ? 'bg-amber-500 text-zinc-950'
-                            : 'bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300'
-                        } focus:scale-105`}
-                      >
-                        {settings.maintenanceMode ? 'ACTIVADO PARA TODOS' : 'DESACTIVADO'}
-                      </button>
-                      <button
-                        type="button"
-                        data-tv-focusable="true"
-                        data-tv-id="settings-creator-lock"
-                        onClick={() => setIsCreatorUnlocked(false)}
-                        title="Bloquear panel de creador"
-                        className="tv-focusable p-2 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300 focus:scale-105"
-                      >
-                        <Lock className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-1 border-t border-slate-900/8 dark:border-white/8">
-                    <label htmlFor="settings-maint-msg" className="block text-xs text-slate-500 dark:text-zinc-400">
-                      Mensaje del cartel para todos los usuarios:
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="settings-maint-msg"
-                        type="text"
-                        defaultValue={settings.maintenanceMessage}
-                        onBlur={(e) => {
-                          const msg = e.target.value;
-                          onUpdateSettings({ maintenanceMessage: msg });
-                          void setGlobalLauncherStatus({
-                            maintenanceMode: settings.maintenanceMode,
-                            appsOnlyMode: settings.appsOnlyMode,
-                            title: settings.maintenanceTitle,
-                            message: msg,
-                          });
-                        }}
-                        data-tv-focusable="true"
-                        data-tv-id="settings-maint-msg-input"
-                        className="tv-focusable flex-1 px-3 py-2 rounded-xl bg-[#DCE3EE] dark:bg-[#090B10] border border-slate-900/12 dark:border-white/12 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <button
                 type="button"
@@ -397,8 +374,120 @@ export function NavaSettingsDrawer({
               </button>
             </div>
 
+            {/* Panel de Creador protegido por PIN */}
+            <div id="section-creator" className="space-y-2.5 pt-2">
+              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-amber-500" />
+                <span>Panel de Creador (Mantenimiento Global)</span>
+              </h3>
+
+              {!isCreatorUnlocked ? (
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="settings-creator-access"
+                  onClick={() => setShowPinPrompt(true)}
+                  className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border-2 border-amber-500/40 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        Administración Remota de Mantenimiento
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                        PIN por defecto: <strong>2026</strong> · Solo tú puedes activar el modo para todos
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 shrink-0 shadow-xs">
+                    Desbloquear
+                  </span>
+                </button>
+              ) : (
+                <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border-2 border-amber-500 p-4 space-y-3 shadow-md">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          Panel de Creador (Sincronizado vía Firebase)
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-zinc-400 truncate">
+                          Activa el aviso obligatorio &ldquo;El modo solo apps será activado&rdquo; para TODOS los usuarios
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        data-tv-focusable="true"
+                        data-tv-id="settings-maint-toggle"
+                        onClick={() => {
+                          const nextVal = !settings.maintenanceMode;
+                          onUpdateSettings({
+                            maintenanceMode: nextVal,
+                            appsOnlyMode: nextVal ? true : settings.appsOnlyMode,
+                          });
+                          void setGlobalLauncherStatus({
+                            maintenanceMode: nextVal,
+                            appsOnlyMode: nextVal,
+                            title: settings.maintenanceTitle,
+                            message: settings.maintenanceMessage,
+                          });
+                        }}
+                        className={`tv-focusable px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                          settings.maintenanceMode
+                            ? 'bg-amber-500 text-zinc-950 shadow-md'
+                            : 'bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300'
+                        } focus:scale-105`}
+                      >
+                        {settings.maintenanceMode ? 'ACTIVADO PARA TODOS' : 'DESACTIVADO'}
+                      </button>
+                      <button
+                        type="button"
+                        data-tv-focusable="true"
+                        data-tv-id="settings-creator-lock"
+                        onClick={() => setIsCreatorUnlocked(false)}
+                        title="Bloquear panel de creador"
+                        className="tv-focusable p-2 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300 focus:scale-105"
+                      >
+                        <Lock className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1 border-t border-slate-900/8 dark:border-white/8">
+                    <label htmlFor="settings-maint-msg" className="block text-xs text-slate-500 dark:text-zinc-400">
+                      Mensaje del cartel para todos los usuarios:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="settings-maint-msg"
+                        type="text"
+                        defaultValue={settings.maintenanceMessage}
+                        onBlur={(e) => {
+                          const msg = e.target.value;
+                          onUpdateSettings({ maintenanceMessage: msg });
+                          void setGlobalLauncherStatus({
+                            maintenanceMode: settings.maintenanceMode,
+                            appsOnlyMode: settings.appsOnlyMode,
+                            title: settings.maintenanceTitle,
+                            message: msg,
+                          });
+                        }}
+                        data-tv-focusable="true"
+                        data-tv-id="settings-maint-msg-input"
+                        className="tv-focusable flex-1 px-3 py-2 rounded-xl bg-[#DCE3EE] dark:bg-[#090B10] border border-slate-900/12 dark:border-white/12 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Sistema Android TV */}
-            <div className="space-y-2.5">
+            <div id="section-system" className="space-y-2.5">
               <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Sistema Android TV
               </h3>
@@ -444,7 +533,7 @@ export function NavaSettingsDrawer({
             </div>
 
             {/* Actualización de la aplicación estilo Xuper TV */}
-            <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-5 space-y-4">
+            <div id="section-updates" className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -497,17 +586,34 @@ export function NavaSettingsDrawer({
                 </div>
               </div>
             </div>
+
+            {/* Pie del menú de ajustes */}
+            <div className="pt-2 pb-6 text-center text-xs text-slate-500 dark:text-zinc-500 font-medium shrink-0">
+              VORA TV OS · Ajustes listos para mando y pantalla de Android TV
+            </div>
           </motion.div>
 
           {/* Modal para introducir el PIN de Creador */}
           {showPinPrompt && (
             <div
+              id="creator-pin-modal"
               role="dialog"
               aria-modal="true"
               aria-label="Introducir PIN de Creador"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowPinPrompt(false);
+                  setPinInput('');
+                  setPinError(false);
+                  window.requestAnimationFrame(() => {
+                    focusElementById('settings-creator-access');
+                  });
+                }
+              }}
               className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6"
             >
               <div
+                onClick={(e) => e.stopPropagation()}
                 className="w-full max-w-sm rounded-3xl bg-[#E6ECF4] dark:bg-[#12151E] border border-slate-900/15 dark:border-white/15 p-7 shadow-2xl flex flex-col items-center gap-4 text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">

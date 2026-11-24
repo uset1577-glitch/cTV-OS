@@ -244,7 +244,23 @@ function findNextElement(
 }
 
 function findVerticalScrollContainer(el: HTMLElement): HTMLElement | null {
-  return el.closest<HTMLElement>('[data-tv-scroll-container="true"]');
+  const tagged = el.closest<HTMLElement>('[data-tv-scroll-container="true"]');
+  if (tagged) return tagged;
+
+  // Fallback: detectar cualquier contenedor ascendente con scroll vertical activo
+  let curr = el.parentElement;
+  while (curr && curr !== document.body && curr !== document.documentElement) {
+    const style = window.getComputedStyle(curr);
+    const overflowY = style.overflowY;
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll') &&
+      curr.scrollHeight > curr.clientHeight
+    ) {
+      return curr;
+    }
+    curr = curr.parentElement;
+  }
+  return null;
 }
 
 function findHorizontalRail(el: HTMLElement): HTMLElement | null {
