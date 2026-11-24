@@ -161,14 +161,6 @@ export function NavaSettingsDrawer({
                               : preset.swatch,
                         }}
                       >
-                        {settings.themeMode === 'dark' && preset.type === 'image' && (
-                          <img
-                            src={preset.value}
-                            alt={preset.name}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover"
-                          />
-                        )}
                         {selected && (
                           <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center">
                             <Check className="w-3 h-3 stroke-[3]" />

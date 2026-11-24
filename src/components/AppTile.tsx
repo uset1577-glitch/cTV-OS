@@ -44,37 +44,37 @@ export function AppTile({
       data-tv-supports-longpress="true"
       data-tv-id={focusId}
       onClick={() => onLaunch(app)}
-      className="tv-focusable group relative w-full h-[156px] rounded-3xl bg-white/90 dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 p-4 flex flex-col items-center justify-center gap-3 text-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.06] focus:shadow-2xl"
+      className="tv-focusable group relative w-full py-3 px-2 rounded-3xl flex flex-col items-center justify-start gap-3 text-center focus:scale-[1.08]"
     >
-      {isFavorite && (
-        <span
-          aria-label="Fijada en la fila principal"
-          className="absolute top-3.5 right-3.5 text-amber-500"
-        >
-          <Star className="w-4 h-4 fill-amber-500" />
-        </span>
-      )}
-
-      <div className="w-15 h-15 rounded-2xl bg-zinc-100 dark:bg-zinc-800/90 flex items-center justify-center overflow-hidden shrink-0">
+      <div className="relative w-24 h-24 rounded-full bg-zinc-200 dark:bg-zinc-800 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden flex items-center justify-center shrink-0 transition-all shadow-lg">
         {app.icon && !iconError ? (
           <img
             src={app.icon}
             alt={app.name}
             referrerPolicy="no-referrer"
             onError={() => setIconError(true)}
-            className="w-full h-full object-contain p-1.5"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <AppWindow className="w-7 h-7 text-zinc-400" />
+          <AppWindow className="w-9 h-9 text-zinc-400" />
+        )}
+
+        {isFavorite && (
+          <span
+            aria-label="Fijada en Inicio"
+            className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-zinc-950/90 text-amber-400 flex items-center justify-center border border-white/20"
+          >
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+          </span>
         )}
       </div>
 
-      <div className="w-full min-w-0">
-        <div className="text-[15px] font-semibold truncate leading-tight">
+      <div className="w-full min-w-0 px-1">
+        <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 group-focus:text-zinc-950 dark:group-focus:text-white group-focus:font-semibold truncate leading-tight">
           {app.name}
         </div>
         {showPackageName && (
-          <div className="mt-0.5 text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600 truncate">
+          <div className="mt-0.5 text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 truncate">
             {app.packageName}
           </div>
         )}

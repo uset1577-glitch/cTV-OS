@@ -54,8 +54,7 @@ export function NavaAppsDrawer({
         return (
           app.category === 'games' ||
           app.packageName.includes('game') ||
-          app.packageName.includes('party') ||
-          app.packageName.includes('retro')
+          app.packageName.includes('party')
         );
       }
       if (filter === 'other') {
@@ -88,22 +87,21 @@ export function NavaAppsDrawer({
           role="dialog"
           aria-modal="true"
           aria-label="Todas las aplicaciones"
-          initial={{ opacity: 0, y: 36 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 24 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="fixed inset-0 z-40 bg-[#ECEEF2]/98 dark:bg-[#090B10]/98 flex flex-col px-12 pt-9 pb-8"
+          exit={{ opacity: 0, y: 18 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-40 bg-[#F4F6F9] dark:bg-[#0E1015] flex flex-col px-12 pt-8 pb-8"
         >
-          {/* Cabecera limpia */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0">
             <div>
               <h1 className="font-display text-3xl font-bold text-zinc-900 dark:text-white">
-                Aplicaciones instaladas
+                Tus aplicaciones
               </h1>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                 {apps.length} aplicaciones ·{' '}
                 {isNative
-                  ? 'Leídas con PackageManager'
+                  ? 'Detectadas en este Android TV'
                   : 'Vista previa web · En Android TV lee tus apps reales'}
               </p>
             </div>
@@ -121,7 +119,7 @@ export function NavaAppsDrawer({
                 } focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105`}
               >
                 <Star className={`w-4 h-4 ${pinMode ? 'fill-zinc-950' : ''}`} />
-                <span>{pinMode ? 'Terminar de fijar' : 'Fijar en fila'}</span>
+                <span>{pinMode ? 'Terminar de fijar' : 'Fijar en Inicio'}</span>
               </button>
 
               <button
@@ -148,7 +146,6 @@ export function NavaAppsDrawer({
             </div>
           </div>
 
-          {/* Filtros de una sola línea */}
           <div className="flex items-center gap-2 mb-6 shrink-0">
             {filterOptions.map((opt) => {
               const active = filter === opt.id;
@@ -172,20 +169,19 @@ export function NavaAppsDrawer({
 
             {pinMode && (
               <span className="ml-3 text-sm font-medium text-amber-600 dark:text-amber-400">
-                Pulsa OK en cualquier app para fijarla o quitarla de tu fila principal
+                Pulsa OK en cualquier icono para fijarlo o quitarlo de Inicio
               </span>
             )}
           </div>
 
-          {/* Grilla espaciosa */}
           <div className="flex-1 overflow-y-auto no-scrollbar py-2 px-1 -mx-1">
             {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 12 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="h-[156px] rounded-3xl bg-zinc-900/6 dark:bg-white/6 animate-pulse"
-                  />
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-5">
+                {Array.from({ length: 14 }).map((_, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-3 py-3">
+                    <div className="w-24 h-24 rounded-full bg-zinc-900/8 dark:bg-white/8 animate-pulse" />
+                    <div className="w-20 h-3 rounded bg-zinc-900/8 dark:bg-white/8 animate-pulse" />
+                  </div>
                 ))}
               </div>
             ) : filteredApps.length === 0 ? (
@@ -205,7 +201,7 @@ export function NavaAppsDrawer({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4 pb-10">
                 {filteredApps.map((app, index) => (
                   <div
                     key={app.packageName}

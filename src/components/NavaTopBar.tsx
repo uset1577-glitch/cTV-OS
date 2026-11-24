@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Download, Moon, Search, Settings, Sun } from 'lucide-react';
-import type { ThemeMode } from '../types/launcher';
+import type { HomeTab, ThemeMode } from '../types/launcher';
 
 interface NavaTopBarProps {
+  activeTab: HomeTab;
   themeMode: ThemeMode;
   use24HourClock: boolean;
   hasAvailableUpdate: boolean;
+  onSelectTab: (tab: HomeTab) => void;
   onToggleTheme: () => void;
   onOpenSearch: () => void;
   onOpenOta: () => void;
@@ -13,9 +15,11 @@ interface NavaTopBarProps {
 }
 
 export function NavaTopBar({
+  activeTab,
   themeMode,
   use24HourClock,
   hasAvailableUpdate,
+  onSelectTab,
   onToggleTheme,
   onOpenSearch,
   onOpenOta,
@@ -34,40 +38,60 @@ export function NavaTopBar({
     hour12: !use24HourClock,
   });
 
-  const formattedDate = now.toLocaleDateString('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const tabs: Array<{ id: HomeTab; label: string }> = [
+    { id: 'inicio', label: 'Inicio' },
+    { id: 'envivo', label: 'En vivo' },
+    { id: 'apps', label: 'Aplicaciones' },
+  ];
 
   return (
-    <header className="flex items-start justify-between gap-8 px-12 pt-9 pb-2 shrink-0">
-      {/* Reloj minimalista en periferia superior izquierda */}
-      <div className="flex flex-col leading-none">
-        <div className="flex items-baseline gap-3.5">
-          <span className="font-display text-4xl font-semibold tracking-tight tabular-nums text-zinc-900 dark:text-white">
-            {formattedTime}
-          </span>
-          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+    <header className="relative z-20 flex items-center justify-between gap-8 px-12 pt-6 pb-3 shrink-0">
+      {/* Zona izquierda Google TV 2025: Perfil compacto + Pestañas limpias */}
+      <div className="flex items-center gap-7">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-9 h-9 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-display text-sm font-bold flex items-center justify-center shrink-0">
+            C
+          </div>
+          <span className="font-display text-lg font-semibold tracking-tight text-zinc-900 dark:text-white whitespace-nowrap shrink-0">
             CTV OS
           </span>
         </div>
-        <span className="mt-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400 capitalize">
-          {formattedDate}
-        </span>
+
+        <nav aria-label="Navegación principal" className="flex items-center gap-2">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id={`top-tab-${tab.id}`}
+                onClick={() => onSelectTab(tab.id)}
+                className={`tv-focusable px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                    : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white focus:bg-zinc-900/15 dark:focus:bg-white/20'
+                } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Acciones discretas estilo Nava TV */}
-      <nav aria-label="Utilidades" className="flex items-center gap-2.5">
+      {/* Zona derecha: Herramientas compactas + Reloj */}
+      <div className="flex items-center gap-2.5 shrink-0">
         <button
           type="button"
           data-tv-focusable="true"
           data-tv-id="top-search"
           onClick={onOpenSearch}
-          className="tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
+          aria-label="Buscar aplicaciones y contenido"
+          title="Buscar"
+          className="tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110"
         >
-          <Search className="w-4 h-4 shrink-0" />
-          <span>Buscar</span>
+          <Search className="w-4 h-4" />
         </button>
 
         <button
@@ -76,14 +100,10 @@ export function NavaTopBar({
           data-tv-id="top-theme"
           onClick={onToggleTheme}
           aria-label={themeMode === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'}
-          className="tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
+          title={themeMode === 'dark' ? 'Modo día' : 'Modo noche'}
+          className="tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110"
         >
-          {themeMode === 'dark' ? (
-            <Sun className="w-4 h-4 shrink-0" />
-          ) : (
-            <Moon className="w-4 h-4 shrink-0" />
-          )}
-          <span>{themeMode === 'dark' ? 'Día' : 'Noche'}</span>
+          {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         <button
@@ -91,13 +111,15 @@ export function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-ota"
           onClick={onOpenOta}
-          className={`tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border border-transparent focus:scale-105 whitespace-nowrap shrink-0 ${
+          aria-label="Actualización OTA"
+          title="Actualización OTA"
+          className={`tv-focusable h-10 px-3.5 rounded-full flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 ${
             hasAvailableUpdate
-              ? 'bg-amber-500 text-zinc-950 font-semibold focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
-              : 'bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
-          }`}
+              ? 'bg-amber-500 text-zinc-950 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+              : 'bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+          } focus:scale-105`}
         >
-          <Download className="w-4 h-4 shrink-0" />
+          <Download className="w-3.5 h-3.5 shrink-0" />
           <span>{hasAvailableUpdate ? 'Actualizar' : 'OTA'}</span>
         </button>
 
@@ -106,13 +128,17 @@ export function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-settings"
           onClick={onOpenSettings}
-          aria-label="Abrir ajustes"
-          className="tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
+          aria-label="Ajustes del launcher"
+          title="Ajustes"
+          className="tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110"
         >
-          <Settings className="w-4 h-4 shrink-0" />
-          <span>Ajustes</span>
+          <Settings className="w-4 h-4" />
         </button>
-      </nav>
+
+        <span className="ml-2 font-display text-lg font-medium tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap shrink-0">
+          {formattedTime}
+        </span>
+      </div>
     </header>
   );
 }

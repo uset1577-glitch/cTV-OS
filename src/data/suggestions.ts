@@ -1,123 +1,4 @@
-import cgamesBannerImg from '../assets/images/cgames_tv_party_banner_1795483246737.jpg';
-import posterDuneImg from '../assets/images/poster_dune_max_1795485086679.jpg';
-import posterInterstellarImg from '../assets/images/poster_interstellar_prime_1795485087463.jpg';
-import posterStrangerThingsImg from '../assets/images/poster_stranger_things_netflix_1795485087498.jpg';
-import posterTheBatmanImg from '../assets/images/poster_the_batman_max_1795485087113.jpg';
-import type { AppSuggestion, InstalledApp } from '../types/launcher';
-
-// Catálogo base offline (empaquetado localmente en el APK sin dependencias externas rotas)
-export const ALL_REAL_SUGGESTIONS: AppSuggestion[] = [
-  // --- Netflix ---
-  {
-    id: 'nf-1',
-    appName: 'Netflix',
-    packageName: 'com.netflix.ninja',
-    title: 'Stranger Things',
-    subtitle: 'Ciencia ficción y misterio en Hawkins',
-    deepLinkUrl: 'https://www.netflix.com/title/80057281',
-    posterUrl: posterStrangerThingsImg,
-    accentGradient: 'linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)',
-    tag: 'Netflix',
-  },
-  {
-    id: 'nf-2',
-    appName: 'Netflix',
-    packageName: 'com.netflix.ninja',
-    title: 'El Juego del Calamar',
-    subtitle: 'Suspenso coreano de alto impacto en 4K',
-    deepLinkUrl: 'https://www.netflix.com/title/81040344',
-    posterUrl: posterStrangerThingsImg,
-    accentGradient: 'linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%)',
-    tag: 'Netflix',
-  },
-
-  // --- Max (HBO) ---
-  {
-    id: 'max-1',
-    appName: 'Max (HBO)',
-    packageName: 'com.wbd.stream',
-    title: 'Duna: Parte Dos',
-    subtitle: 'Épica cinematográfica de Denis Villeneuve',
-    deepLinkUrl: 'https://play.max.com/',
-    posterUrl: posterDuneImg,
-    accentGradient: 'linear-gradient(135deg, #451A03 0%, #D97706 100%)',
-    tag: 'Max · HBO',
-  },
-  {
-    id: 'max-2',
-    appName: 'Max (HBO)',
-    packageName: 'com.wbd.stream',
-    title: 'The Batman',
-    subtitle: 'Suspenso nocturno en Gotham City',
-    deepLinkUrl: 'https://play.max.com/movies',
-    posterUrl: posterTheBatmanImg,
-    accentGradient: 'linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)',
-    tag: 'Max · HBO',
-  },
-
-  // --- Prime Video ---
-  {
-    id: 'pv-1',
-    appName: 'Prime Video',
-    packageName: 'com.amazon.amazonvideo.livingroom',
-    title: 'Interestelar',
-    subtitle: 'Viaje espacial épico en Ultra HD',
-    deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: posterInterstellarImg,
-    accentGradient: 'linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)',
-    tag: 'Prime Video',
-  },
-  {
-    id: 'pv-2',
-    appName: 'Prime Video',
-    packageName: 'com.amazon.amazonvideo.livingroom',
-    title: 'Fallout',
-    subtitle: 'Aventura postapocalíptica en 4K HDR',
-    deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: posterDuneImg,
-    accentGradient: 'linear-gradient(135deg, #14532D 0%, #16A34A 100%)',
-    tag: 'Prime Video',
-  },
-
-  // --- YouTube ---
-  {
-    id: 'yt-1',
-    appName: 'YouTube',
-    packageName: 'com.google.android.youtube.tv',
-    title: 'Tendencias en tu pantalla',
-    subtitle: 'Explora los estrenos y directos del día',
-    deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-    posterUrl: posterInterstellarImg,
-    accentGradient: 'linear-gradient(135deg, #881337 0%, #E11D48 100%)',
-    tag: 'YouTube',
-  },
-
-  // --- Disney+ ---
-  {
-    id: 'dp-1',
-    appName: 'Disney+',
-    packageName: 'com.disney.disneyplus',
-    title: 'The Mandalorian',
-    subtitle: 'Aventuras en la galaxia Star Wars',
-    deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: posterInterstellarImg,
-    accentGradient: 'linear-gradient(135deg, #172554 0%, #1D4ED8 100%)',
-    tag: 'Disney+',
-  },
-
-  // --- CgamesTVPARTY ---
-  {
-    id: 'cg-1',
-    appName: 'CgamesTVPARTY',
-    packageName: 'com.mandoparty.tv',
-    title: 'Torneo Local con Mandos',
-    subtitle: 'Minijuegos cooperativos para toda la familia',
-    deepLinkUrl: 'cgamestv://party',
-    posterUrl: cgamesBannerImg,
-    accentGradient: 'linear-gradient(135deg, #9A3412 0%, #EA580C 100%)',
-    tag: 'CgamesTVPARTY',
-  },
-];
+import type { AppSuggestion, GoogleTvLiveCatalog, InstalledApp } from '../types/launcher';
 
 const PACKAGE_ALIASES: Record<string, string[]> = {
   'com.wbd.stream': ['com.hbo.hbonow', 'com.hbomax', 'com.hbo.android.app'],
@@ -125,21 +6,41 @@ const PACKAGE_ALIASES: Record<string, string[]> = {
   'com.amazon.amazonvideo.livingroom': ['com.amazon.avod.thirdpartyclient'],
 };
 
-const LIVE_CACHE_KEY = 'ctvos_daily_catalog_v1';
+const LIVE_FEED_CACHE_KEY = 'ctvos_gtv_live_feed_v2';
 
-interface TvMazeShow {
-  id: number;
-  name: string;
-  genres?: string[];
-  rating?: { average?: number | null };
-  image?: { medium?: string; original?: string } | null;
-  network?: { name?: string } | null;
-  webChannel?: { name?: string } | null;
+interface ITunesEntry {
+  id?: { attributes?: { 'im:id'?: string } };
+  'im:name'?: { label?: string };
+  'im:collection'?: { 'im:name'?: { label?: string } };
+  'im:image'?: Array<{ label?: string }>;
+  'im:releaseDate'?: { attributes?: { label?: string } };
+  category?: { attributes?: { label?: string } };
+  summary?: { label?: string };
+  link?: Array<{ attributes?: { href?: string } }>;
 }
 
-function getDailySeed(): number {
-  const now = new Date();
-  return now.getFullYear() * 1000 + now.getMonth() * 40 + now.getDate();
+interface TvMazeScheduleItem {
+  _embedded?: {
+    show?: {
+      id: number;
+      name: string;
+      language?: string;
+      genres?: string[];
+      summary?: string;
+      rating?: { average?: number | null };
+      image?: { medium?: string; original?: string } | null;
+      webChannel?: { name?: string } | null;
+    };
+  };
+}
+
+function stripHtml(text?: string): string {
+  if (!text) return '';
+  return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function upscaleAppleImage(url: string, size = '600x900bb'): string {
+  return url.replace(/\/\d+x\d+bb\.(png|jpg|jpeg)/i, `/${size}.$1`);
 }
 
 function mapPlatformToPackage(channelName: string): {
@@ -155,17 +56,17 @@ function mapPlatformToPackage(channelName: string): {
       appName: 'Netflix',
       packageName: 'com.netflix.ninja',
       deepLinkUrl: 'https://www.netflix.com/browse',
-      accentGradient: 'linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)',
+      accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
       tag: 'Netflix',
     };
   }
   if (lower.includes('hbo') || lower.includes('max')) {
     return {
-      appName: 'Max (HBO)',
+      appName: 'Max',
       packageName: 'com.wbd.stream',
       deepLinkUrl: 'https://play.max.com/',
-      accentGradient: 'linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)',
-      tag: 'Max · HBO',
+      accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
+      tag: 'Max',
     };
   }
   if (lower.includes('amazon') || lower.includes('prime')) {
@@ -173,7 +74,7 @@ function mapPlatformToPackage(channelName: string): {
       appName: 'Prime Video',
       packageName: 'com.amazon.amazonvideo.livingroom',
       deepLinkUrl: 'https://app.primevideo.com/',
-      accentGradient: 'linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)',
+      accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
       tag: 'Prime Video',
     };
   }
@@ -182,7 +83,7 @@ function mapPlatformToPackage(channelName: string): {
       appName: 'Disney+',
       packageName: 'com.disney.disneyplus',
       deepLinkUrl: 'https://www.disneyplus.com/home',
-      accentGradient: 'linear-gradient(135deg, #172554 0%, #1D4ED8 100%)',
+      accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
       tag: 'Disney+',
     };
   }
@@ -191,90 +92,295 @@ function mapPlatformToPackage(channelName: string): {
       appName: 'YouTube',
       packageName: 'com.google.android.youtube.tv',
       deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-      accentGradient: 'linear-gradient(135deg, #881337 0%, #E11D48 100%)',
+      accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
       tag: 'YouTube',
     };
   }
   return null;
 }
 
-// Consulta catálogo real público (TVMaze API sin clave) con rotación diaria y caché local
-export async function fetchDailyStreamingCatalog(): Promise<AppSuggestion[]> {
+// Respaldo limpio sin imágenes IA por si el TV está completamente sin internet
+export const OFFLINE_FALLBACK_CATALOG: GoogleTvLiveCatalog = {
+  spotlight: [
+    {
+      id: 'offline-party',
+      appName: 'CgamesTVPARTY',
+      packageName: 'com.mandoparty.tv',
+      title: 'CgamesTVPARTY',
+      subtitle:
+        'Multijugador local para tu televisor con mandos Bluetooth o controles de TV.',
+      deepLinkUrl: 'cgamestv://party',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #18181B 0%, #7C2D12 100%)',
+      tag: 'Juego destacado',
+      genre: 'Multijugador',
+      mediaKind: 'game',
+    },
+  ],
+  movies: [],
+  series: [
+    {
+      id: 'offline-yt',
+      appName: 'YouTube',
+      packageName: 'com.google.android.youtube.tv',
+      title: 'Explorar tendencias en YouTube TV',
+      subtitle: 'Música, directos y estrenos en 4K',
+      deepLinkUrl: 'https://www.youtube.com/tv#/explore',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #270A10 0%, #991B1B 100%)',
+      tag: 'YouTube',
+      mediaKind: 'series',
+    },
+    {
+      id: 'offline-nf',
+      appName: 'Netflix',
+      packageName: 'com.netflix.ninja',
+      title: 'Novedades en Netflix',
+      subtitle: 'Series y películas recientes en tu cuenta',
+      deepLinkUrl: 'https://www.netflix.com/browse',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #1E0909 0%, #991B1B 100%)',
+      tag: 'Netflix',
+      mediaKind: 'series',
+    },
+    {
+      id: 'offline-max',
+      appName: 'Max',
+      packageName: 'com.wbd.stream',
+      title: 'Estrenos de cine en Max',
+      subtitle: 'Catálogo HBO, Warner Bros. y DC',
+      deepLinkUrl: 'https://play.max.com/',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1D4ED8 100%)',
+      tag: 'Max',
+      mediaKind: 'series',
+    },
+    {
+      id: 'offline-pv',
+      appName: 'Prime Video',
+      packageName: 'com.amazon.amazonvideo.livingroom',
+      title: 'Tendencias en Prime Video',
+      subtitle: 'Producciones Amazon Originals en Ultra HD',
+      deepLinkUrl: 'https://app.primevideo.com/',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0284C7 100%)',
+      tag: 'Prime Video',
+      mediaKind: 'series',
+    },
+    {
+      id: 'offline-dp',
+      appName: 'Disney+',
+      packageName: 'com.disney.disneyplus',
+      title: 'Colección en Disney+',
+      subtitle: 'Marvel, Star Wars, Pixar y National Geographic',
+      deepLinkUrl: 'https://www.disneyplus.com/home',
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1E40AF 100%)',
+      tag: 'Disney+',
+      mediaKind: 'series',
+    },
+  ],
+  updatedAt: new Date().toISOString().slice(0, 10),
+};
+
+// Consulta catálogos públicos reales actualizados hoy (sin imágenes IA, sin API key)
+export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<GoogleTvLiveCatalog> {
   const todayKey = new Date().toISOString().slice(0, 10);
 
-  try {
-    const cachedRaw = localStorage.getItem(LIVE_CACHE_KEY);
-    if (cachedRaw) {
-      const cached = JSON.parse(cachedRaw) as { date: string; items: AppSuggestion[] };
-      if (cached.date === todayKey && Array.isArray(cached.items) && cached.items.length > 0) {
-        return cached.items;
+  if (!forceRefresh) {
+    try {
+      const cachedRaw = localStorage.getItem(LIVE_FEED_CACHE_KEY);
+      if (cachedRaw) {
+        const parsed = JSON.parse(cachedRaw) as GoogleTvLiveCatalog;
+        if (parsed.updatedAt === todayKey && parsed.movies.length > 0) {
+          return parsed;
+        }
       }
+    } catch {
+      // Ignorar error de lectura de caché
     }
-  } catch {
-    // Ignorar error de caché
   }
+
+  const movies: AppSuggestion[] = [];
+  const series: AppSuggestion[] = [];
 
   try {
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
-    const page = getDailySeed() % 4;
-    const res = await fetch(`https://api.tvmaze.com/shows?page=${page}`, {
-      signal: controller.signal,
-    });
-    window.clearTimeout(timeoutId);
+    const timer = window.setTimeout(() => controller.abort(), 7000);
 
-    if (!res.ok) return ALL_REAL_SUGGESTIONS;
-    const shows = (await res.json()) as TvMazeShow[];
-    if (!Array.isArray(shows)) return ALL_REAL_SUGGESTIONS;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
-    const perService = new Map<string, AppSuggestion[]>();
-    for (const show of shows) {
-      const channel = show.webChannel?.name || show.network?.name || '';
-      const poster = show.image?.original || show.image?.medium;
-      if (!channel || !poster) continue;
+    const [mxMoviesRes, usTvRes, tvMazeTodayRes, tvMazeYestRes] = await Promise.allSettled([
+      fetch('https://itunes.apple.com/mx/rss/topmovies/limit=25/json', {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : null)),
+      fetch('https://itunes.apple.com/us/rss/toptvepisodes/limit=25/json', {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`https://api.tvmaze.com/schedule/web?date=${todayStr}`, {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`https://api.tvmaze.com/schedule/web?date=${yesterdayStr}`, {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : null)),
+    ]);
 
-      const mapped = mapPlatformToPackage(channel);
-      if (!mapped) continue;
+    window.clearTimeout(timer);
 
-      const list = perService.get(mapped.packageName) || [];
-      if (list.length >= 6) continue;
+    // 1. Películas reales actuales (Apple / iTunes MX Top Movies en español)
+    if (mxMoviesRes.status === 'fulfilled' && mxMoviesRes.value?.feed?.entry) {
+      const entries = mxMoviesRes.value.feed.entry as ITunesEntry[];
+      const seenTitles = new Set<string>();
 
-      const genreText =
-        show.genres && show.genres.length > 0 ? show.genres.slice(0, 2).join(' · ') : 'Serie destacada';
-      const scoreText = show.rating?.average ? `★ ${show.rating.average}` : '';
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        const title = entry['im:name']?.label?.trim();
+        const rawImg = entry['im:image']?.[entry['im:image'].length - 1]?.label;
+        if (!title || !rawImg || seenTitles.has(title)) continue;
+        seenTitles.add(title);
 
-      list.push({
-        id: `tvm-${show.id}`,
-        appName: mapped.appName,
-        packageName: mapped.packageName,
-        title: show.name,
-        subtitle: [genreText, scoreText].filter(Boolean).join(' · '),
-        deepLinkUrl: mapped.deepLinkUrl,
-        posterUrl: poster.replace(/^http:\/\//i, 'https://'),
-        accentGradient: mapped.accentGradient,
-        tag: mapped.tag,
-      });
-      perService.set(mapped.packageName, list);
+        const posterUrl = upscaleAppleImage(rawImg, '600x900bb');
+        const backdropUrl = upscaleAppleImage(rawImg, '900x1350bb');
+        const genre = entry.category?.attributes?.label || 'Cine';
+        const releaseDate = entry['im:releaseDate']?.attributes?.label || '';
+        const synopsis =
+          stripHtml(entry.summary?.label) || `${genre} disponible en cartelera digital.`;
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+          `${title} trailer español`
+        )}`;
+
+        movies.push({
+          id: `mov-${entry.id?.attributes?.['im:id'] || i}`,
+          appName: 'YouTube',
+          packageName: 'com.google.android.youtube.tv',
+          title,
+          subtitle: synopsis,
+          deepLinkUrl: searchUrl,
+          posterUrl,
+          backdropUrl,
+          accentGradient: 'linear-gradient(135deg, #141923 0%, #273244 100%)',
+          tag: genre,
+          genre,
+          releaseDate,
+          mediaKind: 'movie',
+        });
+      }
     }
 
-    const merged: AppSuggestion[] = [
-      ...Array.from(perService.values()).flat(),
-      ...ALL_REAL_SUGGESTIONS.filter((s) => !perService.has(s.packageName)),
+    // 2. Programas reales transmitidos hoy en plataformas (TVMaze live schedule)
+    const seenShows = new Set<string>();
+    const scheduleArrays = [
+      tvMazeTodayRes.status === 'fulfilled' && Array.isArray(tvMazeTodayRes.value)
+        ? (tvMazeTodayRes.value as TvMazeScheduleItem[])
+        : [],
+      tvMazeYestRes.status === 'fulfilled' && Array.isArray(tvMazeYestRes.value)
+        ? (tvMazeYestRes.value as TvMazeScheduleItem[])
+        : [],
     ];
 
-    if (merged.length > 0) {
-      try {
-        localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({ date: todayKey, items: merged }));
-      } catch {
-        // Ignorar cuota llena
-      }
-      return merged;
-    }
-  } catch {
-    // Sin conexión: usar catálogo local incluido en el APK
-  }
+    for (const list of scheduleArrays) {
+      for (const item of list) {
+        const show = item._embedded?.show;
+        const channel = show?.webChannel?.name;
+        const img = show?.image?.original || show?.image?.medium;
+        if (!show?.name || !channel || !img) continue;
 
-  return ALL_REAL_SUGGESTIONS;
+        const mapped = mapPlatformToPackage(channel);
+        if (!mapped) continue;
+
+        const dedupeKey = `${mapped.packageName}:${show.name}`;
+        if (seenShows.has(dedupeKey)) continue;
+        seenShows.add(dedupeKey);
+
+        const genres = show.genres?.slice(0, 2).join(' · ') || 'Emisión de hoy';
+        const score = show.rating?.average ? ` · ★ ${show.rating.average}` : '';
+
+        series.push({
+          id: `tvm-${show.id}`,
+          appName: mapped.appName,
+          packageName: mapped.packageName,
+          title: show.name,
+          subtitle: `${genres}${score}`,
+          deepLinkUrl: mapped.deepLinkUrl,
+          posterUrl: img.replace(/^http:\/\//i, 'https://'),
+          backdropUrl: (show.image?.original || img).replace(/^http:\/\//i, 'https://'),
+          accentGradient: mapped.accentGradient,
+          tag: mapped.tag,
+          genre: genres,
+          mediaKind: 'series',
+        });
+      }
+    }
+
+    // 3. Series top actuales (Apple / iTunes Top TV) para enriquecer la fila de series
+    if (usTvRes.status === 'fulfilled' && usTvRes.value?.feed?.entry) {
+      const entries = usTvRes.value.feed.entry as ITunesEntry[];
+      const platformCycle = [
+        { appName: 'Max', pkg: 'com.wbd.stream', url: 'https://play.max.com/' },
+        { appName: 'Prime Video', pkg: 'com.amazon.amazonvideo.livingroom', url: 'https://app.primevideo.com/' },
+        { appName: 'Netflix', pkg: 'com.netflix.ninja', url: 'https://www.netflix.com/browse' },
+        { appName: 'Disney+', pkg: 'com.disney.disneyplus', url: 'https://www.disneyplus.com/home' },
+      ];
+
+      let cycleIdx = 0;
+      for (const entry of entries) {
+        const showTitle = entry['im:collection']?.['im:name']?.label?.trim();
+        const rawImg = entry['im:image']?.[entry['im:image'].length - 1]?.label;
+        if (!showTitle || !rawImg) continue;
+
+        const cleanTitle = showTitle.replace(/,\s*Season\s*\d+/i, '').trim();
+        if (seenShows.has(`top:${cleanTitle}`)) continue;
+        seenShows.add(`top:${cleanTitle}`);
+
+        const target = platformCycle[cycleIdx % platformCycle.length];
+        cycleIdx++;
+
+        series.push({
+          id: `tv-${entry.id?.attributes?.['im:id'] || cycleIdx}`,
+          appName: target.appName,
+          packageName: target.pkg,
+          title: showTitle,
+          subtitle: `${entry.category?.attributes?.label || 'Serie'} · Tendencia`,
+          deepLinkUrl: target.url,
+          posterUrl: upscaleAppleImage(rawImg, '600x600bb'),
+          backdropUrl: upscaleAppleImage(rawImg, '800x800bb'),
+          accentGradient: 'linear-gradient(135deg, #161B26 0%, #242E42 100%)',
+          tag: target.appName,
+          genre: entry.category?.attributes?.label,
+          mediaKind: 'series',
+        });
+      }
+    }
+
+    // Construir Hero Spotlight con los mejores estrenos 2026 + CgamesTVPARTY
+    const spotlightMovies = [...movies]
+      .sort((a, b) => {
+        const aRecent = (a.releaseDate || '').includes('2026') || (a.releaseDate || '').includes('2025') ? 1 : 0;
+        const bRecent = (b.releaseDate || '').includes('2026') || (b.releaseDate || '').includes('2025') ? 1 : 0;
+        return bRecent - aRecent;
+      })
+      .slice(0, 5);
+
+    const catalog: GoogleTvLiveCatalog = {
+      spotlight: spotlightMovies.length > 0 ? spotlightMovies : OFFLINE_FALLBACK_CATALOG.spotlight,
+      movies,
+      series: series.length > 0 ? series : OFFLINE_FALLBACK_CATALOG.series,
+      updatedAt: todayKey,
+    };
+
+    if (movies.length > 0 || series.length > 0) {
+      try {
+        localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(catalog));
+      } catch {
+        // Ignorar si almacenamiento lleno
+      }
+    }
+
+    return catalog;
+  } catch {
+    return OFFLINE_FALLBACK_CATALOG;
+  }
 }
 
 export function resolvePackageAlias(
@@ -288,44 +394,4 @@ export function resolvePackageAlias(
     if (installedSet.has(alias)) return alias;
   }
   return preferredPkg;
-}
-
-export function getContextualSuggestions(
-  focusedPackage: string | null,
-  _installedApps: InstalledApp[],
-  catalog: AppSuggestion[] = ALL_REAL_SUGGESTIONS
-): AppSuggestion[] {
-  const daySeed = getDailySeed();
-
-  if (focusedPackage) {
-    const matching = catalog.filter((s) => {
-      if (s.packageName === focusedPackage) return true;
-      const aliases = PACKAGE_ALIASES[s.packageName] || [];
-      return aliases.includes(focusedPackage);
-    });
-    if (matching.length > 0) {
-      return matching.slice(0, 6);
-    }
-  }
-
-  // Organizar sin mezclar, tomando una sugerencia diaria rotativa por plataforma
-  const servicesOrder = [
-    'com.netflix.ninja',
-    'com.wbd.stream',
-    'com.amazon.amazonvideo.livingroom',
-    'com.google.android.youtube.tv',
-    'com.disney.disneyplus',
-    'com.mandoparty.tv',
-  ];
-
-  const curated: AppSuggestion[] = [];
-  for (const pkg of servicesOrder) {
-    const list = catalog.filter((s) => s.packageName === pkg);
-    if (list.length > 0) {
-      const index = (daySeed + curated.length) % list.length;
-      curated.push(list[index]);
-    }
-  }
-
-  return curated;
 }

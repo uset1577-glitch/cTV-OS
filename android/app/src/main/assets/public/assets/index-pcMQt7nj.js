@@ -21052,6 +21052,26 @@ var Check = createLucideIcon("check", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ChevronLeft = createLucideIcon("chevron-left", [["path", {
+	d: "m15 18-6-6 6-6",
+	key: "1wnfg3"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ChevronRight = createLucideIcon("chevron-right", [["path", {
+	d: "m9 18 6-6-6-6",
+	key: "mthhwq"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var CircleAlert = createLucideIcon("circle-alert", [
 	["circle", {
 		cx: "12",
@@ -21107,46 +21127,6 @@ var Download = createLucideIcon("download", [
 	["path", {
 		d: "m7 10 5 5 5-5",
 		key: "brsn70"
-	}]
-]);
-/**
-* @license lucide-react v0.546.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Gamepad2 = createLucideIcon("gamepad-2", [
-	["line", {
-		x1: "6",
-		x2: "10",
-		y1: "11",
-		y2: "11",
-		key: "1gktln"
-	}],
-	["line", {
-		x1: "8",
-		x2: "8",
-		y1: "9",
-		y2: "13",
-		key: "qnk9ow"
-	}],
-	["line", {
-		x1: "15",
-		x2: "15.01",
-		y1: "12",
-		y2: "12",
-		key: "krot7o"
-	}],
-	["line", {
-		x1: "18",
-		x2: "18.01",
-		y1: "10",
-		y2: "10",
-		key: "1lcuu1"
-	}],
-	["path", {
-		d: "M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z",
-		key: "mfqc10"
 	}]
 ]);
 /**
@@ -21315,32 +21295,6 @@ var ShieldAlert = createLucideIcon("shield-alert", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var Sparkles = createLucideIcon("sparkles", [
-	["path", {
-		d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
-		key: "1s2grr"
-	}],
-	["path", {
-		d: "M20 2v4",
-		key: "1rf3ol"
-	}],
-	["path", {
-		d: "M22 4h-4",
-		key: "gwowj6"
-	}],
-	["circle", {
-		cx: "4",
-		cy: "20",
-		r: "2",
-		key: "6kqj1y"
-	}]
-]);
-/**
-* @license lucide-react v0.546.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var Star = createLucideIcon("star", [["path", {
 	d: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
 	key: "r04s7s"
@@ -21397,6 +21351,23 @@ var Sun = createLucideIcon("sun", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Tv = createLucideIcon("tv", [["path", {
+	d: "m17 2-5 5-5-5",
+	key: "16satq"
+}], ["rect", {
+	width: "20",
+	height: "15",
+	x: "2",
+	y: "7",
+	rx: "2",
+	key: "1e6viu"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Wifi = createLucideIcon("wifi", [
 	["path", {
 		d: "M12 20h.01",
@@ -21428,6 +21399,981 @@ var X = createLucideIcon("x", [["path", {
 	d: "m6 6 12 12",
 	key: "d8bk6v"
 }]]);
+// src/data/presets.ts
+var FEATURED_GAME = {
+	name: "CgamesTVPARTY",
+	packageName: "com.mandoparty.tv",
+	tagline: "Juego multijugador local con mandos para tu Android TV"
+};
+var BACKGROUND_PRESETS = [
+	{
+		id: "gtv-cinema",
+		name: "Google TV Cine",
+		description: "Lienzo oscuro con profundidad ambiental",
+		type: "gradient",
+		value: "radial-gradient(110% 85% at 72% 10%, #1C2331 0%, #0E1015 62%)",
+		lightValue: "radial-gradient(110% 85% at 72% 10%, #FFFFFF 0%, #EFF2F7 70%)",
+		swatch: "linear-gradient(135deg, #1C2331 0%, #0E1015 100%)"
+	},
+	{
+		id: "gtv-midnight",
+		name: "Azul Nocturno",
+		description: "Tono azul pizarra suave para sala oscura",
+		type: "gradient",
+		value: "linear-gradient(160deg, #0D131F 0%, #131C2E 55%, #0A0D14 100%)",
+		lightValue: "linear-gradient(160deg, #F4F7FC 0%, #E6ECF7 100%)",
+		swatch: "linear-gradient(135deg, #131C2E 0%, #0A0D14 100%)"
+	},
+	{
+		id: "pure-oled",
+		name: "Negro Puro OLED",
+		description: "Máximo contraste sin reflejos",
+		type: "solid",
+		value: "#07080B",
+		lightValue: "#F6F7F9",
+		swatch: "#07080B"
+	},
+	{
+		id: "warm-graphite",
+		name: "Grafito Mate",
+		description: "Superficie neutra uniforme",
+		type: "gradient",
+		value: "linear-gradient(160deg, #13151B 0%, #1B1E27 100%)",
+		lightValue: "linear-gradient(160deg, #F8F8FA 0%, #EAECEF 100%)",
+		swatch: "linear-gradient(160deg, #13151B 0%, #1B1E27 100%)"
+	},
+	{
+		id: "emerald-slate",
+		name: "Pizarra Profunda",
+		description: "Contraste sobrio verde petróleo oscuro",
+		type: "gradient",
+		value: "linear-gradient(160deg, #0B1416 0%, #112226 100%)",
+		lightValue: "linear-gradient(160deg, #F1F7F7 0%, #E1ECEC 100%)",
+		swatch: "linear-gradient(160deg, #0B1416 0%, #112226 100%)"
+	},
+	{
+		id: "cobalt-night",
+		name: "Horizonte Cobalto",
+		description: "Degradado cinematográfico profundo",
+		type: "gradient",
+		value: "linear-gradient(160deg, #090F1D 0%, #152340 100%)",
+		lightValue: "linear-gradient(160deg, #F0F5FF 0%, #DFE8FA 100%)",
+		swatch: "linear-gradient(160deg, #090F1D 0%, #152340 100%)"
+	}
+];
+var DEFAULT_FAVORITES = [
+	"com.mandoparty.tv",
+	"com.google.android.youtube.tv",
+	"com.netflix.ninja",
+	"com.wbd.stream",
+	"com.amazon.amazonvideo.livingroom",
+	"com.disney.disneyplus",
+	"com.spotify.tv.android"
+];
+var DEFAULT_SETTINGS = {
+	themeMode: "dark",
+	backgroundId: "gtv-cinema",
+	use24HourClock: false,
+	showPackageNames: false,
+	showSuggestions: true,
+	otaRepo: "tu-usuario/cTV-OS",
+	favoritePackages: DEFAULT_FAVORITES
+};
+function makeCircleAppIcon(bg, label, accent = "#FFFFFF", sub) {
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+    <defs>
+      <radialGradient id="g" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+      </radialGradient>
+    </defs>
+    <rect width="160" height="160" fill="${bg}"/>
+    <rect width="160" height="160" fill="url(#g)"/>
+    <text x="80" y="${sub ? "84" : "94"}" font-family="system-ui, -apple-system, sans-serif" font-size="${label.length > 2 ? "38" : "54"}" font-weight="800" fill="${accent}" text-anchor="middle" letter-spacing="-1">${label}</text>
+    ${sub ? `<text x="80" y="114" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="${accent}" fill-opacity="0.88" text-anchor="middle">${sub}</text>` : ""}
+  </svg>`;
+	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+var WEB_PREVIEW_APPS = [
+	{
+		packageName: "com.mandoparty.tv",
+		name: "CgamesTVPARTY",
+		icon: makeCircleAppIcon("#EA580C", "CTV", "#FFF7ED", "PARTY"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "games"
+	},
+	{
+		packageName: "com.google.android.youtube.tv",
+		name: "YouTube",
+		icon: makeCircleAppIcon("#DC2626", "▶", "#FFFFFF"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.netflix.ninja",
+		name: "Netflix",
+		icon: makeCircleAppIcon("#141414", "N", "#E50914"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.wbd.stream",
+		name: "Max",
+		icon: makeCircleAppIcon("#002BE7", "max", "#FFFFFF"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.amazon.amazonvideo.livingroom",
+		name: "Prime Video",
+		icon: makeCircleAppIcon("#00A8E1", "prime", "#FFFFFF"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.disney.disneyplus",
+		name: "Disney+",
+		icon: makeCircleAppIcon("#0A2259", "D+", "#FFFFFF"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.spotify.tv.android",
+		name: "Spotify",
+		icon: makeCircleAppIcon("#1DB954", "♫", "#0B130E"),
+		isLeanback: true,
+		isSystemApp: false,
+		category: "tv"
+	},
+	{
+		packageName: "com.google.android.play.games",
+		name: "Play Juegos",
+		icon: makeCircleAppIcon("#047857", "PJ", "#ECFDF5"),
+		isLeanback: true,
+		isSystemApp: true,
+		category: "games"
+	},
+	{
+		packageName: "com.android.tv.settings",
+		name: "Ajustes TV",
+		icon: makeCircleAppIcon("#27272A", "⚙", "#F4F4F5"),
+		isLeanback: true,
+		isSystemApp: true,
+		category: "other"
+	}
+];
+// src/data/suggestions.ts
+var PACKAGE_ALIASES = {
+	"com.wbd.stream": [
+		"com.hbo.hbonow",
+		"com.hbomax",
+		"com.hbo.android.app"
+	],
+	"com.google.android.youtube.tv": ["com.liskovsoft.smarttubetv.beta", "com.liskovsoft.smarttubetv"],
+	"com.amazon.amazonvideo.livingroom": ["com.amazon.avod.thirdpartyclient"]
+};
+var LIVE_FEED_CACHE_KEY = "ctvos_gtv_live_feed_v2";
+function stripHtml(text) {
+	if (!text) return "";
+	return text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+function upscaleAppleImage(url, size = "600x900bb") {
+	return url.replace(/\/\d+x\d+bb\.(png|jpg|jpeg)/i, `/${size}.$1`);
+}
+function mapPlatformToPackage(channelName) {
+	const lower = channelName.toLowerCase();
+	if (lower.includes("netflix")) return {
+		appName: "Netflix",
+		packageName: "com.netflix.ninja",
+		deepLinkUrl: "https://www.netflix.com/browse",
+		accentGradient: "linear-gradient(135deg, #2B0909 0%, #8E1218 100%)",
+		tag: "Netflix"
+	};
+	if (lower.includes("hbo") || lower.includes("max")) return {
+		appName: "Max",
+		packageName: "com.wbd.stream",
+		deepLinkUrl: "https://play.max.com/",
+		accentGradient: "linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)",
+		tag: "Max"
+	};
+	if (lower.includes("amazon") || lower.includes("prime")) return {
+		appName: "Prime Video",
+		packageName: "com.amazon.amazonvideo.livingroom",
+		deepLinkUrl: "https://app.primevideo.com/",
+		accentGradient: "linear-gradient(135deg, #0A2538 0%, #0369A1 100%)",
+		tag: "Prime Video"
+	};
+	if (lower.includes("disney")) return {
+		appName: "Disney+",
+		packageName: "com.disney.disneyplus",
+		deepLinkUrl: "https://www.disneyplus.com/home",
+		accentGradient: "linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)",
+		tag: "Disney+"
+	};
+	if (lower.includes("youtube")) return {
+		appName: "YouTube",
+		packageName: "com.google.android.youtube.tv",
+		deepLinkUrl: "https://www.youtube.com/tv#/explore",
+		accentGradient: "linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)",
+		tag: "YouTube"
+	};
+	return null;
+}
+var OFFLINE_FALLBACK_CATALOG = {
+	spotlight: [{
+		id: "offline-party",
+		appName: "CgamesTVPARTY",
+		packageName: "com.mandoparty.tv",
+		title: "CgamesTVPARTY",
+		subtitle: "Multijugador local para tu televisor con mandos Bluetooth o controles de TV.",
+		deepLinkUrl: "cgamestv://party",
+		posterUrl: "",
+		accentGradient: "linear-gradient(135deg, #18181B 0%, #7C2D12 100%)",
+		tag: "Juego destacado",
+		genre: "Multijugador",
+		mediaKind: "game"
+	}],
+	movies: [],
+	series: [
+		{
+			id: "offline-yt",
+			appName: "YouTube",
+			packageName: "com.google.android.youtube.tv",
+			title: "Explorar tendencias en YouTube TV",
+			subtitle: "Música, directos y estrenos en 4K",
+			deepLinkUrl: "https://www.youtube.com/tv#/explore",
+			posterUrl: "",
+			accentGradient: "linear-gradient(135deg, #270A10 0%, #991B1B 100%)",
+			tag: "YouTube",
+			mediaKind: "series"
+		},
+		{
+			id: "offline-nf",
+			appName: "Netflix",
+			packageName: "com.netflix.ninja",
+			title: "Novedades en Netflix",
+			subtitle: "Series y películas recientes en tu cuenta",
+			deepLinkUrl: "https://www.netflix.com/browse",
+			posterUrl: "",
+			accentGradient: "linear-gradient(135deg, #1E0909 0%, #991B1B 100%)",
+			tag: "Netflix",
+			mediaKind: "series"
+		},
+		{
+			id: "offline-max",
+			appName: "Max",
+			packageName: "com.wbd.stream",
+			title: "Estrenos de cine en Max",
+			subtitle: "Catálogo HBO, Warner Bros. y DC",
+			deepLinkUrl: "https://play.max.com/",
+			posterUrl: "",
+			accentGradient: "linear-gradient(135deg, #0D163A 0%, #1D4ED8 100%)",
+			tag: "Max",
+			mediaKind: "series"
+		},
+		{
+			id: "offline-pv",
+			appName: "Prime Video",
+			packageName: "com.amazon.amazonvideo.livingroom",
+			title: "Tendencias en Prime Video",
+			subtitle: "Producciones Amazon Originals en Ultra HD",
+			deepLinkUrl: "https://app.primevideo.com/",
+			posterUrl: "",
+			accentGradient: "linear-gradient(135deg, #0A2538 0%, #0284C7 100%)",
+			tag: "Prime Video",
+			mediaKind: "series"
+		},
+		{
+			id: "offline-dp",
+			appName: "Disney+",
+			packageName: "com.disney.disneyplus",
+			title: "Colección en Disney+",
+			subtitle: "Marvel, Star Wars, Pixar y National Geographic",
+			deepLinkUrl: "https://www.disneyplus.com/home",
+			posterUrl: "",
+			accentGradient: "linear-gradient(135deg, #0D1A3D 0%, #1E40AF 100%)",
+			tag: "Disney+",
+			mediaKind: "series"
+		}
+	],
+	updatedAt: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+};
+async function fetchGoogleTvLiveCatalog(forceRefresh = false) {
+	const todayKey = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+	if (!forceRefresh) try {
+		const cachedRaw = localStorage.getItem(LIVE_FEED_CACHE_KEY);
+		if (cachedRaw) {
+			const parsed = JSON.parse(cachedRaw);
+			if (parsed.updatedAt === todayKey && parsed.movies.length > 0) return parsed;
+		}
+	} catch {}
+	const movies = [];
+	const series = [];
+	try {
+		const controller = new AbortController();
+		const timer = window.setTimeout(() => controller.abort(), 7e3);
+		const todayStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+		const yesterdayStr = (/* @__PURE__ */ new Date(Date.now() - 864e5)).toISOString().slice(0, 10);
+		const [mxMoviesRes, usTvRes, tvMazeTodayRes, tvMazeYestRes] = await Promise.allSettled([
+			fetch("https://itunes.apple.com/mx/rss/topmovies/limit=25/json", { signal: controller.signal }).then((r) => r.ok ? r.json() : null),
+			fetch("https://itunes.apple.com/us/rss/toptvepisodes/limit=25/json", { signal: controller.signal }).then((r) => r.ok ? r.json() : null),
+			fetch(`https://api.tvmaze.com/schedule/web?date=${todayStr}`, { signal: controller.signal }).then((r) => r.ok ? r.json() : null),
+			fetch(`https://api.tvmaze.com/schedule/web?date=${yesterdayStr}`, { signal: controller.signal }).then((r) => r.ok ? r.json() : null)
+		]);
+		window.clearTimeout(timer);
+		if (mxMoviesRes.status === "fulfilled" && mxMoviesRes.value?.feed?.entry) {
+			const entries = mxMoviesRes.value.feed.entry;
+			const seenTitles = /* @__PURE__ */ new Set();
+			for (let i = 0; i < entries.length; i++) {
+				const entry = entries[i];
+				const title = entry["im:name"]?.label?.trim();
+				const rawImg = entry["im:image"]?.[entry["im:image"].length - 1]?.label;
+				if (!title || !rawImg || seenTitles.has(title)) continue;
+				seenTitles.add(title);
+				const posterUrl = upscaleAppleImage(rawImg, "600x900bb");
+				const backdropUrl = upscaleAppleImage(rawImg, "900x1350bb");
+				const genre = entry.category?.attributes?.label || "Cine";
+				const releaseDate = entry["im:releaseDate"]?.attributes?.label || "";
+				const synopsis = stripHtml(entry.summary?.label) || `${genre} disponible en cartelera digital.`;
+				const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer español`)}`;
+				movies.push({
+					id: `mov-${entry.id?.attributes?.["im:id"] || i}`,
+					appName: "YouTube",
+					packageName: "com.google.android.youtube.tv",
+					title,
+					subtitle: synopsis,
+					deepLinkUrl: searchUrl,
+					posterUrl,
+					backdropUrl,
+					accentGradient: "linear-gradient(135deg, #141923 0%, #273244 100%)",
+					tag: genre,
+					genre,
+					releaseDate,
+					mediaKind: "movie"
+				});
+			}
+		}
+		const seenShows = /* @__PURE__ */ new Set();
+		const scheduleArrays = [tvMazeTodayRes.status === "fulfilled" && Array.isArray(tvMazeTodayRes.value) ? tvMazeTodayRes.value : [], tvMazeYestRes.status === "fulfilled" && Array.isArray(tvMazeYestRes.value) ? tvMazeYestRes.value : []];
+		for (const list of scheduleArrays) for (const item of list) {
+			const show = item._embedded?.show;
+			const channel = show?.webChannel?.name;
+			const img = show?.image?.original || show?.image?.medium;
+			if (!show?.name || !channel || !img) continue;
+			const mapped = mapPlatformToPackage(channel);
+			if (!mapped) continue;
+			const dedupeKey = `${mapped.packageName}:${show.name}`;
+			if (seenShows.has(dedupeKey)) continue;
+			seenShows.add(dedupeKey);
+			const genres = show.genres?.slice(0, 2).join(" · ") || "Emisión de hoy";
+			const score = show.rating?.average ? ` · ★ ${show.rating.average}` : "";
+			series.push({
+				id: `tvm-${show.id}`,
+				appName: mapped.appName,
+				packageName: mapped.packageName,
+				title: show.name,
+				subtitle: `${genres}${score}`,
+				deepLinkUrl: mapped.deepLinkUrl,
+				posterUrl: img.replace(/^http:\/\//i, "https://"),
+				backdropUrl: (show.image?.original || img).replace(/^http:\/\//i, "https://"),
+				accentGradient: mapped.accentGradient,
+				tag: mapped.tag,
+				genre: genres,
+				mediaKind: "series"
+			});
+		}
+		if (usTvRes.status === "fulfilled" && usTvRes.value?.feed?.entry) {
+			const entries = usTvRes.value.feed.entry;
+			const platformCycle = [
+				{
+					appName: "Max",
+					pkg: "com.wbd.stream",
+					url: "https://play.max.com/"
+				},
+				{
+					appName: "Prime Video",
+					pkg: "com.amazon.amazonvideo.livingroom",
+					url: "https://app.primevideo.com/"
+				},
+				{
+					appName: "Netflix",
+					pkg: "com.netflix.ninja",
+					url: "https://www.netflix.com/browse"
+				},
+				{
+					appName: "Disney+",
+					pkg: "com.disney.disneyplus",
+					url: "https://www.disneyplus.com/home"
+				}
+			];
+			let cycleIdx = 0;
+			for (const entry of entries) {
+				const showTitle = entry["im:collection"]?.["im:name"]?.label?.trim();
+				const rawImg = entry["im:image"]?.[entry["im:image"].length - 1]?.label;
+				if (!showTitle || !rawImg) continue;
+				const cleanTitle = showTitle.replace(/,\s*Season\s*\d+/i, "").trim();
+				if (seenShows.has(`top:${cleanTitle}`)) continue;
+				seenShows.add(`top:${cleanTitle}`);
+				const target = platformCycle[cycleIdx % platformCycle.length];
+				cycleIdx++;
+				series.push({
+					id: `tv-${entry.id?.attributes?.["im:id"] || cycleIdx}`,
+					appName: target.appName,
+					packageName: target.pkg,
+					title: showTitle,
+					subtitle: `${entry.category?.attributes?.label || "Serie"} · Tendencia`,
+					deepLinkUrl: target.url,
+					posterUrl: upscaleAppleImage(rawImg, "600x600bb"),
+					backdropUrl: upscaleAppleImage(rawImg, "800x800bb"),
+					accentGradient: "linear-gradient(135deg, #161B26 0%, #242E42 100%)",
+					tag: target.appName,
+					genre: entry.category?.attributes?.label,
+					mediaKind: "series"
+				});
+			}
+		}
+		const spotlightMovies = [...movies].sort((a, b) => {
+			const aRecent = (a.releaseDate || "").includes("2026") || (a.releaseDate || "").includes("2025") ? 1 : 0;
+			return ((b.releaseDate || "").includes("2026") || (b.releaseDate || "").includes("2025") ? 1 : 0) - aRecent;
+		}).slice(0, 5);
+		const catalog = {
+			spotlight: spotlightMovies.length > 0 ? spotlightMovies : OFFLINE_FALLBACK_CATALOG.spotlight,
+			movies,
+			series: series.length > 0 ? series : OFFLINE_FALLBACK_CATALOG.series,
+			updatedAt: todayKey
+		};
+		if (movies.length > 0 || series.length > 0) try {
+			localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(catalog));
+		} catch {}
+		return catalog;
+	} catch {
+		return OFFLINE_FALLBACK_CATALOG;
+	}
+}
+function resolvePackageAlias(preferredPkg, installedApps) {
+	const installedSet = new Set(installedApps.map((a) => a.packageName));
+	if (installedSet.has(preferredPkg)) return preferredPkg;
+	const aliases = PACKAGE_ALIASES[preferredPkg] || [];
+	for (const alias of aliases) if (installedSet.has(alias)) return alias;
+	return preferredPkg;
+}
+// src/components/GoogleTvHome.tsx
+var STREAMING_FILTERS = [
+	{
+		id: "all",
+		label: "Todas"
+	},
+	{
+		id: "com.netflix.ninja",
+		label: "Netflix"
+	},
+	{
+		id: "com.wbd.stream",
+		label: "Max"
+	},
+	{
+		id: "com.amazon.amazonvideo.livingroom",
+		label: "Prime Video"
+	},
+	{
+		id: "com.disney.disneyplus",
+		label: "Disney+"
+	},
+	{
+		id: "com.google.android.youtube.tv",
+		label: "YouTube"
+	}
+];
+function CircularAppShortcut({ app, isInitial = false, onLaunch, onToggleFavorite }) {
+	const ref = (0, import_react.useRef)(null);
+	const [imgErr, setImgErr] = (0, import_react.useState)(false);
+	(0, import_react.useEffect)(() => {
+		const el = ref.current;
+		if (!el) return;
+		const handler = () => onToggleFavorite(app);
+		el.addEventListener("tv-longpress", handler);
+		return () => el.removeEventListener("tv-longpress", handler);
+	}, [app, onToggleFavorite]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+		ref,
+		type: "button",
+		"data-tv-focusable": "true",
+		"data-tv-supports-longpress": "true",
+		"data-tv-initial": isInitial ? "true" : void 0,
+		"data-tv-id": `row-app-${app.packageName}`,
+		onClick: () => onLaunch(app),
+		className: "tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2.5 py-2 focus:outline-none",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "w-[84px] h-[84px] rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-800 border-2 border-zinc-900/10 dark:border-white/15 group-focus:scale-110 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 transition-transform duration-150 flex items-center justify-center shadow-md",
+			children: app.icon && !imgErr ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+				src: app.icon,
+				alt: app.name,
+				referrerPolicy: "no-referrer",
+				onError: () => setImgErr(true),
+				className: "w-full h-full object-cover"
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppWindow, { className: "w-8 h-8 text-zinc-400" })
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			className: "w-full text-[13px] font-medium text-zinc-700 dark:text-zinc-300 group-focus:text-zinc-950 dark:group-focus:text-white group-focus:font-semibold truncate text-center leading-tight",
+			children: app.name
+		})]
+	});
+}
+function GoogleTvHome({ allApps, favoriteApps, liveCatalog, isLoadingCatalog, isNative, showSuggestions, onRefreshCatalog, onLaunchFeatured, onLaunchApp, onLaunchSuggestion, onToggleFavorite, onOpenAllApps }) {
+	const [heroIdx, setHeroIdx] = (0, import_react.useState)(0);
+	const [platformFilter, setPlatformFilter] = (0, import_react.useState)("all");
+	const [failedImages, setFailedImages] = (0, import_react.useState)({});
+	const markImageFailed = (url) => {
+		setFailedImages((prev) => prev[url] ? prev : {
+			...prev,
+			[url]: true
+		});
+	};
+	const circularApps = (0, import_react.useMemo)(() => {
+		return [allApps.find((a) => a.packageName === FEATURED_GAME.packageName) || {
+			packageName: FEATURED_GAME.packageName,
+			name: FEATURED_GAME.name,
+			icon: "",
+			isLeanback: true,
+			isSystemApp: false,
+			category: "games"
+		}, ...favoriteApps.filter((a) => a.packageName !== FEATURED_GAME.packageName)];
+	}, [allApps, favoriteApps]);
+	const spotlightList = liveCatalog.spotlight;
+	const activeHero = spotlightList[heroIdx % Math.max(1, spotlightList.length)] || spotlightList[0];
+	const filteredSeries = (0, import_react.useMemo)(() => {
+		if (platformFilter === "all") return liveCatalog.series.slice(0, 14);
+		return liveCatalog.series.filter((s) => s.packageName === platformFilter).slice(0, 14);
+	}, [liveCatalog.series, platformFilter]);
+	(0, import_react.useEffect)(() => {
+		if (spotlightList.length <= 1) return;
+		const timer = window.setInterval(() => {
+			setHeroIdx((prev) => (prev + 1) % spotlightList.length);
+		}, 9e3);
+		return () => window.clearInterval(timer);
+	}, [spotlightList.length]);
+	const handleHeroLaunch = () => {
+		if (!activeHero) return;
+		if (activeHero.packageName === FEATURED_GAME.packageName) {
+			onLaunchFeatured();
+			return;
+		}
+		const resolvedPkg = resolvePackageAlias(activeHero.packageName, allApps);
+		onLaunchSuggestion({
+			...activeHero,
+			packageName: resolvedPkg
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex-1 overflow-y-auto no-scrollbar px-12 pb-12 space-y-8",
+		children: [
+			activeHero && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				"aria-label": "Destacado de hoy",
+				className: "relative w-full h-[290px] lg:h-[320px] rounded-3xl overflow-hidden border border-zinc-900/10 dark:border-white/10 bg-white dark:bg-[#141720]",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, {
+						mode: "wait",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
+							initial: { opacity: 0 },
+							animate: { opacity: 1 },
+							exit: { opacity: 0 },
+							transition: { duration: .3 },
+							className: "absolute inset-0",
+							children: [
+								activeHero.backdropUrl && !failedImages[activeHero.backdropUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: activeHero.backdropUrl,
+									alt: activeHero.title,
+									referrerPolicy: "no-referrer",
+									onError: () => markImageFailed(activeHero.backdropUrl),
+									className: "absolute right-0 top-0 h-full w-[58%] object-cover object-center"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "absolute right-0 top-0 h-full w-[65%]",
+									style: { background: activeHero.accentGradient }
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-r from-white via-white/92 to-white/10 dark:from-[#12151E] dark:via-[#12151E]/90 dark:to-transparent" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent dark:from-[#12151E]/75 dark:via-transparent dark:to-transparent" })
+							]
+						}, activeHero.id)
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "relative z-10 h-full flex flex-col justify-between p-8 lg:p-10 max-w-2xl",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-300",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: activeHero.tag }),
+									activeHero.releaseDate && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										"aria-hidden": "true",
+										children: "·"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "tabular-nums",
+										children: activeHero.releaseDate
+									})] }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										"aria-hidden": "true",
+										children: "·"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Cartelera actualizada" })
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+								className: "font-display text-3xl lg:text-5xl font-bold tracking-tight text-zinc-950 dark:text-white text-balance line-clamp-2",
+								children: activeHero.title
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "mt-2.5 text-sm lg:text-base text-zinc-700 dark:text-zinc-300 line-clamp-2 max-w-xl leading-relaxed",
+								children: activeHero.subtitle
+							})] }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									"data-tv-focusable": "true",
+									"data-tv-id": "hero-primary-cta",
+									onClick: handleHeroLaunch,
+									className: "tv-focusable inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: activeHero.packageName === FEATURED_GAME.packageName ? "Jugar ahora" : isNative ? "Ver en YouTube TV" : "Explorar título" })]
+								}), spotlightList.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-1.5",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"data-tv-focusable": "true",
+										"data-tv-id": "hero-prev",
+										"aria-label": "Destacado anterior",
+										onClick: () => setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length),
+										className: "tv-focusable w-9 h-9 rounded-full bg-zinc-900/10 dark:bg-white/12 text-zinc-800 dark:text-white flex items-center justify-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "w-4 h-4" })
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"data-tv-focusable": "true",
+										"data-tv-id": "hero-next",
+										"aria-label": "Siguiente destacado",
+										onClick: () => setHeroIdx((prev) => (prev + 1) % spotlightList.length),
+										className: "tv-focusable w-9 h-9 rounded-full bg-zinc-900/10 dark:bg-white/12 text-zinc-800 dark:text-white flex items-center justify-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "w-4 h-4" })
+									})]
+								})]
+							})
+						]
+					}),
+					spotlightList.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "absolute bottom-6 right-8 z-10 flex items-center gap-1.5",
+						children: spotlightList.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `h-1.5 rounded-full transition-all ${idx === heroIdx % spotlightList.length ? "w-6 bg-zinc-900 dark:bg-white" : "w-1.5 bg-zinc-900/25 dark:bg-white/30"}` }, item.id))
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				"aria-label": "Tus aplicaciones",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center justify-between mb-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "font-display text-lg font-semibold text-zinc-900 dark:text-white",
+						children: "Tus aplicaciones"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-xs text-zinc-500 dark:text-zinc-400",
+						children: "Mantén OK o pulsa M para fijar o quitar de esta fila"
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-start gap-4 overflow-x-auto no-scrollbar py-2 px-1 -mx-1",
+					children: [circularApps.map((app, index) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircularAppShortcut, {
+						app,
+						isInitial: index === 0,
+						onLaunch: (clicked) => clicked.packageName === FEATURED_GAME.packageName ? onLaunchFeatured() : onLaunchApp(clicked),
+						onToggleFavorite
+					}, app.packageName)), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-id": "row-all-apps",
+						onClick: onOpenAllApps,
+						className: "tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2.5 py-2 focus:outline-none",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "w-[84px] h-[84px] rounded-full bg-zinc-200/80 dark:bg-white/10 border-2 border-zinc-900/10 dark:border-white/15 group-focus:scale-110 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:bg-zinc-900 group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 transition-transform duration-150 flex items-center justify-center text-zinc-700 dark:text-zinc-200",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutGrid, { className: "w-7 h-7" })
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "w-full text-[13px] font-medium text-zinc-700 dark:text-zinc-300 group-focus:text-zinc-950 dark:group-focus:text-white group-focus:font-semibold truncate text-center leading-tight",
+							children: "Ver todas"
+						})]
+					})]
+				})]
+			}),
+			showSuggestions && liveCatalog.movies.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				"aria-label": "Estrenos y películas populares",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center justify-between mb-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "font-display text-lg font-semibold text-zinc-900 dark:text-white",
+						children: "Estrenos y películas populares"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-id": "home-refresh-movies",
+						onClick: onRefreshCatalog,
+						className: "tv-focusable inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 px-3 py-1 rounded-full focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: `w-3.5 h-3.5 ${isLoadingCatalog ? "animate-spin" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Actualizar" })]
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex items-start gap-4 overflow-x-auto no-scrollbar py-2 px-1 -mx-1",
+					children: liveCatalog.movies.slice(0, 16).map((movie) => {
+						const resolvedPkg = resolvePackageAlias(movie.packageName, allApps);
+						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							"data-tv-focusable": "true",
+							"data-tv-id": `movie-${movie.id}`,
+							onClick: () => onLaunchSuggestion({
+								...movie,
+								packageName: resolvedPkg
+							}),
+							className: "tv-focusable group w-[148px] shrink-0 text-left focus:outline-none",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "w-[148px] h-[222px] rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-900 border-2 border-transparent group-focus:border-zinc-900 dark:group-focus:border-white group-focus:scale-[1.06] transition-transform duration-150 shadow-md",
+								children: movie.posterUrl && !failedImages[movie.posterUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: movie.posterUrl,
+									alt: movie.title,
+									referrerPolicy: "no-referrer",
+									onError: () => markImageFailed(movie.posterUrl),
+									className: "w-full h-full object-cover"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "w-full h-full flex items-end p-3",
+									style: { background: movie.accentGradient },
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "font-display text-sm font-bold text-white line-clamp-3",
+										children: movie.title
+									})
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-2 px-0.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "text-[13px] font-semibold text-zinc-900 dark:text-white truncate",
+									children: movie.title
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5",
+									children: [movie.genre || movie.tag, movie.releaseDate ? ` · ${movie.releaseDate}` : ""]
+								})]
+							})]
+						}, movie.id);
+					})
+				})]
+			}),
+			showSuggestions && liveCatalog.series.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				"aria-label": "En tus plataformas",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-wrap items-center justify-between gap-3 mb-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "font-display text-lg font-semibold text-zinc-900 dark:text-white",
+						children: "Series y emisiones en tus plataformas"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex items-center gap-1.5 overflow-x-auto no-scrollbar",
+						children: STREAMING_FILTERS.map((f) => {
+							const active = platformFilter === f.id;
+							return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"data-tv-focusable": "true",
+								"data-tv-id": `home-plat-${f.id}`,
+								onClick: () => setPlatformFilter(f.id),
+								className: `tv-focusable px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${active ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950" : "bg-zinc-900/6 dark:bg-white/8 text-zinc-600 dark:text-zinc-300"} focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white`,
+								children: f.label
+							}, f.id);
+						})
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex items-start gap-4 overflow-x-auto no-scrollbar py-2 px-1 -mx-1",
+					children: filteredSeries.map((show) => {
+						const resolvedPkg = resolvePackageAlias(show.packageName, allApps);
+						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							"data-tv-focusable": "true",
+							"data-tv-id": `series-${show.id}`,
+							onClick: () => onLaunchSuggestion({
+								...show,
+								packageName: resolvedPkg
+							}),
+							className: "tv-focusable group w-[224px] shrink-0 text-left focus:outline-none",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "w-[224px] h-[128px] rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-900 border-2 border-transparent group-focus:border-zinc-900 dark:group-focus:border-white group-focus:scale-[1.05] transition-transform duration-150 shadow-md",
+								children: show.posterUrl && !failedImages[show.posterUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: show.posterUrl,
+									alt: show.title,
+									referrerPolicy: "no-referrer",
+									onError: () => markImageFailed(show.posterUrl),
+									className: "w-full h-full object-cover"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "w-full h-full flex items-end p-3.5",
+									style: { background: show.accentGradient },
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "font-display text-sm font-bold text-white line-clamp-2",
+										children: show.title
+									})
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-2 px-0.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "text-[13px] font-semibold text-zinc-900 dark:text-white truncate",
+									children: show.title
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5",
+									children: [
+										show.tag,
+										" · ",
+										show.subtitle
+									]
+								})]
+							})]
+						}, show.id);
+					})
+				})]
+			})
+		]
+	});
+}
+// src/components/LivePlatformsView.tsx
+var PLATFORM_TABS = [
+	{
+		id: "all",
+		label: "Todas las plataformas"
+	},
+	{
+		id: "com.netflix.ninja",
+		label: "Netflix"
+	},
+	{
+		id: "com.wbd.stream",
+		label: "Max"
+	},
+	{
+		id: "com.amazon.amazonvideo.livingroom",
+		label: "Prime Video"
+	},
+	{
+		id: "com.disney.disneyplus",
+		label: "Disney+"
+	},
+	{
+		id: "com.google.android.youtube.tv",
+		label: "YouTube"
+	}
+];
+function LivePlatformsView({ allApps, series, isLoading, onRefreshFeed, onLaunchSuggestion }) {
+	const [selectedPlatform, setSelectedPlatform] = (0, import_react.useState)("all");
+	const [failedUrls, setFailedUrls] = (0, import_react.useState)({});
+	const filteredItems = (0, import_react.useMemo)(() => {
+		if (selectedPlatform === "all") return series;
+		return series.filter((item) => item.packageName === selectedPlatform);
+	}, [series, selectedPlatform]);
+	const markFailed = (url) => {
+		setFailedUrls((prev) => prev[url] ? prev : {
+			...prev,
+			[url]: true
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex-1 overflow-y-auto no-scrollbar px-12 pt-4 pb-12",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-wrap items-center justify-between gap-4 mb-6",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+					className: "font-display text-3xl font-bold text-zinc-900 dark:text-white",
+					children: "En vivo y emisiones de hoy"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-sm text-zinc-500 dark:text-zinc-400 mt-1",
+					children: "Catálogo actualizado del día, separado por aplicación para abrirlo directo en tu TV"
+				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					"data-tv-focusable": "true",
+					"data-tv-id": "live-refresh-btn",
+					onClick: onRefreshFeed,
+					className: "tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: `w-4 h-4 ${isLoading ? "animate-spin" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Actualizar catálogo" })]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mb-6",
+				children: PLATFORM_TABS.map((tab, idx) => {
+					const active = selectedPlatform === tab.id;
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-initial": idx === 0 ? "true" : void 0,
+						"data-tv-id": `live-filter-${tab.id}`,
+						onClick: () => setSelectedPlatform(tab.id),
+						className: `tv-focusable px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap shrink-0 ${active ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950" : "bg-zinc-900/6 dark:bg-white/8 text-zinc-600 dark:text-zinc-300"} focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`,
+						children: tab.label
+					}, tab.id);
+				})
+			}),
+			filteredItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "py-16 text-center rounded-3xl border border-zinc-900/8 dark:border-white/10",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tv, { className: "w-8 h-8 text-zinc-400 mx-auto mb-3" }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-base font-medium text-zinc-700 dark:text-zinc-300",
+						children: "No hay emisiones cargadas para esta plataforma hoy."
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-id": "live-show-all",
+						onClick: () => setSelectedPlatform("all"),
+						className: "tv-focusable mt-4 px-5 py-2 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105",
+						children: "Ver todas las plataformas"
+					})
+				]
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5",
+				children: filteredItems.map((item) => {
+					const resolvedPkg = resolvePackageAlias(item.packageName, allApps);
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.button, {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-id": `live-card-${item.id}`,
+						onClick: () => onLaunchSuggestion({
+							...item,
+							packageName: resolvedPkg
+						}),
+						whileFocus: { scale: 1.04 },
+						className: "tv-focusable group text-left rounded-2xl focus:outline-none",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "relative aspect-video w-full rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-900 border-2 border-transparent group-focus:border-zinc-900 dark:group-focus:border-white shadow-lg transition-colors",
+							children: [item.posterUrl && !failedUrls[item.posterUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+								src: item.posterUrl,
+								alt: item.title,
+								referrerPolicy: "no-referrer",
+								onError: () => markFailed(item.posterUrl),
+								className: "w-full h-full object-cover"
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "w-full h-full flex items-center justify-center p-4",
+								style: { background: item.accentGradient },
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-display text-sm font-bold text-white text-center line-clamp-2",
+									children: item.title
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "opacity-0 group-focus:opacity-100 transition-opacity absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 text-white flex items-center justify-center",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowUpRight, { className: "w-4 h-4" })
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "mt-2.5 px-0.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "text-sm font-semibold text-zinc-900 dark:text-white truncate",
+								children: item.title
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5",
+								children: [
+									item.tag,
+									" · ",
+									item.subtitle
+								]
+							})]
+						})]
+					}, item.id);
+				})
+			})
+		]
+	});
+}
 // src/hooks/useSpatialNavigation.ts
 function getFocusableElements(scopeSelector) {
 	const root = scopeSelector ? document.querySelector(scopeSelector) || document : document;
@@ -21618,34 +22564,30 @@ function AppTile({ app, isFavorite, showPackageName = false, focusId, onLaunch, 
 		"data-tv-supports-longpress": "true",
 		"data-tv-id": focusId,
 		onClick: () => onLaunch(app),
-		className: "tv-focusable group relative w-full h-[156px] rounded-3xl bg-white/90 dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 p-4 flex flex-col items-center justify-center gap-3 text-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.06] focus:shadow-2xl",
-		children: [
-			isFavorite && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-				"aria-label": "Fijada en la fila principal",
-				className: "absolute top-3.5 right-3.5 text-amber-500",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "w-4 h-4 fill-amber-500" })
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "w-15 h-15 rounded-2xl bg-zinc-100 dark:bg-zinc-800/90 flex items-center justify-center overflow-hidden shrink-0",
-				children: app.icon && !iconError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-					src: app.icon,
-					alt: app.name,
-					referrerPolicy: "no-referrer",
-					onError: () => setIconError(true),
-					className: "w-full h-full object-contain p-1.5"
-				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppWindow, { className: "w-7 h-7 text-zinc-400" })
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "w-full min-w-0",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "text-[15px] font-semibold truncate leading-tight",
-					children: app.name
-				}), showPackageName && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "mt-0.5 text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600 truncate",
-					children: app.packageName
-				})]
-			})
-		]
+		className: "tv-focusable group relative w-full py-3 px-2 rounded-3xl flex flex-col items-center justify-start gap-3 text-center focus:scale-[1.08]",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "relative w-24 h-24 rounded-full bg-zinc-200 dark:bg-zinc-800 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden flex items-center justify-center shrink-0 transition-all shadow-lg",
+			children: [app.icon && !iconError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+				src: app.icon,
+				alt: app.name,
+				referrerPolicy: "no-referrer",
+				onError: () => setIconError(true),
+				className: "w-full h-full object-cover"
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppWindow, { className: "w-9 h-9 text-zinc-400" }), isFavorite && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				"aria-label": "Fijada en Inicio",
+				className: "absolute bottom-1 right-1 w-6 h-6 rounded-full bg-zinc-950/90 text-amber-400 flex items-center justify-center border border-white/20",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "w-3.5 h-3.5 fill-amber-400" })
+			})]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "w-full min-w-0 px-1",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "text-sm font-medium text-zinc-800 dark:text-zinc-200 group-focus:text-zinc-950 dark:group-focus:text-white group-focus:font-semibold truncate leading-tight",
+				children: app.name
+			}), showPackageName && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "mt-0.5 text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 truncate",
+				children: app.packageName
+			})]
+		})]
 	});
 }
 // src/components/NavaAppsDrawer.tsx
@@ -21663,7 +22605,7 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 	const filteredApps = (0, import_react.useMemo)(() => {
 		return apps.filter((app) => {
 			if (filter === "tv") return app.isLeanback && !app.isSystemApp && app.category !== "games";
-			if (filter === "games") return app.category === "games" || app.packageName.includes("game") || app.packageName.includes("party") || app.packageName.includes("retro");
+			if (filter === "games") return app.category === "games" || app.packageName.includes("game") || app.packageName.includes("party");
 			if (filter === "other") return app.isSystemApp || !app.isLeanback || app.category === "other";
 			return true;
 		});
@@ -21697,7 +22639,7 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 		"aria-label": "Todas las aplicaciones",
 		initial: {
 			opacity: 0,
-			y: 36
+			y: 24
 		},
 		animate: {
 			opacity: 1,
@@ -21705,27 +22647,31 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 		},
 		exit: {
 			opacity: 0,
-			y: 24
+			y: 18
 		},
 		transition: {
-			type: "spring",
-			stiffness: 380,
-			damping: 34
+			duration: .2,
+			ease: [
+				.22,
+				1,
+				.36,
+				1
+			]
 		},
-		className: "fixed inset-0 z-40 bg-[#ECEEF2]/98 dark:bg-[#090B10]/98 flex flex-col px-12 pt-9 pb-8",
+		className: "fixed inset-0 z-40 bg-[#F4F6F9] dark:bg-[#0E1015] flex flex-col px-12 pt-8 pb-8",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 					className: "font-display text-3xl font-bold text-zinc-900 dark:text-white",
-					children: "Aplicaciones instaladas"
+					children: "Tus aplicaciones"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 					className: "text-sm text-zinc-500 dark:text-zinc-400 mt-1",
 					children: [
 						apps.length,
 						" aplicaciones ·",
 						" ",
-						isNative ? "Leídas con PackageManager" : "Vista previa web · En Android TV lee tus apps reales"
+						isNative ? "Detectadas en este Android TV" : "Vista previa web · En Android TV lee tus apps reales"
 					]
 				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center gap-2.5",
@@ -21736,7 +22682,7 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 							"data-tv-id": "drawer-pin-mode",
 							onClick: () => setPinMode((prev) => !prev),
 							className: `tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 ${pinMode ? "bg-amber-500 text-zinc-950" : "bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200"} focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105`,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-4 h-4 ${pinMode ? "fill-zinc-950" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: pinMode ? "Terminar de fijar" : "Fijar en fila" })]
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-4 h-4 ${pinMode ? "fill-zinc-950" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: pinMode ? "Terminar de fijar" : "Fijar en Inicio" })]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 							type: "button",
@@ -21772,14 +22718,17 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 					}, opt.id);
 				}), pinMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 					className: "ml-3 text-sm font-medium text-amber-600 dark:text-amber-400",
-					children: "Pulsa OK en cualquier app para fijarla o quitarla de tu fila principal"
+					children: "Pulsa OK en cualquier icono para fijarlo o quitarlo de Inicio"
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 				className: "flex-1 overflow-y-auto no-scrollbar py-2 px-1 -mx-1",
 				children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4",
-					children: Array.from({ length: 12 }).map((_, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "h-[156px] rounded-3xl bg-zinc-900/6 dark:bg-white/6 animate-pulse" }, idx))
+					className: "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-5",
+					children: Array.from({ length: 14 }).map((_, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-col items-center gap-3 py-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-24 h-24 rounded-full bg-zinc-900/8 dark:bg-white/8 animate-pulse" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-20 h-3 rounded bg-zinc-900/8 dark:bg-white/8 animate-pulse" })]
+					}, idx))
 				}) : filteredApps.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "py-16 text-center",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
@@ -21795,7 +22744,7 @@ function NavaAppsDrawer({ isOpen, apps, favoritePackages, showPackageNames, isLo
 						children: "Ver todas"
 					})]
 				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8",
+					className: "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4 pb-10",
 					children: filteredApps.map((app, index) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						"data-tv-initial": index === 0 ? "true" : void 0,
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppTile, {
@@ -21930,174 +22879,6 @@ function NavaSearchOverlay({ isOpen, apps, onLaunchApp, onClose }) {
 		})
 	}) });
 }
-// src/assets/images/cgames_tv_party_banner_1795483246737.jpg
-var cgames_tv_party_banner_1795483246737_default = "/assets/cgames_tv_party_banner_1795483246737-CaUeovYn.jpg";
-// src/assets/images/tv_bg_midnight_slate_1795483247067.jpg
-var tv_bg_midnight_slate_1795483247067_default = "/assets/tv_bg_midnight_slate_1795483247067-B8c9Cpdl.jpg";
-// src/assets/images/tv_bg_obsidian_1795483246355.jpg
-var tv_bg_obsidian_1795483246355_default = "/assets/tv_bg_obsidian_1795483246355-C-3XWmIh.jpg";
-// src/data/presets.ts
-var FEATURED_GAME = {
-	name: "CgamesTVPARTY",
-	packageName: "com.mandoparty.tv",
-	tagline: "Juego multijugador local para tu TV",
-	bannerImage: cgames_tv_party_banner_1795483246737_default
-};
-var BACKGROUND_PRESETS = [
-	{
-		id: "nava-calm",
-		name: "Calma Nava",
-		description: "Lienzo limpio sin distracciones",
-		type: "gradient",
-		value: "radial-gradient(110% 90% at 50% 0%, #171B24 0%, #090B10 68%)",
-		lightValue: "radial-gradient(110% 90% at 50% 0%, #FFFFFF 0%, #ECEEF2 72%)",
-		swatch: "linear-gradient(160deg, #171B24 0%, #090B10 100%)"
-	},
-	{
-		id: "obsidian-studio",
-		name: "Obsidiana Estudio",
-		description: "Carbón mate con luz cálida lateral",
-		type: "image",
-		value: tv_bg_obsidian_1795483246355_default,
-		lightValue: "linear-gradient(160deg, #F6F4F0 0%, #EAE5DD 100%)",
-		swatch: "linear-gradient(135deg, #101216 0%, #261B12 100%)"
-	},
-	{
-		id: "midnight-slate",
-		name: "Pizarra Nocturna",
-		description: "Gris azulado profundo con brillo tenue",
-		type: "image",
-		value: tv_bg_midnight_slate_1795483247067_default,
-		lightValue: "linear-gradient(160deg, #F2F5F8 0%, #E2E8F0 100%)",
-		swatch: "linear-gradient(135deg, #0E131A 0%, #1B333B 100%)"
-	},
-	{
-		id: "pure-oled",
-		name: "Negro Puro OLED",
-		description: "Máximo contraste en sala oscura",
-		type: "solid",
-		value: "#06070A",
-		lightValue: "#F5F6F8",
-		swatch: "#06070A"
-	},
-	{
-		id: "warm-graphite",
-		name: "Grafito Neutro",
-		description: "Superficie mate uniforme",
-		type: "gradient",
-		value: "linear-gradient(160deg, #12141A 0%, #1B1E26 100%)",
-		lightValue: "linear-gradient(160deg, #F8F8FA 0%, #E9EBEF 100%)",
-		swatch: "linear-gradient(160deg, #12141A 0%, #1B1E26 100%)"
-	},
-	{
-		id: "cobalt-night",
-		name: "Horizonte Cobalto",
-		description: "Degradado sereno azul profundo",
-		type: "gradient",
-		value: "linear-gradient(160deg, #090F1D 0%, #121F38 100%)",
-		lightValue: "linear-gradient(160deg, #F0F5FF 0%, #DFE8FA 100%)",
-		swatch: "linear-gradient(160deg, #090F1D 0%, #121F38 100%)"
-	}
-];
-var DEFAULT_FAVORITES = [
-	"com.mandoparty.tv",
-	"com.google.android.youtube.tv",
-	"com.netflix.ninja",
-	"com.wbd.stream",
-	"com.amazon.amazonvideo.livingroom",
-	"com.disney.disneyplus",
-	"com.spotify.tv.android"
-];
-var DEFAULT_SETTINGS = {
-	themeMode: "dark",
-	backgroundId: "nava-calm",
-	use24HourClock: false,
-	showPackageNames: false,
-	showSuggestions: true,
-	otaRepo: "tu-usuario/cTV-OS",
-	favoritePackages: DEFAULT_FAVORITES
-};
-function makeSvgIcon(bg, label, accent = "#FFFFFF") {
-	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" rx="30" fill="${bg}"/>
-    <text x="64" y="76" font-family="system-ui, sans-serif" font-size="42" font-weight="700" fill="${accent}" text-anchor="middle">${label}</text>
-  </svg>`;
-	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-var WEB_PREVIEW_APPS = [
-	{
-		packageName: "com.mandoparty.tv",
-		name: "CgamesTVPARTY",
-		icon: makeSvgIcon("#EA580C", "CG", "#FFF7ED"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "games"
-	},
-	{
-		packageName: "com.google.android.youtube.tv",
-		name: "YouTube",
-		icon: makeSvgIcon("#E11D48", "YT", "#FFFFFF"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.netflix.ninja",
-		name: "Netflix",
-		icon: makeSvgIcon("#B91C1C", "N", "#FFFFFF"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.wbd.stream",
-		name: "Max (HBO)",
-		icon: makeSvgIcon("#1D4ED8", "MAX", "#EFF6FF"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.amazon.amazonvideo.livingroom",
-		name: "Prime Video",
-		icon: makeSvgIcon("#0369A1", "PV", "#F0F9FF"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.disney.disneyplus",
-		name: "Disney+",
-		icon: makeSvgIcon("#1D4ED8", "D+", "#EFF6FF"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.spotify.tv.android",
-		name: "Spotify",
-		icon: makeSvgIcon("#16A34A", "SP", "#ECFDF5"),
-		isLeanback: true,
-		isSystemApp: false,
-		category: "tv"
-	},
-	{
-		packageName: "com.google.android.play.games",
-		name: "Play Juegos",
-		icon: makeSvgIcon("#047857", "PJ", "#ECFDF5"),
-		isLeanback: true,
-		isSystemApp: true,
-		category: "games"
-	},
-	{
-		packageName: "com.android.tv.settings",
-		name: "Configuración TV",
-		icon: makeSvgIcon("#3F3F46", "CFG", "#F4F4F5"),
-		isLeanback: true,
-		isSystemApp: true,
-		category: "other"
-	}
-];
 // src/components/NavaSettingsDrawer.tsx
 function NavaSettingsDrawer({ isOpen, settings, appVersion, isNative, onUpdateSettings, onOpenAndroidSettings, onOpenOtaModal, onClose }) {
 	const [repoInput, setRepoInput] = (0, import_react.useState)(settings.otaRepo);
@@ -22201,18 +22982,13 @@ function NavaSettingsDrawer({ isOpen, settings, appVersion, isNative, onUpdateSe
 									"data-tv-id": `settings-bg-${preset.id}`,
 									onClick: () => onUpdateSettings({ backgroundId: preset.id }),
 									className: `tv-focusable rounded-2xl p-2.5 text-left border ${selected ? "border-amber-500 bg-white dark:bg-white/10" : "border-zinc-900/8 dark:border-white/10 bg-white/70 dark:bg-white/[0.04]"} focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.03]`,
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 										className: "h-12 w-full rounded-xl mb-2 relative overflow-hidden border border-black/10",
 										style: { background: settings.themeMode === "light" ? preset.lightValue : preset.swatch },
-										children: [settings.themeMode === "dark" && preset.type === "image" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-											src: preset.value,
-											alt: preset.name,
-											referrerPolicy: "no-referrer",
-											className: "w-full h-full object-cover"
-										}), selected && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										children: selected && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 											className: "absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3 h-3 stroke-[3]" })
-										})]
+										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 										className: "text-xs font-semibold text-zinc-900 dark:text-white truncate",
 										children: preset.name
@@ -22376,764 +23152,8 @@ function NavaSettingsDrawer({ isOpen, settings, appVersion, isNative, onUpdateSe
 		})
 	}) });
 }
-// src/assets/images/poster_dune_max_1795485086679.jpg
-var poster_dune_max_1795485086679_default = "/assets/poster_dune_max_1795485086679-O4OxIx7c.jpg";
-// src/assets/images/poster_interstellar_prime_1795485087463.jpg
-var poster_interstellar_prime_1795485087463_default = "/assets/poster_interstellar_prime_1795485087463-CS1h8loM.jpg";
-// src/assets/images/poster_stranger_things_netflix_1795485087498.jpg
-var poster_stranger_things_netflix_1795485087498_default = "/assets/poster_stranger_things_netflix_1795485087498-BpG7rhmB.jpg";
-// src/data/suggestions.ts
-var ALL_REAL_SUGGESTIONS = [
-	{
-		id: "nf-1",
-		appName: "Netflix",
-		packageName: "com.netflix.ninja",
-		title: "Stranger Things",
-		subtitle: "Ciencia ficción y misterio en Hawkins",
-		deepLinkUrl: "https://www.netflix.com/title/80057281",
-		posterUrl: poster_stranger_things_netflix_1795485087498_default,
-		accentGradient: "linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)",
-		tag: "Netflix"
-	},
-	{
-		id: "nf-2",
-		appName: "Netflix",
-		packageName: "com.netflix.ninja",
-		title: "El Juego del Calamar",
-		subtitle: "Suspenso coreano de alto impacto en 4K",
-		deepLinkUrl: "https://www.netflix.com/title/81040344",
-		posterUrl: poster_stranger_things_netflix_1795485087498_default,
-		accentGradient: "linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%)",
-		tag: "Netflix"
-	},
-	{
-		id: "max-1",
-		appName: "Max (HBO)",
-		packageName: "com.wbd.stream",
-		title: "Duna: Parte Dos",
-		subtitle: "Épica cinematográfica de Denis Villeneuve",
-		deepLinkUrl: "https://play.max.com/",
-		posterUrl: poster_dune_max_1795485086679_default,
-		accentGradient: "linear-gradient(135deg, #451A03 0%, #D97706 100%)",
-		tag: "Max · HBO"
-	},
-	{
-		id: "max-2",
-		appName: "Max (HBO)",
-		packageName: "com.wbd.stream",
-		title: "The Batman",
-		subtitle: "Suspenso nocturno en Gotham City",
-		deepLinkUrl: "https://play.max.com/movies",
-		posterUrl: "/assets/poster_the_batman_max_1795485087113-CjDWwWBu.jpg",
-		accentGradient: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)",
-		tag: "Max · HBO"
-	},
-	{
-		id: "pv-1",
-		appName: "Prime Video",
-		packageName: "com.amazon.amazonvideo.livingroom",
-		title: "Interestelar",
-		subtitle: "Viaje espacial épico en Ultra HD",
-		deepLinkUrl: "https://app.primevideo.com/",
-		posterUrl: poster_interstellar_prime_1795485087463_default,
-		accentGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)",
-		tag: "Prime Video"
-	},
-	{
-		id: "pv-2",
-		appName: "Prime Video",
-		packageName: "com.amazon.amazonvideo.livingroom",
-		title: "Fallout",
-		subtitle: "Aventura postapocalíptica en 4K HDR",
-		deepLinkUrl: "https://app.primevideo.com/",
-		posterUrl: poster_dune_max_1795485086679_default,
-		accentGradient: "linear-gradient(135deg, #14532D 0%, #16A34A 100%)",
-		tag: "Prime Video"
-	},
-	{
-		id: "yt-1",
-		appName: "YouTube",
-		packageName: "com.google.android.youtube.tv",
-		title: "Tendencias en tu pantalla",
-		subtitle: "Explora los estrenos y directos del día",
-		deepLinkUrl: "https://www.youtube.com/tv#/explore",
-		posterUrl: poster_interstellar_prime_1795485087463_default,
-		accentGradient: "linear-gradient(135deg, #881337 0%, #E11D48 100%)",
-		tag: "YouTube"
-	},
-	{
-		id: "dp-1",
-		appName: "Disney+",
-		packageName: "com.disney.disneyplus",
-		title: "The Mandalorian",
-		subtitle: "Aventuras en la galaxia Star Wars",
-		deepLinkUrl: "https://www.disneyplus.com/home",
-		posterUrl: poster_interstellar_prime_1795485087463_default,
-		accentGradient: "linear-gradient(135deg, #172554 0%, #1D4ED8 100%)",
-		tag: "Disney+"
-	},
-	{
-		id: "cg-1",
-		appName: "CgamesTVPARTY",
-		packageName: "com.mandoparty.tv",
-		title: "Torneo Local con Mandos",
-		subtitle: "Minijuegos cooperativos para toda la familia",
-		deepLinkUrl: "cgamestv://party",
-		posterUrl: cgames_tv_party_banner_1795483246737_default,
-		accentGradient: "linear-gradient(135deg, #9A3412 0%, #EA580C 100%)",
-		tag: "CgamesTVPARTY"
-	}
-];
-var PACKAGE_ALIASES = {
-	"com.wbd.stream": [
-		"com.hbo.hbonow",
-		"com.hbomax",
-		"com.hbo.android.app"
-	],
-	"com.google.android.youtube.tv": ["com.liskovsoft.smarttubetv.beta", "com.liskovsoft.smarttubetv"],
-	"com.amazon.amazonvideo.livingroom": ["com.amazon.avod.thirdpartyclient"]
-};
-var LIVE_CACHE_KEY = "ctvos_daily_catalog_v1";
-function getDailySeed() {
-	const now = /* @__PURE__ */ new Date();
-	return now.getFullYear() * 1e3 + now.getMonth() * 40 + now.getDate();
-}
-function mapPlatformToPackage(channelName) {
-	const lower = channelName.toLowerCase();
-	if (lower.includes("netflix")) return {
-		appName: "Netflix",
-		packageName: "com.netflix.ninja",
-		deepLinkUrl: "https://www.netflix.com/browse",
-		accentGradient: "linear-gradient(135deg, #450A0A 0%, #B91C1C 100%)",
-		tag: "Netflix"
-	};
-	if (lower.includes("hbo") || lower.includes("max")) return {
-		appName: "Max (HBO)",
-		packageName: "com.wbd.stream",
-		deepLinkUrl: "https://play.max.com/",
-		accentGradient: "linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%)",
-		tag: "Max · HBO"
-	};
-	if (lower.includes("amazon") || lower.includes("prime")) return {
-		appName: "Prime Video",
-		packageName: "com.amazon.amazonvideo.livingroom",
-		deepLinkUrl: "https://app.primevideo.com/",
-		accentGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%)",
-		tag: "Prime Video"
-	};
-	if (lower.includes("disney")) return {
-		appName: "Disney+",
-		packageName: "com.disney.disneyplus",
-		deepLinkUrl: "https://www.disneyplus.com/home",
-		accentGradient: "linear-gradient(135deg, #172554 0%, #1D4ED8 100%)",
-		tag: "Disney+"
-	};
-	if (lower.includes("youtube")) return {
-		appName: "YouTube",
-		packageName: "com.google.android.youtube.tv",
-		deepLinkUrl: "https://www.youtube.com/tv#/explore",
-		accentGradient: "linear-gradient(135deg, #881337 0%, #E11D48 100%)",
-		tag: "YouTube"
-	};
-	return null;
-}
-async function fetchDailyStreamingCatalog() {
-	const todayKey = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-	try {
-		const cachedRaw = localStorage.getItem(LIVE_CACHE_KEY);
-		if (cachedRaw) {
-			const cached = JSON.parse(cachedRaw);
-			if (cached.date === todayKey && Array.isArray(cached.items) && cached.items.length > 0) return cached.items;
-		}
-	} catch {}
-	try {
-		const controller = new AbortController();
-		const timeoutId = window.setTimeout(() => controller.abort(), 5e3);
-		const page = getDailySeed() % 4;
-		const res = await fetch(`https://api.tvmaze.com/shows?page=${page}`, { signal: controller.signal });
-		window.clearTimeout(timeoutId);
-		if (!res.ok) return ALL_REAL_SUGGESTIONS;
-		const shows = await res.json();
-		if (!Array.isArray(shows)) return ALL_REAL_SUGGESTIONS;
-		const perService = /* @__PURE__ */ new Map();
-		for (const show of shows) {
-			const channel = show.webChannel?.name || show.network?.name || "";
-			const poster = show.image?.original || show.image?.medium;
-			if (!channel || !poster) continue;
-			const mapped = mapPlatformToPackage(channel);
-			if (!mapped) continue;
-			const list = perService.get(mapped.packageName) || [];
-			if (list.length >= 6) continue;
-			const genreText = show.genres && show.genres.length > 0 ? show.genres.slice(0, 2).join(" · ") : "Serie destacada";
-			const scoreText = show.rating?.average ? `★ ${show.rating.average}` : "";
-			list.push({
-				id: `tvm-${show.id}`,
-				appName: mapped.appName,
-				packageName: mapped.packageName,
-				title: show.name,
-				subtitle: [genreText, scoreText].filter(Boolean).join(" · "),
-				deepLinkUrl: mapped.deepLinkUrl,
-				posterUrl: poster.replace(/^http:\/\//i, "https://"),
-				accentGradient: mapped.accentGradient,
-				tag: mapped.tag
-			});
-			perService.set(mapped.packageName, list);
-		}
-		const merged = [...Array.from(perService.values()).flat(), ...ALL_REAL_SUGGESTIONS.filter((s) => !perService.has(s.packageName))];
-		if (merged.length > 0) {
-			try {
-				localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({
-					date: todayKey,
-					items: merged
-				}));
-			} catch {}
-			return merged;
-		}
-	} catch {}
-	return ALL_REAL_SUGGESTIONS;
-}
-function resolvePackageAlias(preferredPkg, installedApps) {
-	const installedSet = new Set(installedApps.map((a) => a.packageName));
-	if (installedSet.has(preferredPkg)) return preferredPkg;
-	const aliases = PACKAGE_ALIASES[preferredPkg] || [];
-	for (const alias of aliases) if (installedSet.has(alias)) return alias;
-	return preferredPkg;
-}
-function getContextualSuggestions(focusedPackage, _installedApps, catalog = ALL_REAL_SUGGESTIONS) {
-	const daySeed = getDailySeed();
-	if (focusedPackage) {
-		const matching = catalog.filter((s) => {
-			if (s.packageName === focusedPackage) return true;
-			return (PACKAGE_ALIASES[s.packageName] || []).includes(focusedPackage);
-		});
-		if (matching.length > 0) return matching.slice(0, 6);
-	}
-	const servicesOrder = [
-		"com.netflix.ninja",
-		"com.wbd.stream",
-		"com.amazon.amazonvideo.livingroom",
-		"com.google.android.youtube.tv",
-		"com.disney.disneyplus",
-		"com.mandoparty.tv"
-	];
-	const curated = [];
-	for (const pkg of servicesOrder) {
-		const list = catalog.filter((s) => s.packageName === pkg);
-		if (list.length > 0) {
-			const index = (daySeed + curated.length) % list.length;
-			curated.push(list[index]);
-		}
-	}
-	return curated;
-}
-// src/components/NavaSingleRowHome.tsx
-function NavaRowAppCard({ app, isFocused, onFocusItem, onLaunch, onToggleFavorite }) {
-	const ref = (0, import_react.useRef)(null);
-	const [imgErr, setImgErr] = (0, import_react.useState)(false);
-	(0, import_react.useEffect)(() => {
-		const el = ref.current;
-		if (!el) return;
-		const handler = () => onToggleFavorite(app);
-		el.addEventListener("tv-longpress", handler);
-		return () => el.removeEventListener("tv-longpress", handler);
-	}, [app, onToggleFavorite]);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.button, {
-		ref,
-		type: "button",
-		"data-tv-focusable": "true",
-		"data-tv-supports-longpress": "true",
-		"data-tv-id": `row-app-${app.packageName}`,
-		onFocus: onFocusItem,
-		onMouseEnter: onFocusItem,
-		onClick: () => onLaunch(app),
-		animate: {
-			scale: isFocused ? 1.08 : 1,
-			y: isFocused ? -5 : 0
-		},
-		transition: {
-			type: "spring",
-			stiffness: 420,
-			damping: 32,
-			mass: .8
-		},
-		className: `tv-focusable relative w-[156px] h-[152px] shrink-0 rounded-3xl flex flex-col items-center justify-center gap-3 p-4 border transition-colors ${isFocused ? "bg-white text-zinc-950 border-zinc-900/20 shadow-2xl dark:bg-zinc-900 dark:text-white dark:border-white ring-2 ring-zinc-900 dark:ring-white" : "bg-white/85 text-zinc-800 border-zinc-900/8 dark:bg-white/[0.06] dark:text-zinc-200 dark:border-white/10"}`,
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "w-15 h-15 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/90 flex items-center justify-center shrink-0",
-			children: app.icon && !imgErr ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-				src: app.icon,
-				alt: app.name,
-				referrerPolicy: "no-referrer",
-				onError: () => setImgErr(true),
-				className: "w-full h-full object-contain p-1.5"
-			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppWindow, { className: "w-7 h-7 text-zinc-400" })
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-			className: "w-full text-[15px] font-semibold truncate text-center leading-tight",
-			children: app.name
-		})]
-	});
-}
-function NavaSingleRowHome({ allApps, favoriteApps, totalAppsCount, featuredInstalled, isNative, showPackageNames, showSuggestions, onLaunchFeatured, onLaunchApp, onLaunchSuggestion, onToggleFavorite, onOpenAllApps }) {
-	const [spotlight, setSpotlight] = (0, import_react.useState)({ kind: "featured" });
-	const [failedImages, setFailedImages] = (0, import_react.useState)({});
-	const [lastFocusedPkg, setLastFocusedPkg] = (0, import_react.useState)(FEATURED_GAME.packageName);
-	const [catalog, setCatalog] = (0, import_react.useState)(ALL_REAL_SUGGESTIONS);
-	(0, import_react.useEffect)(() => {
-		if (!showSuggestions) return;
-		let cancelled = false;
-		fetchDailyStreamingCatalog().then((items) => {
-			if (!cancelled && items.length > 0) setCatalog(items);
-		}).catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, [showSuggestions]);
-	const markImageFailed = (url) => {
-		setFailedImages((prev) => prev[url] ? prev : {
-			...prev,
-			[url]: true
-		});
-	};
-	const rowFavorites = favoriteApps.filter((app) => app.packageName !== FEATURED_GAME.packageName);
-	const suggestions = (0, import_react.useMemo)(() => {
-		if (!showSuggestions) return [];
-		return getContextualSuggestions(lastFocusedPkg, allApps, catalog);
-	}, [
-		showSuggestions,
-		lastFocusedPkg,
-		allApps,
-		catalog
-	]);
-	const isFeaturedFocused = spotlight.kind === "featured";
-	const isAllAppsFocused = spotlight.kind === "all_apps";
-	const activeHeroImage = spotlight.kind === "suggestion" ? spotlight.suggestion.posterUrl : FEATURED_GAME.bannerImage;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "relative flex-1 flex flex-col justify-end pb-9 overflow-hidden",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: (isFeaturedFocused || spotlight.kind === "suggestion") && !failedImages[activeHeroImage] && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-				initial: {
-					opacity: 0,
-					scale: 1.03
-				},
-				animate: {
-					opacity: .44,
-					scale: 1
-				},
-				exit: { opacity: 0 },
-				transition: {
-					duration: .35,
-					ease: [
-						.22,
-						1,
-						.36,
-						1
-					]
-				},
-				"aria-hidden": "true",
-				className: "pointer-events-none absolute top-0 right-0 w-[68%] h-[72%] overflow-hidden",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-						src: activeHeroImage,
-						alt: "",
-						referrerPolicy: "no-referrer",
-						onError: () => markImageFailed(activeHeroImage),
-						className: "w-full h-full object-cover object-center"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-r from-[#ECEEF2] via-[#ECEEF2]/70 to-transparent dark:from-[#090B10] dark:via-[#090B10]/70 dark:to-transparent" }),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-t from-[#ECEEF2] via-transparent to-[#ECEEF2]/50 dark:from-[#090B10] dark:via-transparent dark:to-[#090B10]/50" })
-				]
-			}, spotlight.kind === "suggestion" ? `poster-${spotlight.suggestion.id}` : "featured-horizon-art") }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "relative z-10 px-12 mb-4 min-h-[104px] flex flex-col justify-end",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AnimatePresence, {
-					mode: "wait",
-					children: [
-						spotlight.kind === "featured" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-							initial: {
-								opacity: 0,
-								y: 10
-							},
-							animate: {
-								opacity: 1,
-								y: 0
-							},
-							exit: {
-								opacity: 0,
-								y: -8
-							},
-							transition: {
-								duration: .18,
-								ease: [
-									.22,
-									1,
-									.36,
-									1
-								]
-							},
-							className: "max-w-2xl",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400 mb-1",
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gamepad2, { className: "w-4 h-4 shrink-0" }),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Acceso directo" }),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"aria-hidden": "true",
-											children: "·"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "font-mono-tabular text-zinc-500 dark:text-zinc-400",
-											children: FEATURED_GAME.packageName
-										})
-									]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-									className: "font-display text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white text-balance",
-									children: FEATURED_GAME.name
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "mt-1.5 text-base text-zinc-600 dark:text-zinc-300",
-									children: [FEATURED_GAME.tagline, isNative && !featuredInstalled ? " · Aún no instalado en este TV" : ""]
-								})
-							]
-						}, "spot-featured"),
-						spotlight.kind === "app" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-							initial: {
-								opacity: 0,
-								y: 10
-							},
-							animate: {
-								opacity: 1,
-								y: 0
-							},
-							exit: {
-								opacity: 0,
-								y: -8
-							},
-							transition: {
-								duration: .18,
-								ease: [
-									.22,
-									1,
-									.36,
-									1
-								]
-							},
-							className: "max-w-2xl",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "w-4 h-4 text-amber-500 fill-amber-500 shrink-0" }),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Aplicación fijada" }),
-										showPackageNames && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"aria-hidden": "true",
-											children: "·"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "font-mono-tabular",
-											children: spotlight.app.packageName
-										})] })
-									]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-									className: "font-display text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white text-balance",
-									children: spotlight.app.name
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "mt-1.5 text-base text-zinc-600 dark:text-zinc-400",
-									children: "Pulsa OK para abrir · Arriba para sugerencias cinemáticas · Mantén OK para quitar"
-								})
-							]
-						}, `spot-${spotlight.app.packageName}`),
-						spotlight.kind === "suggestion" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-							initial: {
-								opacity: 0,
-								y: 10
-							},
-							animate: {
-								opacity: 1,
-								y: 0
-							},
-							exit: {
-								opacity: 0,
-								y: -8
-							},
-							transition: {
-								duration: .18,
-								ease: [
-									.22,
-									1,
-									.36,
-									1
-								]
-							},
-							className: "max-w-2xl",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400 mb-1",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: ["Recomendación de hoy en ", spotlight.suggestion.tag] })]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-									className: "font-display text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white text-balance",
-									children: spotlight.suggestion.title
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "mt-1.5 text-base text-zinc-600 dark:text-zinc-300",
-									children: spotlight.suggestion.subtitle
-								})
-							]
-						}, `spot-sug-${spotlight.suggestion.id}`),
-						spotlight.kind === "all_apps" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-							initial: {
-								opacity: 0,
-								y: 10
-							},
-							animate: {
-								opacity: 1,
-								y: 0
-							},
-							exit: {
-								opacity: 0,
-								y: -8
-							},
-							transition: {
-								duration: .18,
-								ease: [
-									.22,
-									1,
-									.36,
-									1
-								]
-							},
-							className: "max-w-2xl",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-									children: "Biblioteca completa"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-									className: "font-display text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white",
-									children: "Todas las aplicaciones"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "mt-1.5 text-base text-zinc-600 dark:text-zinc-400",
-									children: [totalAppsCount, " aplicaciones detectadas en tu Android TV · Pulsa OK para explorar"]
-								})
-							]
-						}, "spot-all-apps")
-					]
-				})
-			}),
-			showSuggestions && suggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				"aria-label": "Recomendaciones de cine y streaming",
-				className: "relative z-10 px-12 mb-2",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex items-center justify-between mb-2",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-3.5 h-3.5 text-amber-500 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Recomendaciones de hoy (Netflix, Max, Prime Video, YouTube)" })]
-					})
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex items-center gap-4 overflow-x-auto no-scrollbar py-2 px-2 -mx-2",
-					children: suggestions.map((sug) => {
-						const isSugFocused = spotlight.kind === "suggestion" && spotlight.suggestion.id === sug.id;
-						const resolvedPkg = resolvePackageAlias(sug.packageName, allApps);
-						const isInstalled = allApps.some((a) => a.packageName === resolvedPkg);
-						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.button, {
-							type: "button",
-							"data-tv-focusable": "true",
-							"data-tv-id": `sug-${sug.id}`,
-							onFocus: () => {
-								setSpotlight({
-									kind: "suggestion",
-									suggestion: sug
-								});
-								setLastFocusedPkg(sug.packageName);
-							},
-							onMouseEnter: () => {
-								setSpotlight({
-									kind: "suggestion",
-									suggestion: sug
-								});
-								setLastFocusedPkg(sug.packageName);
-							},
-							onClick: () => onLaunchSuggestion({
-								...sug,
-								packageName: resolvedPkg
-							}),
-							animate: {
-								scale: isSugFocused ? 1.07 : 1,
-								y: isSugFocused ? -4 : 0
-							},
-							transition: {
-								type: "spring",
-								stiffness: 420,
-								damping: 32,
-								mass: .8
-							},
-							className: `tv-focusable relative w-[264px] h-[132px] shrink-0 rounded-2xl overflow-hidden text-left border transition-colors ${isSugFocused ? "border-white ring-2 ring-zinc-900 dark:ring-white shadow-2xl" : "border-white/12 opacity-90"}`,
-							children: [
-								!failedImages[sug.posterUrl] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-									src: sug.posterUrl,
-									alt: sug.title,
-									referrerPolicy: "no-referrer",
-									onError: () => markImageFailed(sug.posterUrl),
-									className: "absolute inset-0 w-full h-full object-cover"
-								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"aria-hidden": "true",
-									className: "absolute inset-0",
-									style: { background: sug.accentGradient }
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"aria-hidden": "true",
-									className: "absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "relative z-10 h-full flex flex-col justify-between p-3.5",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center justify-between gap-2 text-[11px] font-semibold text-amber-300",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "px-2.5 py-0.5 rounded-full bg-black/75",
-											children: sug.tag
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white",
-											children: !isNative || isInstalled ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowUpRight, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												className: "text-[9px]",
-												children: "+"
-											})
-										})]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "font-display text-sm font-bold text-white leading-tight truncate",
-										children: sug.title
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[11px] text-zinc-300 truncate mt-0.5",
-										children: sug.subtitle
-									})] })]
-								})
-							]
-						}, sug.id);
-					})
-				})]
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				"aria-label": "Aplicaciones principales",
-				className: "relative z-10 px-12",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-4 overflow-x-auto no-scrollbar py-4 px-2 -mx-2",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.button, {
-							type: "button",
-							"data-tv-focusable": "true",
-							"data-tv-initial": "true",
-							"data-tv-id": "row-featured-cgamestvparty",
-							onFocus: () => {
-								setSpotlight({ kind: "featured" });
-								setLastFocusedPkg(FEATURED_GAME.packageName);
-							},
-							onMouseEnter: () => {
-								setSpotlight({ kind: "featured" });
-								setLastFocusedPkg(FEATURED_GAME.packageName);
-							},
-							onClick: onLaunchFeatured,
-							animate: {
-								scale: isFeaturedFocused ? 1.07 : 1,
-								y: isFeaturedFocused ? -5 : 0
-							},
-							transition: {
-								type: "spring",
-								stiffness: 420,
-								damping: 32,
-								mass: .8
-							},
-							className: `tv-focusable relative w-[264px] h-[142px] shrink-0 rounded-3xl overflow-hidden text-left border transition-colors ${isFeaturedFocused ? "border-zinc-900 dark:border-white ring-2 ring-zinc-900 dark:ring-white shadow-2xl" : "border-zinc-900/12 dark:border-white/15"}`,
-							children: [
-								!failedImages[FEATURED_GAME.bannerImage] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-									src: FEATURED_GAME.bannerImage,
-									alt: FEATURED_GAME.name,
-									referrerPolicy: "no-referrer",
-									onError: () => markImageFailed(FEATURED_GAME.bannerImage),
-									className: "absolute inset-0 w-full h-full object-cover object-right"
-								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-br from-amber-600 to-zinc-900" }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"aria-hidden": "true",
-									className: "absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "relative z-10 h-full flex flex-col justify-end p-4",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center justify-between gap-3",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											className: "font-display text-base font-bold text-white leading-tight",
-											children: FEATURED_GAME.name
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											className: "text-xs font-medium text-amber-300 mt-0.5",
-											children: "Juego destacado"
-										})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "w-9 h-9 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center shrink-0",
-											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current ml-0.5" })
-										})]
-									})
-								})
-							]
-						}),
-						rowFavorites.map((app) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NavaRowAppCard, {
-							app,
-							isFocused: spotlight.kind === "app" && spotlight.app.packageName === app.packageName,
-							onFocusItem: () => {
-								setSpotlight({
-									kind: "app",
-									app
-								});
-								setLastFocusedPkg(app.packageName);
-							},
-							onLaunch: onLaunchApp,
-							onToggleFavorite
-						}, app.packageName)),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.button, {
-							type: "button",
-							"data-tv-focusable": "true",
-							"data-tv-id": "row-all-apps",
-							onFocus: () => {
-								setSpotlight({ kind: "all_apps" });
-								setLastFocusedPkg(null);
-							},
-							onMouseEnter: () => {
-								setSpotlight({ kind: "all_apps" });
-								setLastFocusedPkg(null);
-							},
-							onClick: onOpenAllApps,
-							animate: {
-								scale: isAllAppsFocused ? 1.08 : 1,
-								y: isAllAppsFocused ? -5 : 0
-							},
-							transition: {
-								type: "spring",
-								stiffness: 420,
-								damping: 32,
-								mass: .8
-							},
-							className: `tv-focusable w-[142px] h-[142px] shrink-0 rounded-3xl flex flex-col items-center justify-center gap-2.5 p-4 border transition-colors ${isAllAppsFocused ? "bg-zinc-900 text-white border-zinc-900 ring-2 ring-zinc-900 shadow-2xl dark:bg-white dark:text-zinc-950 dark:border-white dark:ring-white" : "bg-white/75 text-zinc-700 border-zinc-900/10 dark:bg-white/[0.05] dark:text-zinc-300 dark:border-white/10"}`,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "w-12 h-12 rounded-2xl bg-zinc-900/6 dark:bg-white/10 flex items-center justify-center",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutGrid, { className: "w-6 h-6" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-sm font-semibold",
-								children: "Todas las apps"
-							})]
-						})
-					]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "mt-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Usa las flechas para navegar · Arriba para sugerencias cinemáticas · OK para abrir" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-						className: "tabular-nums",
-						children: [totalAppsCount, " apps instaladas"]
-					})]
-				})]
-			})
-		]
-	});
-}
 // src/components/NavaTopBar.tsx
-function NavaTopBar({ themeMode, use24HourClock, hasAvailableUpdate, onToggleTheme, onOpenSearch, onOpenOta, onOpenSettings }) {
+function NavaTopBar({ activeTab, themeMode, use24HourClock, hasAvailableUpdate, onSelectTab, onToggleTheme, onOpenSearch, onOpenOta, onOpenSettings }) {
 	const [now, setNow] = (0, import_react.useState)(() => /* @__PURE__ */ new Date());
 	(0, import_react.useEffect)(() => {
 		const timer = window.setInterval(() => setNow(/* @__PURE__ */ new Date()), 1e4);
@@ -23144,65 +23164,93 @@ function NavaTopBar({ themeMode, use24HourClock, hasAvailableUpdate, onToggleThe
 		minute: "2-digit",
 		hour12: !use24HourClock
 	});
-	const formattedDate = now.toLocaleDateString("es-ES", {
-		weekday: "long",
-		day: "numeric",
-		month: "long"
-	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-		className: "flex items-start justify-between gap-8 px-12 pt-9 pb-2 shrink-0",
+		className: "relative z-20 flex items-center justify-between gap-8 px-12 pt-6 pb-3 shrink-0",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex flex-col leading-none",
+			className: "flex items-center gap-7",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-baseline gap-3.5",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "font-display text-4xl font-semibold tracking-tight tabular-nums text-zinc-900 dark:text-white",
-					children: formattedTime
+				className: "flex items-center gap-3 shrink-0",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "w-9 h-9 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-display text-sm font-bold flex items-center justify-center shrink-0",
+					children: "C"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "text-sm font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap",
+					className: "font-display text-lg font-semibold tracking-tight text-zinc-900 dark:text-white whitespace-nowrap shrink-0",
 					children: "CTV OS"
 				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-				className: "mt-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400 capitalize",
-				children: formattedDate
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", {
+				"aria-label": "Navegación principal",
+				className: "flex items-center gap-2",
+				children: [
+					{
+						id: "inicio",
+						label: "Inicio"
+					},
+					{
+						id: "envivo",
+						label: "En vivo"
+					},
+					{
+						id: "apps",
+						label: "Aplicaciones"
+					}
+				].map((tab) => {
+					const isActive = activeTab === tab.id;
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						"data-tv-focusable": "true",
+						"data-tv-id": `top-tab-${tab.id}`,
+						onClick: () => onSelectTab(tab.id),
+						className: `tv-focusable px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 ${isActive ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950" : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white focus:bg-zinc-900/15 dark:focus:bg-white/20"} focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`,
+						children: tab.label
+					}, tab.id);
+				})
 			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("nav", {
-			"aria-label": "Utilidades",
-			className: "flex items-center gap-2.5",
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-center gap-2.5 shrink-0",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
 					"data-tv-focusable": "true",
 					"data-tv-id": "top-search",
 					onClick: onOpenSearch,
-					className: "tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Buscar" })]
+					"aria-label": "Buscar aplicaciones y contenido",
+					title: "Buscar",
+					className: "tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: "w-4 h-4" })
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
 					"data-tv-focusable": "true",
 					"data-tv-id": "top-theme",
 					onClick: onToggleTheme,
 					"aria-label": themeMode === "dark" ? "Cambiar a modo día" : "Cambiar a modo noche",
-					className: "tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0",
-					children: [themeMode === "dark" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sun, { className: "w-4 h-4 shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Moon, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: themeMode === "dark" ? "Día" : "Noche" })]
+					title: themeMode === "dark" ? "Modo día" : "Modo noche",
+					className: "tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110",
+					children: themeMode === "dark" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sun, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Moon, { className: "w-4 h-4" })
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 					type: "button",
 					"data-tv-focusable": "true",
 					"data-tv-id": "top-ota",
 					onClick: onOpenOta,
-					className: `tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border border-transparent focus:scale-105 whitespace-nowrap shrink-0 ${hasAvailableUpdate ? "bg-amber-500 text-zinc-950 font-semibold focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950" : "bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950"}`,
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: hasAvailableUpdate ? "Actualizar" : "OTA" })]
+					"aria-label": "Actualización OTA",
+					title: "Actualización OTA",
+					className: `tv-focusable h-10 px-3.5 rounded-full flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 ${hasAvailableUpdate ? "bg-amber-500 text-zinc-950 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950" : "bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950"} focus:scale-105`,
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-3.5 h-3.5 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: hasAvailableUpdate ? "Actualizar" : "OTA" })]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
 					"data-tv-focusable": "true",
 					"data-tv-id": "top-settings",
 					onClick: onOpenSettings,
-					"aria-label": "Abrir ajustes",
-					className: "tv-focusable flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 border border-transparent focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Ajustes" })]
+					"aria-label": "Ajustes del launcher",
+					title: "Ajustes",
+					className: "tv-focusable w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-110",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, { className: "w-4 h-4" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "ml-2 font-display text-lg font-medium tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap shrink-0",
+					children: formattedTime
 				})
 			]
 		})]
@@ -24145,10 +24193,13 @@ function loadSavedSettings() {
 }
 function App() {
 	const [settings, setSettings] = (0, import_react.useState)(loadSavedSettings);
+	const [activeTab, setActiveTab] = (0, import_react.useState)("inicio");
 	const [overlay, setOverlay] = (0, import_react.useState)("none");
 	const [apps, setApps] = (0, import_react.useState)([]);
 	const [isNative, setIsNative] = (0, import_react.useState)(false);
 	const [isLoadingApps, setIsLoadingApps] = (0, import_react.useState)(true);
+	const [liveCatalog, setLiveCatalog] = (0, import_react.useState)(OFFLINE_FALLBACK_CATALOG);
+	const [isLoadingCatalog, setIsLoadingCatalog] = (0, import_react.useState)(true);
 	const [launchingApp, setLaunchingApp] = (0, import_react.useState)(null);
 	const [appVersion, setAppVersion] = (0, import_react.useState)({
 		versionName: "1.0.0",
@@ -24197,9 +24248,19 @@ function App() {
 			setIsLoadingApps(false);
 		}
 	}, []);
+	const loadLiveCatalog = (0, import_react.useCallback)(async (force = false) => {
+		setIsLoadingCatalog(true);
+		try {
+			const catalog = await fetchGoogleTvLiveCatalog(force);
+			setLiveCatalog(catalog);
+		} finally {
+			setIsLoadingCatalog(false);
+		}
+	}, []);
 	(0, import_react.useEffect)(() => {
 		loadLauncherData();
-	}, [loadLauncherData]);
+		loadLiveCatalog(false);
+	}, [loadLauncherData, loadLiveCatalog]);
 	(0, import_react.useEffect)(() => {
 		if (!settings.otaRepo || settings.otaRepo.startsWith("tu-usuario/")) return;
 		let cancelled = false;
@@ -24210,7 +24271,7 @@ function App() {
 			cancelled = true;
 		};
 	}, [settings.otaRepo, appVersion.versionCode]);
-	const closeOverlayToHome = (0, import_react.useCallback)((focusTargetId = "row-featured-cgamestvparty") => {
+	const closeOverlayToHome = (0, import_react.useCallback)((focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
 		if (cleanupOtaRef.current) {
 			cleanupOtaRef.current();
 			cleanupOtaRef.current = null;
@@ -24222,9 +24283,23 @@ function App() {
 	}, []);
 	useSpatialNavigation({
 		enabled: overlay === "none",
-		onBack: () => focusElementById("row-featured-cgamestvparty"),
-		scopeSelector: "#nava-home-shell"
+		onBack: () => {
+			if (activeTab !== "inicio") {
+				setActiveTab("inicio");
+				window.requestAnimationFrame(() => {
+					focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+				});
+			} else focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+		},
+		scopeSelector: "#gtv-home-shell"
 	});
+	const handleSelectTab = (0, import_react.useCallback)((tab) => {
+		if (tab === "apps") {
+			setOverlay("apps");
+			return;
+		}
+		setActiveTab(tab);
+	}, []);
 	const handleLaunchPackage = (0, import_react.useCallback)(async (packageName, displayName, icon) => {
 		setLaunchingApp({
 			name: displayName,
@@ -24260,7 +24335,7 @@ function App() {
 		const exists = settings.favoritePackages.includes(app.packageName);
 		const nextFavs = exists ? settings.favoritePackages.filter((pkg) => pkg !== app.packageName) : [app.packageName, ...settings.favoritePackages];
 		updateSettings({ favoritePackages: nextFavs });
-		showToast(exists ? `${app.name} quitada de la fila principal` : `${app.name} fijada en la fila principal`);
+		showToast(exists ? `${app.name} quitada de Tus aplicaciones` : `${app.name} fijada en Tus aplicaciones`);
 	}, [
 		settings.favoritePackages,
 		updateSettings,
@@ -24318,80 +24393,24 @@ function App() {
 	const currentBackground = (0, import_react.useMemo)(() => {
 		return BACKGROUND_PRESETS.find((b) => b.id === settings.backgroundId) || BACKGROUND_PRESETS[0];
 	}, [settings.backgroundId]);
-	const featuredInstalled = (0, import_react.useMemo)(() => {
-		return apps.some((a) => a.packageName === FEATURED_GAME.packageName);
-	}, [apps]);
 	const favoriteApps = (0, import_react.useMemo)(() => {
 		const map = new Map(apps.map((a) => [a.packageName, a]));
 		return settings.favoritePackages.map((pkg) => map.get(pkg)).filter((a) => Boolean(a));
 	}, [apps, settings.favoritePackages]);
 	const hasAvailableUpdate = Boolean(remoteManifest && remoteManifest.versionCode > appVersion.versionCode);
-	const isLight = settings.themeMode === "light";
-	const backgroundStyle = isLight ? currentBackground.lightValue.startsWith("#") ? { backgroundColor: currentBackground.lightValue } : { backgroundImage: currentBackground.lightValue } : currentBackground.type === "solid" ? { backgroundColor: currentBackground.value } : currentBackground.type === "gradient" ? { backgroundImage: currentBackground.value } : void 0;
+	const backgroundStyle = settings.themeMode === "light" ? currentBackground.lightValue.startsWith("#") ? { backgroundColor: currentBackground.lightValue } : { backgroundImage: currentBackground.lightValue } : currentBackground.type === "solid" ? { backgroundColor: currentBackground.value } : { backgroundImage: currentBackground.value };
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		id: "nava-home-shell",
-		className: "relative w-screen h-screen overflow-hidden flex flex-col bg-[#ECEEF2] dark:bg-[#090B10] text-zinc-900 dark:text-zinc-100 transition-colors duration-300",
+		id: "gtv-home-shell",
+		className: "relative w-screen h-screen overflow-hidden flex flex-col bg-[#F4F6F9] dark:bg-[#0E1015] text-zinc-900 dark:text-zinc-100 transition-colors duration-300",
 		style: backgroundStyle,
 		children: [
-			!isLight && currentBackground.type === "image" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"aria-hidden": "true",
-				className: "absolute inset-0 pointer-events-none z-0",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-					src: currentBackground.value,
-					alt: "",
-					referrerPolicy: "no-referrer",
-					className: "w-full h-full object-cover opacity-50"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-gradient-to-b from-[#090B10]/55 via-[#090B10]/30 to-[#090B10]/90" })]
-			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
 				animate: {
 					scale: overlay !== "none" ? .975 : 1,
 					opacity: overlay !== "none" ? .35 : 1
 				},
 				transition: {
-					type: "spring",
-					stiffness: 360,
-					damping: 32
-				},
-				className: "relative z-10 flex flex-col h-full min-h-0",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NavaTopBar, {
-					themeMode: settings.themeMode,
-					use24HourClock: settings.use24HourClock,
-					hasAvailableUpdate,
-					onToggleTheme: () => updateSettings({ themeMode: settings.themeMode === "dark" ? "light" : "dark" }),
-					onOpenSearch: () => setOverlay("search"),
-					onOpenOta: handleOpenOtaModal,
-					onOpenSettings: () => setOverlay("settings")
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NavaSingleRowHome, {
-					allApps: apps,
-					favoriteApps,
-					totalAppsCount: apps.length,
-					featuredInstalled,
-					isNative,
-					showPackageNames: settings.showPackageNames,
-					showSuggestions: settings.showSuggestions,
-					onLaunchFeatured: () => void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name, FEATURED_GAME.bannerImage),
-					onLaunchApp: handleLaunchApp,
-					onLaunchSuggestion: (sug) => void handleLaunchSuggestion(sug),
-					onToggleFavorite: handleToggleFavorite,
-					onOpenAllApps: () => setOverlay("apps")
-				})]
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: launchingApp && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
-				initial: {
-					opacity: 0,
-					scale: .92
-				},
-				animate: {
-					opacity: 1,
-					scale: 1
-				},
-				exit: {
-					opacity: 0,
-					scale: 1.06
-				},
-				transition: {
-					duration: .2,
+					duration: .18,
 					ease: [
 						.22,
 						1,
@@ -24399,12 +24418,66 @@ function App() {
 						1
 					]
 				},
-				className: "fixed inset-0 z-50 bg-[#ECEEF2] dark:bg-[#090B10] flex flex-col items-center justify-center gap-4 pointer-events-none",
+				className: "relative z-10 flex flex-col h-full min-h-0",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NavaTopBar, {
+					activeTab: overlay === "apps" ? "apps" : activeTab,
+					themeMode: settings.themeMode,
+					use24HourClock: settings.use24HourClock,
+					hasAvailableUpdate,
+					onSelectTab: handleSelectTab,
+					onToggleTheme: () => updateSettings({ themeMode: settings.themeMode === "dark" ? "light" : "dark" }),
+					onOpenSearch: () => setOverlay("search"),
+					onOpenOta: handleOpenOtaModal,
+					onOpenSettings: () => setOverlay("settings")
+				}), activeTab === "inicio" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GoogleTvHome, {
+					allApps: apps,
+					favoriteApps,
+					liveCatalog,
+					isLoadingCatalog,
+					isNative,
+					showSuggestions: settings.showSuggestions,
+					onRefreshCatalog: () => void loadLiveCatalog(true),
+					onLaunchFeatured: () => void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name),
+					onLaunchApp: handleLaunchApp,
+					onLaunchSuggestion: (sug) => void handleLaunchSuggestion(sug),
+					onToggleFavorite: handleToggleFavorite,
+					onOpenAllApps: () => setOverlay("apps")
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LivePlatformsView, {
+					allApps: apps,
+					series: liveCatalog.series,
+					isLoading: isLoadingCatalog,
+					onRefreshFeed: () => void loadLiveCatalog(true),
+					onLaunchSuggestion: (sug) => void handleLaunchSuggestion(sug)
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: launchingApp && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
+				initial: {
+					opacity: 0,
+					scale: .94
+				},
+				animate: {
+					opacity: 1,
+					scale: 1
+				},
+				exit: {
+					opacity: 0,
+					scale: 1.04
+				},
+				transition: {
+					duration: .18,
+					ease: [
+						.22,
+						1,
+						.36,
+						1
+					]
+				},
+				className: "fixed inset-0 z-50 bg-[#F4F6F9] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none",
 				children: [launchingApp.icon && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
 					src: launchingApp.icon,
 					alt: "",
 					referrerPolicy: "no-referrer",
-					className: "w-24 h-24 rounded-3xl object-cover shadow-2xl"
+					className: "w-24 h-24 rounded-full object-cover shadow-2xl"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 					className: "font-display text-2xl font-semibold text-zinc-900 dark:text-white",
 					children: launchingApp.name

@@ -1,5 +1,7 @@
 export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'ota';
 
+export type HomeTab = 'inicio' | 'envivo' | 'apps';
+
 export type ThemeMode = 'dark' | 'light';
 
 export type AppCategoryFilter = 'all' | 'tv' | 'games' | 'other';
@@ -17,7 +19,7 @@ export interface BackgroundPreset {
   id: string;
   name: string;
   description: string;
-  type: 'image' | 'solid' | 'gradient';
+  type: 'solid' | 'gradient';
   value: string;
   lightValue: string;
   swatch: string;
@@ -31,8 +33,19 @@ export interface AppSuggestion {
   subtitle: string;
   deepLinkUrl: string;
   posterUrl: string;
+  backdropUrl?: string;
   accentGradient: string;
   tag: string;
+  genre?: string;
+  releaseDate?: string;
+  mediaKind?: 'movie' | 'series' | 'game';
+}
+
+export interface GoogleTvLiveCatalog {
+  spotlight: AppSuggestion[];
+  movies: AppSuggestion[];
+  series: AppSuggestion[];
+  updatedAt: string;
 }
 
 export interface LauncherSettings {

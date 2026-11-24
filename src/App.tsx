@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { GoogleTvHome } from './components/GoogleTvHome';
+import { LivePlatformsView } from './components/LivePlatformsView';
 import { NavaAppsDrawer } from './components/NavaAppsDrawer';
 import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
-import { NavaSingleRowHome } from './components/NavaSingleRowHome';
 import { NavaTopBar } from './components/NavaTopBar';
 import { OtaUpdateModal } from './components/OtaUpdateModal';
 import {
@@ -11,6 +12,10 @@ import {
   DEFAULT_SETTINGS,
   FEATURED_GAME,
 } from './data/presets';
+import {
+  fetchGoogleTvLiveCatalog,
+  OFFLINE_FALLBACK_CATALOG,
+} from './data/suggestions';
 import { focusElementById, useSpatialNavigation } from './hooks/useSpatialNavigation';
 import {
   fetchOtaManifest,
@@ -24,6 +29,8 @@ import {
 import type {
   AppSuggestion,
   AppVersionInfo,
+  GoogleTvLiveCatalog,
+  HomeTab,
   InstalledApp,
   LauncherOverlay,
   LauncherSettings,
@@ -53,10 +60,13 @@ function loadSavedSettings(): LauncherSettings {
 
 export default function App() {
   const [settings, setSettings] = useState<LauncherSettings>(loadSavedSettings);
+  const [activeTab, setActiveTab] = useState<HomeTab>('inicio');
   const [overlay, setOverlay] = useState<LauncherOverlay>('none');
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [isNative, setIsNative] = useState(false);
   const [isLoadingApps, setIsLoadingApps] = useState(true);
+  const [liveCatalog, setLiveCatalog] = useState<GoogleTvLiveCatalog>(OFFLINE_FALLBACK_CATALOG);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [launchingApp, setLaunchingApp] = useState<{ name: string; icon?: string } | null>(
     null
   );
@@ -77,7 +87,7 @@ export default function App() {
   const [otaError, setOtaError] = useState<string | null>(null);
   const cleanupOtaRef = useRef<(() => void) | null>(null);
 
-  // Sincronizar clase .dark en <html> para modo Día / Noche estilo Nava TV
+  // Sincronizar clase .dark en <html>
   useEffect(() => {
     const root = document.documentElement;
     if (settings.themeMode === 'dark') {
@@ -124,9 +134,20 @@ export default function App() {
     }
   }, []);
 
+  const loadLiveCatalog = useCallback(async (force = false) => {
+    setIsLoadingCatalog(true);
+    try {
+      const catalog = await fetchGoogleTvLiveCatalog(force);
+      setLiveCatalog(catalog);
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadLauncherData();
-  }, [loadLauncherData]);
+    void loadLiveCatalog(false);
+  }, [loadLauncherData, loadLiveCatalog]);
 
   // Verificación OTA silenciosa al arrancar
   useEffect(() => {
@@ -146,22 +167,42 @@ export default function App() {
     };
   }, [settings.otaRepo, appVersion.versionCode]);
 
-  const closeOverlayToHome = useCallback((focusTargetId = 'row-featured-cgamestvparty') => {
-    if (cleanupOtaRef.current) {
-      cleanupOtaRef.current();
-      cleanupOtaRef.current = null;
-    }
-    setOverlay('none');
-    window.requestAnimationFrame(() => {
-      focusElementById(focusTargetId);
-    });
-  }, []);
+  const closeOverlayToHome = useCallback(
+    (focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
+      if (cleanupOtaRef.current) {
+        cleanupOtaRef.current();
+        cleanupOtaRef.current = null;
+      }
+      setOverlay('none');
+      window.requestAnimationFrame(() => {
+        focusElementById(focusTargetId);
+      });
+    },
+    []
+  );
 
   useSpatialNavigation({
     enabled: overlay === 'none',
-    onBack: () => focusElementById('row-featured-cgamestvparty'),
-    scopeSelector: '#nava-home-shell',
+    onBack: () => {
+      if (activeTab !== 'inicio') {
+        setActiveTab('inicio');
+        window.requestAnimationFrame(() => {
+          focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+        });
+      } else {
+        focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+      }
+    },
+    scopeSelector: '#gtv-home-shell',
   });
+
+  const handleSelectTab = useCallback((tab: HomeTab) => {
+    if (tab === 'apps') {
+      setOverlay('apps');
+      return;
+    }
+    setActiveTab(tab);
+  }, []);
 
   const handleLaunchPackage = useCallback(
     async (packageName: string, displayName: string, icon?: string) => {
@@ -216,8 +257,8 @@ export default function App() {
       updateSettings({ favoritePackages: nextFavs });
       showToast(
         exists
-          ? `${app.name} quitada de la fila principal`
-          : `${app.name} fijada en la fila principal`
+          ? `${app.name} quitada de Tus aplicaciones`
+          : `${app.name} fijada en Tus aplicaciones`
       );
     },
     [settings.favoritePackages, updateSettings, showToast]
@@ -304,10 +345,6 @@ export default function App() {
     );
   }, [settings.backgroundId]);
 
-  const featuredInstalled = useMemo(() => {
-    return apps.some((a) => a.packageName === FEATURED_GAME.packageName);
-  }, [apps]);
-
   const favoriteApps = useMemo(() => {
     const map = new Map(apps.map((a) => [a.packageName, a]));
     return settings.favoritePackages
@@ -326,42 +363,28 @@ export default function App() {
       : { backgroundImage: currentBackground.lightValue }
     : currentBackground.type === 'solid'
       ? { backgroundColor: currentBackground.value }
-      : currentBackground.type === 'gradient'
-        ? { backgroundImage: currentBackground.value }
-        : undefined;
+      : { backgroundImage: currentBackground.value };
 
   return (
     <div
-      id="nava-home-shell"
-      className="relative w-screen h-screen overflow-hidden flex flex-col bg-[#ECEEF2] dark:bg-[#090B10] text-zinc-900 dark:text-zinc-100 transition-colors duration-300"
+      id="gtv-home-shell"
+      className="relative w-screen h-screen overflow-hidden flex flex-col bg-[#F4F6F9] dark:bg-[#0E1015] text-zinc-900 dark:text-zinc-100 transition-colors duration-300"
       style={backgroundStyle}
     >
-      {/* Fondo de imagen limpio en modo Noche (sin blur) */}
-      {!isLight && currentBackground.type === 'image' && (
-        <div aria-hidden="true" className="absolute inset-0 pointer-events-none z-0">
-          <img
-            src={currentBackground.value}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover opacity-50"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#090B10]/55 via-[#090B10]/30 to-[#090B10]/90" />
-        </div>
-      )}
-
-      {/* Interfaz principal Nava TV: periferia ligera + fila única centrada */}
       <motion.div
         animate={{
           scale: overlay !== 'none' ? 0.975 : 1,
           opacity: overlay !== 'none' ? 0.35 : 1,
         }}
-        transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 flex flex-col h-full min-h-0"
       >
         <NavaTopBar
+          activeTab={overlay === 'apps' ? 'apps' : activeTab}
           themeMode={settings.themeMode}
           use24HourClock={settings.use24HourClock}
           hasAvailableUpdate={hasAvailableUpdate}
+          onSelectTab={handleSelectTab}
           onToggleTheme={() =>
             updateSettings({
               themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
@@ -372,44 +395,50 @@ export default function App() {
           onOpenSettings={() => setOverlay('settings')}
         />
 
-        <NavaSingleRowHome
-          allApps={apps}
-          favoriteApps={favoriteApps}
-          totalAppsCount={apps.length}
-          featuredInstalled={featuredInstalled}
-          isNative={isNative}
-          showPackageNames={settings.showPackageNames}
-          showSuggestions={settings.showSuggestions}
-          onLaunchFeatured={() =>
-            void handleLaunchPackage(
-              FEATURED_GAME.packageName,
-              FEATURED_GAME.name,
-              FEATURED_GAME.bannerImage
-            )
-          }
-          onLaunchApp={handleLaunchApp}
-          onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
-          onToggleFavorite={handleToggleFavorite}
-          onOpenAllApps={() => setOverlay('apps')}
-        />
+        {activeTab === 'inicio' ? (
+          <GoogleTvHome
+            allApps={apps}
+            favoriteApps={favoriteApps}
+            liveCatalog={liveCatalog}
+            isLoadingCatalog={isLoadingCatalog}
+            isNative={isNative}
+            showSuggestions={settings.showSuggestions}
+            onRefreshCatalog={() => void loadLiveCatalog(true)}
+            onLaunchFeatured={() =>
+              void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name)
+            }
+            onLaunchApp={handleLaunchApp}
+            onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
+            onToggleFavorite={handleToggleFavorite}
+            onOpenAllApps={() => setOverlay('apps')}
+          />
+        ) : (
+          <LivePlatformsView
+            allApps={apps}
+            series={liveCatalog.series}
+            isLoading={isLoadingCatalog}
+            onRefreshFeed={() => void loadLiveCatalog(true)}
+            onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
+          />
+        )}
       </motion.div>
 
-      {/* Animación fluida al lanzar una app (estilo Nava TV) */}
+      {/* Animación limpia al abrir una aplicación */}
       <AnimatePresence>
         {launchingApp && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.06 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 bg-[#ECEEF2] dark:bg-[#090B10] flex flex-col items-center justify-center gap-4 pointer-events-none"
+            exit={{ opacity: 0, scale: 1.04 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-50 bg-[#F4F6F9] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
           >
             {launchingApp.icon && (
               <img
                 src={launchingApp.icon}
                 alt=""
                 referrerPolicy="no-referrer"
-                className="w-24 h-24 rounded-3xl object-cover shadow-2xl"
+                className="w-24 h-24 rounded-full object-cover shadow-2xl"
               />
             )}
             <span className="font-display text-2xl font-semibold text-zinc-900 dark:text-white">
@@ -419,7 +448,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Overlays fluidos */}
+      {/* Overlays */}
       <NavaAppsDrawer
         isOpen={overlay === 'apps'}
         apps={apps}
