@@ -59,6 +59,9 @@ export interface LauncherSettings {
   showPackageNames: boolean;
   showSuggestions: boolean;
   appsOnlyMode: boolean;
+  maintenanceMode: boolean;
+  maintenanceTitle: string;
+  maintenanceMessage: string;
   updateRepo: string;
   favoritePackages: string[];
 }

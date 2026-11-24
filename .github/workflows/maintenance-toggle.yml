@@ -1,0 +1,64 @@
+name: Activar o Desactivar Mantenimiento
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'Modo mantenimiento (para todos los usuarios)'
+        required: true
+        type: choice
+        default: 'ACTIVAR'
+        options:
+          - 'ACTIVAR'
+          - 'DESACTIVAR'
+      mensaje:
+        description: 'Mensaje del cartel (opcional)'
+        required: false
+        type: string
+        default: 'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.'
+
+permissions:
+  contents: write
+
+jobs:
+  cambiar-mantenimiento:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Actualizar estado de mantenimiento
+        env:
+          MODO: ${{ github.event.inputs.modo }}
+          MENSAJE: ${{ github.event.inputs.mensaje }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const active = process.env.MODO === "ACTIVAR";
+            const msg = (process.env.MENSAJE || "").trim() || "El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.";
+            const data = {
+              maintenanceMode: active,
+              appsOnlyMode: active,
+              title: "Mantenimiento · Próxima actualización",
+              message: msg,
+              updatedAt: new Date().toISOString()
+            };
+            fs.writeFileSync("public/launcher-status.json", JSON.stringify(data, null, 2) + "\n");
+          '
+
+      - name: Guardar cambio sin compilar APK nuevo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/launcher-status.json
+          if git diff --cached --quiet; then
+            echo "El modo ya estaba en ese estado."
+          else
+            git commit -m "[skip ci] Modo mantenimiento: ${{ github.event.inputs.modo }}"
+            git push
+          fi
+
+      - name: Confirmación
+        run: |
+          echo "### Estado actualizado: ${{ github.event.inputs.modo }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Todos los televisores con VORA TV OS aplicarán este cambio automáticamente." >> "$GITHUB_STEP_SUMMARY"

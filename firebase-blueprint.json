@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "LauncherStatus": {
+      "title": "Launcher Status",
+      "description": "Global maintenance and Apps-Only mode configuration",
+      "type": "object",
+      "properties": {
+        "maintenanceMode": {
+          "type": "boolean",
+          "description": "Whether global maintenance mode is active"
+        },
+        "appsOnlyMode": {
+          "type": "boolean",
+          "description": "Whether global Apps-Only mode is active"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Maintenance notice title"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Maintenance notice message"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["maintenanceMode", "appsOnlyMode", "title", "message"]
+    }
+  },
+  "firestore": {
+    "/launcherStatus/{statusId}": {
+      "schema": {
+        "$ref": "LauncherStatus"
+      },
+      "description": "Global launcher status documents"
+    }
+  }
+}

@@ -29,6 +29,11 @@ import {
   openTvSettings,
   startAppUpdateInstall,
 } from './native/launcherBridge';
+import {
+  setGlobalLauncherStatus,
+  subscribeToLauncherStatus,
+  testFirestoreConnection,
+} from './services/firebase';
 import type {
   AppDownloadProgress,
   AppSuggestion,
@@ -97,60 +102,6 @@ export default function App() {
   });
   const wasMaintenanceForcedRef = useRef(false);
 
-  // Notificación sutil
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastTimerRef = useRef<number | null>(null);
-
-  // Estado actualización de la aplicación
-  const [updateStatus, setUpdateStatus] = useState<AppUpdateModalStatus>('idle');
-  const [remoteManifest, setRemoteManifest] = useState<AppUpdateManifest | null>(null);
-  const [updateProgress, setUpdateProgress] = useState<AppDownloadProgress | null>(null);
-  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
-  const cleanupUpdateRef = useRef<(() => void) | null>(null);
-
-  const isMaintenanceForced = Boolean(remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode);
-  const effectiveAppsOnly = isMaintenanceForced || settings.appsOnlyMode;
-
-  // Sincronizar clase .dark en <html>
-  useEffect(() => {
-    const root = document.documentElement;
-    if (settings.themeMode === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [settings.themeMode]);
-
-  // Si está activo el Modo Solo Apps, garantizar pestaña Inicio (ocultar En vivo)
-  useEffect(() => {
-    if (effectiveAppsOnly && activeTab === 'envivo') {
-      setActiveTab('inicio');
-      setTopBarVisible(true);
-    }
-  }, [effectiveAppsOnly, activeTab]);
-
-  const showToast = useCallback((msg: string) => {
-    setToastMessage(msg);
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
-    }
-    toastTimerRef.current = window.setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-  }, []);
-
-  const updateSettings = useCallback((patch: Partial<LauncherSettings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...patch };
-      try {
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignorar si almacenamiento está lleno
-      }
-      return next;
-    });
-  }, []);
-
   const loadLauncherData = useCallback(async (silent = false) => {
     if (!silent) {
       setIsLoadingApps(true);
@@ -207,10 +158,106 @@ export default function App() {
     [loadLiveCatalog]
   );
 
+  // Notificación sutil
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  // Estado actualización de la aplicación
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateModalStatus>('idle');
+  const [remoteManifest, setRemoteManifest] = useState<AppUpdateManifest | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<AppDownloadProgress | null>(null);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const cleanupUpdateRef = useRef<(() => void) | null>(null);
+
+  const isMaintenanceForced = Boolean(
+    settings.maintenanceMode || remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode
+  );
+  const effectiveAppsOnly = isMaintenanceForced || settings.appsOnlyMode;
+
+  const activeMaintenanceStatus: LauncherRemoteStatus = {
+    maintenanceMode: isMaintenanceForced,
+    appsOnlyMode: effectiveAppsOnly,
+    title: settings.maintenanceTitle || remoteStatus.title,
+    message: settings.maintenanceMessage || remoteStatus.message,
+  };
+
+  // Sincronizar clase .dark en <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.themeMode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [settings.themeMode]);
+
+  // Si se activa mantenimiento local o remoto, mostrar cartel obligatorio
+  useEffect(() => {
+    if (isMaintenanceForced && !wasMaintenanceForcedRef.current) {
+      wasMaintenanceForcedRef.current = true;
+      setActiveTab('inicio');
+      setTopBarVisible(true);
+      setOverlay((curr) => (curr === 'none' || curr === 'update' ? 'maintenance' : curr));
+    } else if (!isMaintenanceForced && wasMaintenanceForcedRef.current) {
+      wasMaintenanceForcedRef.current = false;
+      setOverlay((curr) => (curr === 'maintenance' ? 'none' : curr));
+      void loadLiveCatalog(true);
+    }
+  }, [isMaintenanceForced, loadLiveCatalog]);
+
+  // Si está activo el Modo Solo Apps, garantizar pestaña Inicio (ocultar En vivo)
+  useEffect(() => {
+    if (effectiveAppsOnly && activeTab === 'envivo') {
+      setActiveTab('inicio');
+      setTopBarVisible(true);
+    }
+  }, [effectiveAppsOnly, activeTab]);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  }, []);
+
+  const updateSettings = useCallback((patch: Partial<LauncherSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignorar si almacenamiento está lleno
+      }
+      return next;
+    });
+  }, []);
+
+
+
   useEffect(() => {
     void loadLauncherData(false);
-    void loadRemoteStatus(settings.updateRepo);
-  }, [loadLauncherData, loadRemoteStatus, settings.updateRepo]);
+    void testFirestoreConnection();
+    const unsubscribe = subscribeToLauncherStatus((status) => {
+      setRemoteStatus(status);
+      const forcedNow = Boolean(status.maintenanceMode || status.appsOnlyMode);
+      if (forcedNow && !wasMaintenanceForcedRef.current) {
+        wasMaintenanceForcedRef.current = true;
+        setActiveTab('inicio');
+        setTopBarVisible(true);
+        setOverlay((curr) => (curr === 'none' || curr === 'update' ? 'maintenance' : curr));
+      } else if (!forcedNow && wasMaintenanceForcedRef.current) {
+        wasMaintenanceForcedRef.current = false;
+        setOverlay((curr) => (curr === 'maintenance' ? 'none' : curr));
+        void loadLiveCatalog(true);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [loadLauncherData, loadLiveCatalog]);
 
   useEffect(() => {
     if (!effectiveAppsOnly) {
@@ -550,7 +597,7 @@ export default function App() {
             isNative={isNative}
             showSuggestions={settings.showSuggestions}
             appsOnlyMode={effectiveAppsOnly}
-            maintenanceNotice={isMaintenanceForced ? remoteStatus : null}
+            maintenanceNotice={isMaintenanceForced ? activeMaintenanceStatus : null}
             heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
             onScrollTopChange={setTopBarVisible}
             onLaunchFeatured={() =>
@@ -650,7 +697,7 @@ export default function App() {
 
       <MaintenanceNoticeModal
         isOpen={overlay === 'maintenance'}
-        status={remoteStatus}
+        status={activeMaintenanceStatus}
         onAcknowledge={() => closeOverlayToHome(`row-app-${FEATURED_GAME.packageName}`)}
       />
 
