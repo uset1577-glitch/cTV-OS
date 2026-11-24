@@ -16,6 +16,7 @@ export interface LauncherNativePlugin {
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
   openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'unknown_sources' }): Promise<{ opened: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
+  checkOtaUpdate(options: { repo: string }): Promise<OtaVersionManifest>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
   addListener(
     eventName: 'otaDownloadProgress',
@@ -124,35 +125,44 @@ export async function getCurrentAppVersion(): Promise<AppVersionInfo> {
 
 export async function fetchOtaManifest(repoSlug: string): Promise<OtaVersionManifest> {
   const cleanRepo = repoSlug.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
-  if (!cleanRepo || !cleanRepo.includes('/')) {
-    throw new Error('Configura un repositorio válido con formato usuario/repositorio.');
+  if (!cleanRepo || !cleanRepo.includes('/') || cleanRepo.startsWith('tu-usuario/')) {
+    throw new Error('Configura tu usuario de GitHub en los ajustes (ej: tu-nombre/cTV-OS) para consultar las actualizaciones.');
   }
 
-  // Intentar descargar version.json directo de GitHub Releases latest
-  const directUrl = `https://github.com/${cleanRepo}/releases/latest/download/version.json?t=${Date.now()}`;
-  try {
-    const res = await fetch(directUrl, { cache: 'no-store' });
-    if (res.ok) {
-      const data = (await res.json()) as OtaVersionManifest;
-      if (data && typeof data.versionCode === 'number' && data.apkUrl) {
-        return data;
-      }
+  // 1. En Android TV nativo, usar HttpURLConnection mediante el plugin nativo (evita restricciones CORS de WebView)
+  if (isNativeAndroid()) {
+    try {
+      return await LauncherNative.checkOtaUpdate({ repo: cleanRepo });
+    } catch (nativeErr) {
+      const msg = nativeErr instanceof Error ? nativeErr.message : String(nativeErr);
+      throw new Error(msg || 'No se pudo verificar la actualización en GitHub.');
     }
-  } catch {
-    // Fallback a API pública de GitHub Releases si CORS o red bloquea redirect directo
   }
 
+  // 2. En vista previa web, consultar api.github.com (que soporta CORS *)
   const apiUrl = `https://api.github.com/repos/${cleanRepo}/releases/latest`;
-  const apiRes = await fetch(apiUrl, {
-    headers: { Accept: 'application/vnd.github+json' },
-    cache: 'no-store',
-  });
+  let apiRes: Response;
+  try {
+    apiRes = await fetch(apiUrl, {
+      headers: { Accept: 'application/vnd.github+json' },
+      cache: 'no-store',
+    });
+  } catch (err) {
+    throw new Error(
+      `No se pudo conectar con GitHub (${err instanceof Error ? err.message : 'Error de conexión'}). Comprueba el nombre de repositorio o tu conexión a internet.`
+    );
+  }
 
   if (!apiRes.ok) {
     if (apiRes.status === 404) {
-      throw new Error(`No se encontró ningún Release publicado en ${cleanRepo}.`);
+      throw new Error(
+        `No se encontró ningún Release en "${cleanRepo}". Comprueba que el repositorio sea público y que el workflow de GitHub Actions haya compilado un APK.`
+      );
     }
-    throw new Error(`Error al consultar GitHub Releases (${apiRes.status}).`);
+    if (apiRes.status === 403) {
+      throw new Error('Límite de peticiones a la API de GitHub alcanzado temporalmente. Inténtalo en unos minutos.');
+    }
+    throw new Error(`Error al consultar GitHub Releases (HTTP ${apiRes.status}).`);
   }
 
   const release = (await apiRes.json()) as {
@@ -162,29 +172,24 @@ export async function fetchOtaManifest(repoSlug: string): Promise<OtaVersionMani
     assets?: Array<{ name: string; browser_download_url: string; size?: number }>;
   };
 
-  const versionJsonAsset = release.assets?.find((a) => a.name.toLowerCase() === 'version.json');
-  if (versionJsonAsset) {
-    const vRes = await fetch(versionJsonAsset.browser_download_url, { cache: 'no-store' });
-    if (vRes.ok) {
-      return (await vRes.json()) as OtaVersionManifest;
-    }
-  }
-
   const apkAsset = release.assets?.find((a) => a.name.toLowerCase().endsWith('.apk'));
   if (!apkAsset) {
-    throw new Error('El último Release no contiene un archivo APK ni version.json.');
+    throw new Error(`El release ${release.tag_name || ''} no contiene un archivo APK (.apk).`);
   }
 
   const cleanTag = (release.tag_name || '1.0.0').replace(/^v/i, '');
   const numericParts = cleanTag.split('.').map((n) => parseInt(n, 10) || 0);
-  const computedCode =
-    (numericParts[0] || 1) * 10000 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0);
+
+  const buildMatch = (release.body || '').match(/versionCode[":\s]+(\d+)|Build\s+(\d+)/i);
+  const computedCode = buildMatch
+    ? parseInt(buildMatch[1] || buildMatch[2], 10)
+    : (numericParts[0] || 1) * 10000 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0);
 
   return {
     versionCode: computedCode,
     versionName: cleanTag,
     apkUrl: apkAsset.browser_download_url,
-    releaseNotes: release.body || 'Nueva versión disponible desde GitHub Releases.',
+    releaseNotes: release.body || `Compilación CTV OS v${cleanTag} lista para instalar.`,
     publishedAt: release.published_at,
     fileSizeBytes: apkAsset.size,
   };

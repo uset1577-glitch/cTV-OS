@@ -274,13 +274,14 @@ export default function App() {
     [showToast]
   );
 
-  const runOtaCheck = useCallback(async () => {
+  const runOtaCheck = useCallback(async (customRepo?: string) => {
+    const targetRepo = (customRepo || settings.otaRepo).trim();
     setOtaStatus('checking');
     setOtaError(null);
     setOtaProgress(null);
 
     try {
-      const manifest = await fetchOtaManifest(settings.otaRepo);
+      const manifest = await fetchOtaManifest(targetRepo);
       setRemoteManifest(manifest);
       if (manifest.versionCode > appVersion.versionCode) {
         setOtaStatus('update_available');
@@ -489,7 +490,8 @@ export default function App() {
         progress={otaProgress}
         errorMessage={otaError}
         isNative={isNative}
-        onCheckAgain={() => void runOtaCheck()}
+        onUpdateRepo={(newRepo) => updateSettings({ otaRepo: newRepo })}
+        onCheckAgain={(customRepo) => void runOtaCheck(customRepo)}
         onStartDownload={() => void handleStartOtaDownload()}
         onOpenUnknownSources={() => void handleOpenAndroidSettings('unknown_sources')}
         onClose={() => closeOverlayToHome('top-ota')}

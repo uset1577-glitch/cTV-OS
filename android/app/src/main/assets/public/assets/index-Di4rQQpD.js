@@ -21135,6 +21135,34 @@ var Download = createLucideIcon("download", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var FolderGit2 = createLucideIcon("folder-git-2", [
+	["path", {
+		d: "M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v5",
+		key: "1w6njk"
+	}],
+	["circle", {
+		cx: "13",
+		cy: "12",
+		r: "2",
+		key: "1j92g6"
+	}],
+	["path", {
+		d: "M18 19c-2.8 0-5-2.2-5-5v8",
+		key: "pkpw2h"
+	}],
+	["circle", {
+		cx: "20",
+		cy: "19",
+		r: "2",
+		key: "1obnsp"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var House = createLucideIcon("house", [["path", {
 	d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
 	key: "5wwlr5"
@@ -23261,8 +23289,10 @@ function formatBytes(bytes) {
 	if (!bytes || bytes <= 0) return "—";
 	return `${(bytes / 1048576).toFixed(1)} MB`;
 }
-function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, status, progress, errorMessage, isNative, onCheckAgain, onStartDownload, onOpenUnknownSources, onClose }) {
+function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, status, progress, errorMessage, isNative, onUpdateRepo, onCheckAgain, onStartDownload, onOpenUnknownSources, onClose }) {
 	const closeBtnRef = (0, import_react.useRef)(null);
+	const [repoInput, setRepoInput] = (0, import_react.useState)(repoSlug);
+	const isDefaultPlaceholder = repoSlug.includes("tu-usuario");
 	useSpatialNavigation({
 		enabled: isOpen,
 		onBack: onClose,
@@ -23270,12 +23300,23 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 	});
 	(0, import_react.useEffect)(() => {
 		if (isOpen) {
+			setRepoInput(repoSlug);
 			const id = window.requestAnimationFrame(() => {
 				(document.querySelector("#ota-modal-root [data-tv-initial=\"true\"]") || closeBtnRef.current)?.focus();
 			});
 			return () => window.cancelAnimationFrame(id);
 		}
-	}, [isOpen, status]);
+	}, [
+		isOpen,
+		status,
+		repoSlug
+	]);
+	const handleSaveAndCheck = () => {
+		const trimmed = repoInput.trim();
+		if (!trimmed) return;
+		onUpdateRepo(trimmed);
+		onCheckAgain(trimmed);
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnimatePresence, { children: isOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(motion.div, {
 		id: "ota-modal-root",
 		role: "dialog",
@@ -23285,7 +23326,7 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 		animate: { opacity: 1 },
 		exit: { opacity: 0 },
 		transition: { duration: .16 },
-		className: "fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-8",
+		className: "fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-8",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(motion.div, {
 			initial: {
 				scale: .94,
@@ -23307,13 +23348,13 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 				stiffness: 400,
 				damping: 32
 			},
-			className: "w-full max-w-2xl rounded-3xl bg-[#F4F5F7] dark:bg-[#111520] border border-zinc-900/10 dark:border-white/15 p-8 shadow-2xl",
+			className: "w-full max-w-2xl rounded-3xl bg-[#F4F5F7] dark:bg-[#111520] border border-zinc-900/10 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-start justify-between gap-6 mb-6",
+					className: "flex items-start justify-between gap-6 mb-5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						className: "text-xs font-mono-tabular text-amber-600 dark:text-amber-400 mb-1",
-						children: ["GitHub Releases · ", repoSlug]
+						className: "text-xs font-mono-tabular text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1.5",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderGit2, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: ["GitHub Releases · ", repoSlug] })]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 						id: "ota-modal-title",
 						className: "font-display text-2xl font-bold text-zinc-900 dark:text-white",
@@ -23330,7 +23371,41 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "grid grid-cols-2 gap-4 mb-6",
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/8 dark:border-white/10 p-4 mb-5",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							htmlFor: "ota-repo-input",
+							className: "block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2",
+							children: "Repositorio de GitHub (usuario/repositorio):"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								id: "ota-repo-input",
+								type: "text",
+								value: repoInput,
+								onChange: (e) => setRepoInput(e.target.value),
+								placeholder: "ej: tu-nombre/cTV-OS",
+								"data-tv-focusable": "true",
+								"data-tv-id": "ota-repo-input",
+								className: "tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-sm font-mono-tabular text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"data-tv-focusable": "true",
+								"data-tv-id": "ota-save-repo-btn",
+								onClick: handleSaveAndCheck,
+								className: "tv-focusable px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold whitespace-nowrap focus:ring-2 focus:ring-amber-500 focus:scale-105",
+								children: "Guardar y buscar"
+							})]
+						}),
+						isDefaultPlaceholder && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-amber-600 dark:text-amber-400 mt-2",
+							children: "Escribe tu usuario de GitHub para consultar los releases de tu APK."
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4 mb-5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/8 dark:border-white/10 p-4",
 						children: [
@@ -23360,43 +23435,47 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 								className: "font-mono-tabular text-xs text-zinc-400 dark:text-zinc-500 mt-0.5",
-								children: remoteManifest ? `Build ${remoteManifest.versionCode}${remoteManifest.fileSizeBytes ? ` · ${formatBytes(remoteManifest.fileSizeBytes)}` : ""}` : status === "checking" ? "Consultando version.json..." : "Sin consultar"
+								children: remoteManifest ? `Build ${remoteManifest.versionCode}${remoteManifest.fileSizeBytes ? ` · ${formatBytes(remoteManifest.fileSizeBytes)}` : ""}` : status === "checking" ? "Consultando Releases..." : "Sin consultar"
 							})
 						]
 					})]
 				}),
 				status === "checking" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/8 dark:border-white/10 p-5 flex items-center gap-4 mb-6",
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/8 dark:border-white/10 p-5 flex items-center gap-4 mb-5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: "w-6 h-6 text-amber-500 animate-spin shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "text-base font-semibold text-zinc-900 dark:text-white",
 						children: "Buscando actualización..."
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "text-sm text-zinc-500 dark:text-zinc-400",
-						children: "Verificando version.json en GitHub Releases"
+						children: ["Consultando Releases en GitHub para ", repoSlug]
 					})] })]
 				}),
 				status === "up_to_date" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-emerald-500/30 p-5 flex items-center gap-4 mb-6",
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-emerald-500/30 p-5 flex items-center gap-4 mb-5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "w-6 h-6 text-emerald-500 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "text-base font-semibold text-zinc-900 dark:text-white",
 						children: "Launcher actualizado"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "text-sm text-zinc-500 dark:text-zinc-400",
-						children: "Ya cuentas con la última versión disponible."
+						children: [
+							"Ya cuentas con la última versión disponible (v",
+							currentVersion.versionName,
+							")."
+						]
 					})] })]
 				}),
 				status === "update_available" && remoteManifest && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-amber-500/35 p-5 mb-6",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-amber-500/35 p-5 mb-5",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "text-base font-semibold text-zinc-900 dark:text-white mb-1.5",
-						children: "Nueva versión disponible"
+						children: ["Nueva versión disponible: v", remoteManifest.versionName]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 						className: "text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed whitespace-pre-line",
 						children: remoteManifest.releaseNotes || "Mejoras de rendimiento y fluidez para Android TV."
 					})]
 				}),
 				(status === "downloading" || status === "installing") && progress && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/10 dark:border-white/12 p-5 mb-6",
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-zinc-900/10 dark:border-white/12 p-5 mb-5",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "flex items-center justify-between text-sm mb-2.5",
@@ -23429,7 +23508,7 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 					]
 				}),
 				status === "permission_required" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-amber-500/40 p-5 flex items-start gap-4 mb-6",
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-amber-500/40 p-5 flex items-start gap-4 mb-5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, { className: "w-6 h-6 text-amber-500 shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "text-base font-semibold text-zinc-900 dark:text-white",
 						children: "Permiso necesario en Android TV"
@@ -23438,19 +23517,22 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 						children: "Activa “Instalar aplicaciones desconocidas” para CTV OS y vuelve a pulsar Instalar."
 					})] })]
 				}),
-				status === "error" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-red-500/40 p-5 flex items-start gap-4 mb-6",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "w-6 h-6 text-red-500 shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "text-base font-semibold text-zinc-900 dark:text-white",
-						children: "No se pudo verificar la actualización"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-sm text-zinc-600 dark:text-zinc-300 mt-1",
-						children: errorMessage || "Verifica la conexión a internet o el repositorio."
-					})] })]
+				status === "error" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "rounded-2xl bg-white dark:bg-[#090B10] border border-amber-500/30 p-5 mb-5",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-start gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "w-5 h-5 text-amber-500 shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-base font-semibold text-zinc-900 dark:text-white",
+							children: "No se pudo verificar la actualización"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-zinc-600 dark:text-zinc-300 mt-1",
+							children: errorMessage || "Verifica el nombre del repositorio o la conexión."
+						})] })]
+					})
 				}),
 				!isNative && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "text-xs text-zinc-500 dark:text-zinc-400 mb-5",
-					children: "Vista previa web: en Android TV real, LauncherPlugin.java descarga el APK de GitHub Releases y abre el instalador mediante FileProvider."
+					children: "En Android TV real, el launcher descarga el APK mediante el plugin nativo y lanza el instalador con FileProvider."
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex flex-wrap items-center justify-end gap-3",
@@ -23478,7 +23560,7 @@ function OtaUpdateModal({ isOpen, repoSlug, currentVersion, remoteManifest, stat
 							"data-tv-focusable": "true",
 							"data-tv-initial": status !== "update_available" && status !== "permission_required" ? "true" : void 0,
 							"data-tv-id": "ota-recheck-btn",
-							onClick: onCheckAgain,
+							onClick: () => onCheckAgain(),
 							disabled: status === "checking" || status === "downloading",
 							className: "tv-focusable inline-flex items-center gap-2 px-5 py-3 rounded-full bg-zinc-900/8 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold text-sm disabled:opacity-50 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Buscar de nuevo" })]
@@ -24090,39 +24172,39 @@ async function getCurrentAppVersion() {
 }
 async function fetchOtaManifest(repoSlug) {
 	const cleanRepo = repoSlug.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\/+$/, "");
-	if (!cleanRepo || !cleanRepo.includes("/")) throw new Error("Configura un repositorio válido con formato usuario/repositorio.");
-	const directUrl = `https://github.com/${cleanRepo}/releases/latest/download/version.json?t=${Date.now()}`;
-	try {
-		const res = await fetch(directUrl, { cache: "no-store" });
-		if (res.ok) {
-			const data = await res.json();
-			if (data && typeof data.versionCode === "number" && data.apkUrl) return data;
-		}
-	} catch {}
+	if (!cleanRepo || !cleanRepo.includes("/") || cleanRepo.startsWith("tu-usuario/")) throw new Error("Configura tu usuario de GitHub en los ajustes (ej: tu-nombre/cTV-OS) para consultar las actualizaciones.");
+	if (isNativeAndroid()) try {
+		return await LauncherNative.checkOtaUpdate({ repo: cleanRepo });
+	} catch (nativeErr) {
+		const msg = nativeErr instanceof Error ? nativeErr.message : String(nativeErr);
+		throw new Error(msg || "No se pudo verificar la actualización en GitHub.");
+	}
 	const apiUrl = `https://api.github.com/repos/${cleanRepo}/releases/latest`;
-	const apiRes = await fetch(apiUrl, {
-		headers: { Accept: "application/vnd.github+json" },
-		cache: "no-store"
-	});
+	let apiRes;
+	try {
+		apiRes = await fetch(apiUrl, {
+			headers: { Accept: "application/vnd.github+json" },
+			cache: "no-store"
+		});
+	} catch (err) {
+		throw new Error(`No se pudo conectar con GitHub (${err instanceof Error ? err.message : "Error de conexión"}). Comprueba el nombre de repositorio o tu conexión a internet.`);
+	}
 	if (!apiRes.ok) {
-		if (apiRes.status === 404) throw new Error(`No se encontró ningún Release publicado en ${cleanRepo}.`);
-		throw new Error(`Error al consultar GitHub Releases (${apiRes.status}).`);
+		if (apiRes.status === 404) throw new Error(`No se encontró ningún Release en "${cleanRepo}". Comprueba que el repositorio sea público y que el workflow de GitHub Actions haya compilado un APK.`);
+		if (apiRes.status === 403) throw new Error("Límite de peticiones a la API de GitHub alcanzado temporalmente. Inténtalo en unos minutos.");
+		throw new Error(`Error al consultar GitHub Releases (HTTP ${apiRes.status}).`);
 	}
 	const release = await apiRes.json();
-	const versionJsonAsset = release.assets?.find((a) => a.name.toLowerCase() === "version.json");
-	if (versionJsonAsset) {
-		const vRes = await fetch(versionJsonAsset.browser_download_url, { cache: "no-store" });
-		if (vRes.ok) return await vRes.json();
-	}
 	const apkAsset = release.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
-	if (!apkAsset) throw new Error("El último Release no contiene un archivo APK ni version.json.");
+	if (!apkAsset) throw new Error(`El release ${release.tag_name || ""} no contiene un archivo APK (.apk).`);
 	const cleanTag = (release.tag_name || "1.0.0").replace(/^v/i, "");
 	const numericParts = cleanTag.split(".").map((n) => parseInt(n, 10) || 0);
+	const buildMatch = (release.body || "").match(/versionCode[":\s]+(\d+)|Build\s+(\d+)/i);
 	return {
-		versionCode: (numericParts[0] || 1) * 1e4 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0),
+		versionCode: buildMatch ? parseInt(buildMatch[1] || buildMatch[2], 10) : (numericParts[0] || 1) * 1e4 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0),
 		versionName: cleanTag,
 		apkUrl: apkAsset.browser_download_url,
-		releaseNotes: release.body || "Nueva versión disponible desde GitHub Releases.",
+		releaseNotes: release.body || `Compilación CTV OS v${cleanTag} lista para instalar.`,
 		publishedAt: release.published_at,
 		fileSizeBytes: apkAsset.size
 	};
@@ -24344,12 +24426,13 @@ function App() {
 	const handleOpenAndroidSettings = (0, import_react.useCallback)(async (section) => {
 		if (!await openTvSettings(section)) showToast("Disponible al ejecutar el APK compilado en tu Android TV.");
 	}, [showToast]);
-	const runOtaCheck = (0, import_react.useCallback)(async () => {
+	const runOtaCheck = (0, import_react.useCallback)(async (customRepo) => {
+		const targetRepo = (customRepo || settings.otaRepo).trim();
 		setOtaStatus("checking");
 		setOtaError(null);
 		setOtaProgress(null);
 		try {
-			const manifest = await fetchOtaManifest(settings.otaRepo);
+			const manifest = await fetchOtaManifest(targetRepo);
 			setRemoteManifest(manifest);
 			if (manifest.versionCode > appVersion.versionCode) setOtaStatus("update_available");
 			else setOtaStatus("up_to_date");
@@ -24520,7 +24603,8 @@ function App() {
 				progress: otaProgress,
 				errorMessage: otaError,
 				isNative,
-				onCheckAgain: () => void runOtaCheck(),
+				onUpdateRepo: (newRepo) => updateSettings({ otaRepo: newRepo }),
+				onCheckAgain: (customRepo) => void runOtaCheck(customRepo),
 				onStartDownload: () => void handleStartOtaDownload(),
 				onOpenUnknownSources: () => void handleOpenAndroidSettings("unknown_sources"),
 				onClose: () => closeOverlayToHome("top-ota")

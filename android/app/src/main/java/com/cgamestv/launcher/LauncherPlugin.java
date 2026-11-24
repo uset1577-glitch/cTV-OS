@@ -26,10 +26,12 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedHashMap;
@@ -37,6 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @CapacitorPlugin(name = "Launcher")
 public class LauncherPlugin extends Plugin {
@@ -259,6 +265,116 @@ public class LauncherPlugin extends Plugin {
             call.resolve(res);
         } catch (Exception e) {
             call.reject("No se pudo obtener la versión de la app", e);
+        }
+    }
+
+    @PluginMethod
+    public void checkOtaUpdate(PluginCall call) {
+        String repo = call.getString("repo");
+        if (repo == null || repo.trim().isEmpty() || repo.contains("tu-usuario")) {
+            call.reject("Configura tu repositorio de GitHub en los ajustes (ej: usuario/cTV-OS)");
+            return;
+        }
+
+        executor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                String cleanRepo = repo.trim().replaceAll("^https?://github\\.com/", "").replaceAll("/+$", "");
+                String apiUrl = "https://api.github.com/repos/" + cleanRepo + "/releases/latest";
+
+                URL url = new URL(apiUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "CTVOS-Launcher-AndroidTV");
+                conn.setRequestProperty("Accept", "application/vnd.github+json");
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(15000);
+
+                int code = conn.getResponseCode();
+                if (code == 404) {
+                    call.reject("No se encontró ningún Release publicado en el repositorio " + cleanRepo);
+                    return;
+                }
+                if (code < 200 || code >= 300) {
+                    call.reject("Error al consultar GitHub Releases (HTTP " + code + ")");
+                    return;
+                }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+
+                JSONObject release = new JSONObject(sb.toString());
+                String tagName = release.optString("tag_name", "1.0.0");
+                String releaseNotes = release.optString("body", "");
+                String publishedAt = release.optString("published_at", "");
+
+                JSONArray assets = release.optJSONArray("assets");
+                String apkUrl = "";
+                long fileSizeBytes = 0;
+
+                if (assets != null) {
+                    for (int i = 0; i < assets.length(); i++) {
+                        JSONObject asset = assets.getJSONObject(i);
+                        String name = asset.optString("name", "");
+                        if (name.toLowerCase().endsWith(".apk")) {
+                            apkUrl = asset.optString("browser_download_url", "");
+                            fileSizeBytes = asset.optLong("size", 0);
+                            break;
+                        }
+                    }
+                }
+
+                if (apkUrl.isEmpty()) {
+                    call.reject("El último release " + tagName + " no contiene un archivo APK compilado.");
+                    return;
+                }
+
+                String cleanTag = tagName.replaceAll("(?i)^v", "");
+                String[] parts = cleanTag.split("\\.");
+                long p0 = parts.length > 0 ? parseLongSafe(parts[0], 1) : 1;
+                long p1 = parts.length > 1 ? parseLongSafe(parts[1], 0) : 0;
+                long p2 = parts.length > 2 ? parseLongSafe(parts[2], 0) : 0;
+                long versionCode = p0 * 10000 + p1 * 100 + p2;
+
+                Pattern pattern = Pattern.compile("(?:versionCode[\":\\s]+(\\d+)|Build\\s+(\\d+))", Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(releaseNotes);
+                if (matcher.find()) {
+                    String g1 = matcher.group(1);
+                    String g2 = matcher.group(2);
+                    String matchStr = g1 != null ? g1 : g2;
+                    if (matchStr != null) {
+                        versionCode = parseLongSafe(matchStr, versionCode);
+                    }
+                }
+
+                JSObject res = new JSObject();
+                res.put("versionCode", versionCode);
+                res.put("versionName", cleanTag);
+                res.put("apkUrl", apkUrl);
+                res.put("releaseNotes", releaseNotes);
+                res.put("publishedAt", publishedAt);
+                res.put("fileSizeBytes", fileSizeBytes);
+                call.resolve(res);
+            } catch (Exception e) {
+                call.reject("No se pudo conectar con GitHub: " + e.getMessage(), e);
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        });
+    }
+
+    private long parseLongSafe(String str, long fallback) {
+        try {
+            return Long.parseLong(str.trim());
+        } catch (Exception e) {
+            return fallback;
         }
     }
 
