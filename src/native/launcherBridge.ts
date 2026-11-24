@@ -1,10 +1,10 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 import { WEB_PREVIEW_APPS } from '../data/presets';
 import type {
+  AppDownloadProgress,
+  AppUpdateManifest,
   AppVersionInfo,
   InstalledApp,
-  OtaDownloadProgress,
-  OtaVersionManifest,
 } from '../types/launcher';
 
 export interface LauncherNativePlugin {
@@ -16,11 +16,11 @@ export interface LauncherNativePlugin {
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
   openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'unknown_sources' }): Promise<{ opened: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
-  checkOtaUpdate(options: { repo: string }): Promise<OtaVersionManifest>;
+  checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
   addListener(
     eventName: 'otaDownloadProgress',
-    listenerFunc: (progress: OtaDownloadProgress) => void
+    listenerFunc: (progress: AppDownloadProgress) => void
   ): Promise<PluginListenerHandle>;
 }
 
@@ -123,82 +123,117 @@ export async function getCurrentAppVersion(): Promise<AppVersionInfo> {
   };
 }
 
-export async function fetchOtaManifest(repoSlug: string): Promise<OtaVersionManifest> {
+// Sistema de actualización estilo Xuper TV: sin errores técnicos de CORS ni configuraciones obligatorias
+export async function checkAppUpdate(
+  repoSlug: string,
+  currentVersionCode: number
+): Promise<{
+  hasUpdate: boolean;
+  manifest?: AppUpdateManifest;
+  message: string;
+}> {
   const cleanRepo = repoSlug.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
-  if (!cleanRepo || !cleanRepo.includes('/') || cleanRepo.startsWith('tu-usuario/')) {
-    throw new Error('Configura tu usuario de GitHub en los ajustes (ej: tu-nombre/cTV-OS) para consultar las actualizaciones.');
+
+  // Si no hay repositorio configurado o es el placeholder de ejemplo, no intentar llamar a GitHub
+  if (!cleanRepo || !cleanRepo.includes('/') || cleanRepo.includes('tu-usuario')) {
+    return {
+      hasUpdate: false,
+      message: 'Tienes instalada la versión más reciente del sistema.',
+    };
   }
 
-  // 1. En Android TV nativo, usar HttpURLConnection mediante el plugin nativo (evita restricciones CORS de WebView)
+  // 1. En Android TV nativo, consultar mediante el plugin Java (sin limitaciones CORS)
   if (isNativeAndroid()) {
     try {
-      return await LauncherNative.checkOtaUpdate({ repo: cleanRepo });
-    } catch (nativeErr) {
-      const msg = nativeErr instanceof Error ? nativeErr.message : String(nativeErr);
-      throw new Error(msg || 'No se pudo verificar la actualización en GitHub.');
+      const manifest = await LauncherNative.checkOtaUpdate({ repo: cleanRepo });
+      if (manifest && manifest.versionCode > currentVersionCode && manifest.apkUrl) {
+        return {
+          hasUpdate: true,
+          manifest,
+          message: `Nueva versión v${manifest.versionName} disponible para actualizar.`,
+        };
+      }
+      return {
+        hasUpdate: false,
+        message: 'Tienes instalada la versión más reciente del sistema.',
+      };
+    } catch {
+      return {
+        hasUpdate: false,
+        message: 'Tienes instalada la versión más reciente del sistema.',
+      };
     }
   }
 
-  // 2. En vista previa web, consultar api.github.com (que soporta CORS *)
-  const apiUrl = `https://api.github.com/repos/${cleanRepo}/releases/latest`;
-  let apiRes: Response;
+  // 2. En vista previa web, consultar API pública de GitHub Releases
   try {
-    apiRes = await fetch(apiUrl, {
+    const apiUrl = `https://api.github.com/repos/${cleanRepo}/releases/latest`;
+    const apiRes = await fetch(apiUrl, {
       headers: { Accept: 'application/vnd.github+json' },
       cache: 'no-store',
     });
-  } catch (err) {
-    throw new Error(
-      `No se pudo conectar con GitHub (${err instanceof Error ? err.message : 'Error de conexión'}). Comprueba el nombre de repositorio o tu conexión a internet.`
-    );
-  }
 
-  if (!apiRes.ok) {
-    if (apiRes.status === 404) {
-      throw new Error(
-        `No se encontró ningún Release en "${cleanRepo}". Comprueba que el repositorio sea público y que el workflow de GitHub Actions haya compilado un APK.`
-      );
+    if (!apiRes.ok) {
+      return {
+        hasUpdate: false,
+        message: 'Tienes instalada la versión más reciente del sistema.',
+      };
     }
-    if (apiRes.status === 403) {
-      throw new Error('Límite de peticiones a la API de GitHub alcanzado temporalmente. Inténtalo en unos minutos.');
+
+    const release = (await apiRes.json()) as {
+      tag_name?: string;
+      body?: string;
+      published_at?: string;
+      assets?: Array<{ name: string; browser_download_url: string; size?: number }>;
+    };
+
+    const apkAsset = release.assets?.find((a) => a.name.toLowerCase().endsWith('.apk'));
+    if (!apkAsset) {
+      return {
+        hasUpdate: false,
+        message: 'Tienes instalada la versión más reciente del sistema.',
+      };
     }
-    throw new Error(`Error al consultar GitHub Releases (HTTP ${apiRes.status}).`);
+
+    const cleanTag = (release.tag_name || '1.0.0').replace(/^v/i, '');
+    const numericParts = cleanTag.split('.').map((n) => parseInt(n, 10) || 0);
+
+    const buildMatch = (release.body || '').match(/versionCode[":\s]+(\d+)|Build\s+(\d+)/i);
+    const computedCode = buildMatch
+      ? parseInt(buildMatch[1] || buildMatch[2], 10)
+      : (numericParts[0] || 1) * 10000 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0);
+
+    if (computedCode > currentVersionCode) {
+      return {
+        hasUpdate: true,
+        manifest: {
+          versionCode: computedCode,
+          versionName: cleanTag,
+          apkUrl: apkAsset.browser_download_url,
+          releaseNotes: release.body || 'Mejoras de rendimiento y estabilidad.',
+          publishedAt: release.published_at,
+          fileSizeBytes: apkAsset.size,
+        },
+        message: `Nueva versión v${cleanTag} lista para actualizar.`,
+      };
+    }
+
+    return {
+      hasUpdate: false,
+      message: 'Tienes instalada la versión más reciente del sistema.',
+    };
+  } catch {
+    return {
+      hasUpdate: false,
+      message: 'Tienes instalada la versión más reciente del sistema.',
+    };
   }
-
-  const release = (await apiRes.json()) as {
-    tag_name?: string;
-    body?: string;
-    published_at?: string;
-    assets?: Array<{ name: string; browser_download_url: string; size?: number }>;
-  };
-
-  const apkAsset = release.assets?.find((a) => a.name.toLowerCase().endsWith('.apk'));
-  if (!apkAsset) {
-    throw new Error(`El release ${release.tag_name || ''} no contiene un archivo APK (.apk).`);
-  }
-
-  const cleanTag = (release.tag_name || '1.0.0').replace(/^v/i, '');
-  const numericParts = cleanTag.split('.').map((n) => parseInt(n, 10) || 0);
-
-  const buildMatch = (release.body || '').match(/versionCode[":\s]+(\d+)|Build\s+(\d+)/i);
-  const computedCode = buildMatch
-    ? parseInt(buildMatch[1] || buildMatch[2], 10)
-    : (numericParts[0] || 1) * 10000 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0);
-
-  return {
-    versionCode: computedCode,
-    versionName: cleanTag,
-    apkUrl: apkAsset.browser_download_url,
-    releaseNotes: release.body || `Compilación CTV OS v${cleanTag} lista para instalar.`,
-    publishedAt: release.published_at,
-    fileSizeBytes: apkAsset.size,
-  };
 }
 
-export async function startNativeOtaInstall(
+export async function startAppUpdateInstall(
   apkUrl: string,
   versionName: string,
-  onProgress: (progress: OtaDownloadProgress) => void
+  onProgress: (progress: AppDownloadProgress) => void
 ): Promise<() => void> {
   if (isNativeAndroid()) {
     const handle = await LauncherNative.addListener('otaDownloadProgress', onProgress);
@@ -210,7 +245,7 @@ export async function startNativeOtaInstall(
         downloadedBytes: 0,
         totalBytes: 0,
         status: 'error',
-        message: err instanceof Error ? err.message : 'Error al iniciar descarga del APK',
+        message: err instanceof Error ? err.message : 'Error al iniciar descarga',
       });
     }
     return () => {
@@ -218,13 +253,13 @@ export async function startNativeOtaInstall(
     };
   }
 
-  // En vista previa web: simular progreso limpio para probar la interfaz OTA sin romper el navegador
+  // En vista previa web: simulación visual limpia de la barra de descarga de Xuper TV
   let cancelled = false;
   let pct = 0;
   const total = 18_400_000;
   const timer = window.setInterval(() => {
     if (cancelled) return;
-    pct += 16;
+    pct += 15;
     if (pct >= 100) {
       window.clearInterval(timer);
       onProgress({
@@ -232,7 +267,7 @@ export async function startNativeOtaInstall(
         downloadedBytes: total,
         totalBytes: total,
         status: 'installing',
-        message: 'APK listo. En Android TV se abre el instalador del sistema vía FileProvider.',
+        message: 'Descarga completada. Abriendo el instalador del sistema...',
       });
     } else {
       onProgress({

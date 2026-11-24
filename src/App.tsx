@@ -6,7 +6,7 @@ import { NavaAppsDrawer } from './components/NavaAppsDrawer';
 import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
 import { NavaTopBar } from './components/NavaTopBar';
-import { OtaUpdateModal } from './components/OtaUpdateModal';
+import { AppUpdateModal } from './components/AppUpdateModal';
 import {
   BACKGROUND_PRESETS,
   DEFAULT_SETTINGS,
@@ -18,25 +18,25 @@ import {
 } from './data/suggestions';
 import { focusElementById, useSpatialNavigation } from './hooks/useSpatialNavigation';
 import {
-  fetchOtaManifest,
+  checkAppUpdate,
   getCurrentAppVersion,
   getInstalledApps,
   launchAndroidApp,
   launchSuggestionUri,
   openTvSettings,
-  startNativeOtaInstall,
+  startAppUpdateInstall,
 } from './native/launcherBridge';
 import type {
+  AppDownloadProgress,
   AppSuggestion,
+  AppUpdateManifest,
+  AppUpdateModalStatus,
   AppVersionInfo,
   GoogleTvLiveCatalog,
   HomeTab,
   InstalledApp,
   LauncherOverlay,
   LauncherSettings,
-  OtaDownloadProgress,
-  OtaModalStatus,
-  OtaVersionManifest,
 } from './types/launcher';
 
 const SETTINGS_STORAGE_KEY = 'cgamestv_launcher_settings_v2';
@@ -80,12 +80,12 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
-  // Estado OTA
-  const [otaStatus, setOtaStatus] = useState<OtaModalStatus>('idle');
-  const [remoteManifest, setRemoteManifest] = useState<OtaVersionManifest | null>(null);
-  const [otaProgress, setOtaProgress] = useState<OtaDownloadProgress | null>(null);
-  const [otaError, setOtaError] = useState<string | null>(null);
-  const cleanupOtaRef = useRef<(() => void) | null>(null);
+  // Estado actualización de la aplicación estilo Xuper TV
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateModalStatus>('idle');
+  const [remoteManifest, setRemoteManifest] = useState<AppUpdateManifest | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<AppDownloadProgress | null>(null);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const cleanupUpdateRef = useRef<(() => void) | null>(null);
 
   // Sincronizar clase .dark en <html>
   useEffect(() => {
@@ -149,14 +149,14 @@ export default function App() {
     void loadLiveCatalog(false);
   }, [loadLauncherData, loadLiveCatalog]);
 
-  // Verificación OTA silenciosa al arrancar
+  // Verificación de actualización en segundo plano
   useEffect(() => {
-    if (!settings.otaRepo || settings.otaRepo.startsWith('tu-usuario/')) return;
+    if (!settings.updateRepo || settings.updateRepo.startsWith('tu-usuario/')) return;
     let cancelled = false;
-    fetchOtaManifest(settings.otaRepo)
-      .then((manifest) => {
-        if (!cancelled && manifest.versionCode > appVersion.versionCode) {
-          setRemoteManifest(manifest);
+    checkAppUpdate(settings.updateRepo, appVersion.versionCode)
+      .then((res) => {
+        if (!cancelled && res.hasUpdate && res.manifest) {
+          setRemoteManifest(res.manifest);
         }
       })
       .catch(() => {
@@ -165,13 +165,13 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [settings.otaRepo, appVersion.versionCode]);
+  }, [settings.updateRepo, appVersion.versionCode]);
 
   const closeOverlayToHome = useCallback(
     (focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
-      if (cleanupOtaRef.current) {
-        cleanupOtaRef.current();
-        cleanupOtaRef.current = null;
+      if (cleanupUpdateRef.current) {
+        cleanupUpdateRef.current();
+        cleanupUpdateRef.current = null;
       }
       setOverlay('none');
       window.requestAnimationFrame(() => {
@@ -274,67 +274,63 @@ export default function App() {
     [showToast]
   );
 
-  const runOtaCheck = useCallback(async (customRepo?: string) => {
-    const targetRepo = (customRepo || settings.otaRepo).trim();
-    setOtaStatus('checking');
-    setOtaError(null);
-    setOtaProgress(null);
+  const runUpdateCheck = useCallback(async (customRepo?: string) => {
+    const targetRepo = (customRepo !== undefined ? customRepo : settings.updateRepo).trim();
+    setUpdateStatus('checking');
+    setUpdateMessage(null);
+    setUpdateProgress(null);
 
-    try {
-      const manifest = await fetchOtaManifest(targetRepo);
-      setRemoteManifest(manifest);
-      if (manifest.versionCode > appVersion.versionCode) {
-        setOtaStatus('update_available');
-      } else {
-        setOtaStatus('up_to_date');
-      }
-    } catch (err) {
-      setOtaError(err instanceof Error ? err.message : 'Error al buscar actualización.');
-      setOtaStatus('error');
+    const result = await checkAppUpdate(targetRepo, appVersion.versionCode);
+    setUpdateMessage(result.message);
+    if (result.hasUpdate && result.manifest) {
+      setRemoteManifest(result.manifest);
+      setUpdateStatus('update_available');
+    } else {
+      setUpdateStatus('up_to_date');
     }
-  }, [settings.otaRepo, appVersion.versionCode]);
+  }, [settings.updateRepo, appVersion.versionCode]);
 
-  const handleOpenOtaModal = useCallback(() => {
-    setOverlay('ota');
-    void runOtaCheck();
-  }, [runOtaCheck]);
+  const handleOpenUpdateModal = useCallback(() => {
+    setOverlay('update');
+    void runUpdateCheck();
+  }, [runUpdateCheck]);
 
-  const handleStartOtaDownload = useCallback(async () => {
+  const handleStartUpdateDownload = useCallback(async () => {
     if (!remoteManifest) return;
-    if (cleanupOtaRef.current) {
-      cleanupOtaRef.current();
+    if (cleanupUpdateRef.current) {
+      cleanupUpdateRef.current();
     }
 
-    setOtaStatus('downloading');
-    setOtaError(null);
-    setOtaProgress({
+    setUpdateStatus('downloading');
+    setUpdateMessage(null);
+    setUpdateProgress({
       percent: 0,
       downloadedBytes: 0,
       totalBytes: remoteManifest.fileSizeBytes || 0,
       status: 'downloading',
     });
 
-    const cleanup = await startNativeOtaInstall(
+    const cleanup = await startAppUpdateInstall(
       remoteManifest.apkUrl,
       remoteManifest.versionName,
       (prog) => {
-        setOtaProgress(prog);
+        setUpdateProgress(prog);
         if (prog.status === 'permission_required') {
-          setOtaStatus('permission_required');
+          setUpdateStatus('permission_required');
         } else if (prog.status === 'installing' || prog.status === 'completed') {
-          setOtaStatus('installing');
+          setUpdateStatus('installing');
         } else if (prog.status === 'error') {
-          setOtaError(prog.message || 'Falló la descarga o instalación del APK.');
-          setOtaStatus('error');
+          setUpdateMessage(prog.message || 'Falló la descarga o instalación de la app.');
+          setUpdateStatus('error');
         }
       }
     );
-    cleanupOtaRef.current = cleanup;
+    cleanupUpdateRef.current = cleanup;
   }, [remoteManifest]);
 
   useEffect(() => {
     return () => {
-      if (cleanupOtaRef.current) cleanupOtaRef.current();
+      if (cleanupUpdateRef.current) cleanupUpdateRef.current();
       if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     };
   }, []);
@@ -392,7 +388,7 @@ export default function App() {
             })
           }
           onOpenSearch={() => setOverlay('search')}
-          onOpenOta={handleOpenOtaModal}
+          onOpenUpdate={handleOpenUpdateModal}
           onOpenSettings={() => setOverlay('settings')}
         />
 
@@ -477,24 +473,24 @@ export default function App() {
         isNative={isNative}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
-        onOpenOtaModal={handleOpenOtaModal}
+        onOpenUpdateModal={handleOpenUpdateModal}
         onClose={() => closeOverlayToHome('top-settings')}
       />
 
-      <OtaUpdateModal
-        isOpen={overlay === 'ota'}
-        repoSlug={settings.otaRepo}
+      <AppUpdateModal
+        isOpen={overlay === 'update'}
+        updateRepo={settings.updateRepo}
         currentVersion={appVersion}
         remoteManifest={remoteManifest}
-        status={otaStatus}
-        progress={otaProgress}
-        errorMessage={otaError}
+        status={updateStatus}
+        progress={updateProgress}
+        message={updateMessage}
         isNative={isNative}
-        onUpdateRepo={(newRepo) => updateSettings({ otaRepo: newRepo })}
-        onCheckAgain={(customRepo) => void runOtaCheck(customRepo)}
-        onStartDownload={() => void handleStartOtaDownload()}
+        onUpdateRepo={(newRepo) => updateSettings({ updateRepo: newRepo })}
+        onCheckAgain={(customRepo) => void runUpdateCheck(customRepo)}
+        onStartDownload={() => void handleStartUpdateDownload()}
         onOpenUnknownSources={() => void handleOpenAndroidSettings('unknown_sources')}
-        onClose={() => closeOverlayToHome('top-ota')}
+        onClose={() => closeOverlayToHome(hasAvailableUpdate ? 'top-update' : 'top-settings')}
       />
 
       {/* Toast minimalista */}

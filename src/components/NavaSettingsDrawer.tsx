@@ -22,7 +22,7 @@ interface NavaSettingsDrawerProps {
   isNative: boolean;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
   onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'unknown_sources') => void;
-  onOpenOtaModal: () => void;
+  onOpenUpdateModal: () => void;
   onClose: () => void;
 }
 
@@ -33,17 +33,17 @@ export function NavaSettingsDrawer({
   isNative,
   onUpdateSettings,
   onOpenAndroidSettings,
-  onOpenOtaModal,
+  onOpenUpdateModal,
   onClose,
 }: NavaSettingsDrawerProps) {
-  const [repoInput, setRepoInput] = useState(settings.otaRepo);
+  const [repoInput, setRepoInput] = useState(settings.updateRepo || '');
   const [repoSaved, setRepoSaved] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setRepoInput(settings.otaRepo);
+      setRepoInput(settings.updateRepo || '');
     }
-  }, [isOpen, settings.otaRepo]);
+  }, [isOpen, settings.updateRepo]);
 
   useSpatialNavigation({
     enabled: isOpen,
@@ -52,7 +52,7 @@ export function NavaSettingsDrawer({
   });
 
   const handleSaveRepo = () => {
-    onUpdateSettings({ otaRepo: repoInput.trim() });
+    onUpdateSettings({ updateRepo: repoInput.trim() });
     setRepoSaved(true);
     window.setTimeout(() => setRepoSaved(false), 2000);
   };
@@ -85,7 +85,7 @@ export function NavaSettingsDrawer({
                   Ajustes de CTV OS
                 </h2>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Personalización ligera, sistema Android TV y OTA
+                  Personalización, apariencia y sistema Android TV
                 </p>
               </div>
               <button
@@ -279,48 +279,59 @@ export function NavaSettingsDrawer({
               </div>
             </div>
 
-            {/* OTA GitHub Releases */}
-            <div className="rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 p-5 space-y-3">
+            {/* Actualización de la aplicación estilo Xuper TV */}
+            <div className="rounded-2xl bg-white dark:bg-white/[0.06] border border-zinc-900/8 dark:border-white/10 p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                  Actualización OTA (GitHub Releases)
+                <div>
+                  <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    Actualización de la aplicación
+                  </h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Comprueba e instala nuevas versiones de CTV OS
+                  </p>
+                </div>
+                <span className="font-mono-tabular text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-900/8 dark:bg-white/10 text-zinc-700 dark:text-zinc-300">
+                  v{appVersion.versionName} ({appVersion.versionCode})
                 </span>
-                <span className="font-mono-tabular text-xs text-zinc-500 dark:text-zinc-400">
-                  v{appVersion.versionName} · {appVersion.versionCode}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={repoInput}
-                  onChange={(e) => setRepoInput(e.target.value)}
-                  data-tv-focusable="true"
-                  data-tv-id="settings-ota-repo"
-                  placeholder="usuario/repositorio"
-                  className="tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-100 dark:bg-[#090B10] border border-zinc-900/10 dark:border-white/12 text-sm font-mono-tabular text-zinc-900 dark:text-white focus:ring-2 focus:ring-amber-500"
-                />
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="settings-ota-save"
-                  onClick={handleSaveRepo}
-                  className="tv-focusable px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
-                >
-                  {repoSaved ? 'Guardado' : 'Guardar'}
-                </button>
               </div>
 
               <button
                 type="button"
                 data-tv-focusable="true"
-                data-tv-id="settings-ota-open"
-                onClick={onOpenOtaModal}
-                className="tv-focusable w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-semibold text-sm focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02]"
+                data-tv-id="settings-update-check"
+                onClick={onOpenUpdateModal}
+                className="tv-focusable w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-sm focus:bg-white focus:text-zinc-950 focus:scale-[1.02] shadow-sm"
               >
-                <Download className="w-4 h-4" />
-                <span>Buscar actualización ahora</span>
+                <Download className="w-4 h-4 shrink-0" />
+                <span>Buscar actualizaciones</span>
               </button>
+
+              <div className="pt-2 border-t border-zinc-900/6 dark:border-white/6 space-y-2">
+                <label htmlFor="settings-update-repo-input" className="block text-xs text-zinc-400">
+                  Servidor o repositorio de descargas (opcional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="settings-update-repo-input"
+                    type="text"
+                    value={repoInput}
+                    onChange={(e) => setRepoInput(e.target.value)}
+                    data-tv-focusable="true"
+                    data-tv-id="settings-update-repo"
+                    placeholder="ej: usuario/cTV-OS o vacío por defecto"
+                    className="tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-100 dark:bg-[#090B10] border border-zinc-900/10 dark:border-white/12 text-sm font-mono-tabular text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-500"
+                  />
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="settings-update-save"
+                    onClick={handleSaveRepo}
+                    className="tv-focusable px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
+                  >
+                    {repoSaved ? 'Guardado' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         </motion.div>

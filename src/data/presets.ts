@@ -79,7 +79,7 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   use24HourClock: false,
   showPackageNames: false,
   showSuggestions: true,
-  otaRepo: 'tu-usuario/cTV-OS',
+  updateRepo: '',
   favoritePackages: DEFAULT_FAVORITES,
 };
 

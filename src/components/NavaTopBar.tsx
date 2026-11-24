@@ -10,7 +10,7 @@ interface NavaTopBarProps {
   onSelectTab: (tab: HomeTab) => void;
   onToggleTheme: () => void;
   onOpenSearch: () => void;
-  onOpenOta: () => void;
+  onOpenUpdate?: () => void;
   onOpenSettings: () => void;
 }
 
@@ -22,7 +22,7 @@ export function NavaTopBar({
   onSelectTab,
   onToggleTheme,
   onOpenSearch,
-  onOpenOta,
+  onOpenUpdate,
   onOpenSettings,
 }: NavaTopBarProps) {
   const [now, setNow] = useState(() => new Date());
@@ -106,22 +106,20 @@ export function NavaTopBar({
           {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        <button
-          type="button"
-          data-tv-focusable="true"
-          data-tv-id="top-ota"
-          onClick={onOpenOta}
-          aria-label="Actualización OTA"
-          title="Actualización OTA"
-          className={`tv-focusable h-10 px-3.5 rounded-full flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 ${
-            hasAvailableUpdate
-              ? 'bg-amber-500 text-zinc-950 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
-              : 'bg-zinc-900/8 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
-          } focus:scale-105`}
-        >
-          <Download className="w-3.5 h-3.5 shrink-0" />
-          <span>{hasAvailableUpdate ? 'Actualizar' : 'OTA'}</span>
-        </button>
+        {hasAvailableUpdate && (
+          <button
+            type="button"
+            data-tv-focusable="true"
+            data-tv-id="top-update"
+            onClick={onOpenUpdate}
+            aria-label="Nueva versión disponible para instalar"
+            title="Nueva versión disponible"
+            className="tv-focusable h-10 px-4 rounded-full flex items-center gap-2 text-xs font-bold whitespace-nowrap shrink-0 bg-amber-500 text-zinc-950 focus:bg-white focus:text-zinc-950 focus:scale-105 shadow-md shadow-amber-500/20"
+          >
+            <Download className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
+            <span>Actualizar</span>
+          </button>
+        )}
 
         <button
           type="button"

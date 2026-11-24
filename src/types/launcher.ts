@@ -1,4 +1,4 @@
-export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'ota';
+export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'update';
 
 export type HomeTab = 'inicio' | 'envivo' | 'apps';
 
@@ -54,7 +54,7 @@ export interface LauncherSettings {
   use24HourClock: boolean;
   showPackageNames: boolean;
   showSuggestions: boolean;
-  otaRepo: string;
+  updateRepo: string;
   favoritePackages: string[];
 }
 
@@ -64,7 +64,7 @@ export interface AppVersionInfo {
   packageName: string;
 }
 
-export interface OtaVersionManifest {
+export interface AppUpdateManifest {
   versionCode: number;
   versionName: string;
   apkUrl: string;
@@ -74,7 +74,7 @@ export interface OtaVersionManifest {
   fileSizeBytes?: number;
 }
 
-export interface OtaDownloadProgress {
+export interface AppDownloadProgress {
   percent: number;
   downloadedBytes: number;
   totalBytes: number;
@@ -82,7 +82,7 @@ export interface OtaDownloadProgress {
   message?: string;
 }
 
-export type OtaModalStatus =
+export type AppUpdateModalStatus =
   | 'idle'
   | 'checking'
   | 'up_to_date'
