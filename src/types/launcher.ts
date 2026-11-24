@@ -1,4 +1,4 @@
-export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'update';
+export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'update' | 'maintenance';
 
 export type HomeTab = 'inicio' | 'envivo' | 'apps';
 
@@ -58,8 +58,17 @@ export interface LauncherSettings {
   use24HourClock: boolean;
   showPackageNames: boolean;
   showSuggestions: boolean;
+  appsOnlyMode: boolean;
   updateRepo: string;
   favoritePackages: string[];
+}
+
+export interface LauncherRemoteStatus {
+  maintenanceMode: boolean;
+  appsOnlyMode: boolean;
+  title: string;
+  message: string;
+  updatedAt?: string;
 }
 
 export interface AppVersionInfo {
@@ -76,6 +85,7 @@ export interface AppUpdateManifest {
   publishedAt?: string;
   mandatory?: boolean;
   fileSizeBytes?: number;
+  fromVersionJson?: boolean;
 }
 
 export interface AppDownloadProgress {

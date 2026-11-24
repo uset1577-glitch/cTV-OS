@@ -1,7 +1,7 @@
 {
-  "name": "CTV OS",
-  "short_name": "CTV OS",
-  "description": "CTV OS: Launcher fluido para Android TV optimizado para control remoto.",
+  "name": "VORA TV OS",
+  "short_name": "VORA TV OS",
+  "description": "VORA TV OS: Launcher fluido para Android TV optimizado para control remoto.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090B10",

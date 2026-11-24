@@ -91,6 +91,7 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   use24HourClock: false,
   showPackageNames: false,
   showSuggestions: true,
+  appsOnlyMode: false,
   updateRepo: (import.meta.env.VITE_UPDATE_REPO as string | undefined)?.trim() || '',
   favoritePackages: DEFAULT_FAVORITES,
 };

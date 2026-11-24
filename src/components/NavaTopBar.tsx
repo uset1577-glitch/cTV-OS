@@ -10,6 +10,7 @@ interface NavaTopBarProps {
   hasAvailableUpdate: boolean;
   isVisible: boolean;
   isOverHero?: boolean;
+  appsOnlyMode?: boolean;
   onSelectTab: (tab: HomeTab) => void;
   onToggleTheme: () => void;
   onOpenSearch: () => void;
@@ -24,6 +25,7 @@ export function NavaTopBar({
   hasAvailableUpdate,
   isVisible,
   isOverHero = false,
+  appsOnlyMode = false,
   onSelectTab,
   onToggleTheme,
   onOpenSearch,
@@ -43,13 +45,18 @@ export function NavaTopBar({
     hour12: !use24HourClock,
   });
 
-  const tabs: Array<{ id: HomeTab; label: string }> = [
-    { id: 'inicio', label: 'Inicio' },
-    { id: 'envivo', label: 'En vivo' },
-    { id: 'apps', label: 'Aplicaciones' },
-  ];
+  const tabs: Array<{ id: HomeTab; label: string }> = appsOnlyMode
+    ? [
+        { id: 'inicio', label: 'Inicio' },
+        { id: 'apps', label: 'Aplicaciones' },
+      ]
+    : [
+        { id: 'inicio', label: 'Inicio' },
+        { id: 'envivo', label: 'En vivo' },
+        { id: 'apps', label: 'Aplicaciones' },
+      ];
 
-  const heroTone = isOverHero;
+  const heroTone = isOverHero && !appsOnlyMode;
 
   return (
     <header

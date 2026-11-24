@@ -274,59 +274,44 @@ public class LauncherPlugin extends Plugin {
     public void checkOtaUpdate(PluginCall call) {
         String repo = call.getString("repo");
         if (repo == null || repo.trim().isEmpty() || repo.contains("tu-usuario")) {
-            call.reject("Configura tu repositorio de GitHub en los ajustes (ej: usuario/cTV-OS)");
+            call.reject("Configura tu repositorio de GitHub en los ajustes (ej: usuario/vora-tv-os)");
             return;
         }
 
         executor.execute(() -> {
-            HttpURLConnection conn = null;
             try {
                 String cleanRepo = repo.trim().replaceAll("^https?://github\\.com/", "").replaceAll("/+$", "");
                 String apiUrl = "https://api.github.com/repos/" + cleanRepo + "/releases/latest";
 
-                URL url = new URL(apiUrl);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("User-Agent", "CTVOS-Launcher-AndroidTV");
-                conn.setRequestProperty("Accept", "application/vnd.github+json");
-                conn.setConnectTimeout(10000);
-                conn.setReadTimeout(15000);
-
-                int code = conn.getResponseCode();
-                if (code == 404) {
+                HttpTextResponse releaseResp = fetchTextUrl(apiUrl, "application/vnd.github+json", 10000, 15000);
+                if (releaseResp.statusCode == 404) {
                     call.reject("No se encontró ningún Release publicado en el repositorio " + cleanRepo);
                     return;
                 }
-                if (code < 200 || code >= 300) {
-                    call.reject("Error al consultar GitHub Releases (HTTP " + code + ")");
+                if (releaseResp.statusCode < 200 || releaseResp.statusCode >= 300) {
+                    call.reject("Error al consultar GitHub Releases (HTTP " + releaseResp.statusCode + ")");
                     return;
                 }
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-                reader.close();
-
-                JSONObject release = new JSONObject(sb.toString());
+                JSONObject release = new JSONObject(releaseResp.body);
                 String tagName = release.optString("tag_name", "1.0.0");
                 String releaseNotes = release.optString("body", "");
                 String publishedAt = release.optString("published_at", "");
 
                 JSONArray assets = release.optJSONArray("assets");
                 String apkUrl = "";
+                String versionJsonUrl = "";
                 long fileSizeBytes = 0;
 
                 if (assets != null) {
                     for (int i = 0; i < assets.length(); i++) {
                         JSONObject asset = assets.getJSONObject(i);
-                        String name = asset.optString("name", "");
-                        if (name.toLowerCase().endsWith(".apk")) {
+                        String name = asset.optString("name", "").toLowerCase();
+                        if (name.endsWith(".apk") && apkUrl.isEmpty()) {
                             apkUrl = asset.optString("browser_download_url", "");
                             fileSizeBytes = asset.optLong("size", 0);
-                            break;
+                        } else if ("version.json".equals(name) && versionJsonUrl.isEmpty()) {
+                            versionJsonUrl = asset.optString("browser_download_url", "");
                         }
                     }
                 }
@@ -336,21 +321,47 @@ public class LauncherPlugin extends Plugin {
                     return;
                 }
 
-                String cleanTag = tagName.replaceAll("(?i)^v", "");
-                String[] parts = cleanTag.split("\\.");
-                long p0 = parts.length > 0 ? parseLongSafe(parts[0], 1) : 1;
-                long p1 = parts.length > 1 ? parseLongSafe(parts[1], 0) : 0;
-                long p2 = parts.length > 2 ? parseLongSafe(parts[2], 0) : 0;
-                long versionCode = p0 * 10000 + p1 * 100 + p2;
+                String cleanTag = tagName.replaceAll("(?i)^v", "").trim();
+                long versionCode = 0;
+                boolean mandatory = false;
+                boolean fromVersionJson = false;
 
-                Pattern pattern = Pattern.compile("(?:versionCode[\":\\s]+(\\d+)|Build\\s+(\\d+))", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(releaseNotes);
-                if (matcher.find()) {
-                    String g1 = matcher.group(1);
-                    String g2 = matcher.group(2);
-                    String matchStr = g1 != null ? g1 : g2;
-                    if (matchStr != null) {
-                        versionCode = parseLongSafe(matchStr, versionCode);
+                // 1. Preferir version.json adjunto en el release (contiene versionCode y versionName exactos)
+                if (!versionJsonUrl.isEmpty()) {
+                    try {
+                        HttpTextResponse vjResp = fetchTextUrl(versionJsonUrl, "application/json", 8000, 10000);
+                        if (vjResp.statusCode >= 200 && vjResp.statusCode < 300) {
+                            JSONObject vj = new JSONObject(vjResp.body);
+                            long vjCode = vj.optLong("versionCode", 0);
+                            String vjName = vj.optString("versionName", "").replaceAll("(?i)^v", "").trim();
+                            String vjNotes = vj.optString("releaseNotes", "");
+                            long vjSize = vj.optLong("fileSizeBytes", 0);
+                            String vjPublished = vj.optString("publishedAt", "");
+                            if (vjCode > 0) versionCode = vjCode;
+                            if (!vjName.isEmpty()) cleanTag = vjName;
+                            if (!vjNotes.isEmpty()) releaseNotes = vjNotes;
+                            if (vjSize > 0) fileSizeBytes = vjSize;
+                            if (!vjPublished.isEmpty()) publishedAt = vjPublished;
+                            mandatory = vj.optBoolean("mandatory", false);
+                            fromVersionJson = vjCode > 0;
+                        }
+                    } catch (Exception ignored) {
+                        // Continuar con tag_name / body si version.json falla
+                    }
+                }
+
+                // 2. Fallback: extraer Build / versionCode explícito del cuerpo si existe (nunca inventar 10012)
+                if (versionCode <= 0) {
+                    Pattern pattern = Pattern.compile("(?:versionCode[\":\\s]+(\\d+)|Build\\s+(\\d+))", Pattern.CASE_INSENSITIVE);
+                    Matcher matcher = pattern.matcher(releaseNotes);
+                    if (matcher.find()) {
+                        String g1 = matcher.group(1);
+                        String g2 = matcher.group(2);
+                        String matchStr = g1 != null ? g1 : g2;
+                        if (matchStr != null) {
+                            versionCode = parseLongSafe(matchStr, 0);
+                            fromVersionJson = versionCode > 0;
+                        }
                     }
                 }
 
@@ -361,15 +372,136 @@ public class LauncherPlugin extends Plugin {
                 res.put("releaseNotes", releaseNotes);
                 res.put("publishedAt", publishedAt);
                 res.put("fileSizeBytes", fileSizeBytes);
+                res.put("mandatory", mandatory);
+                res.put("fromVersionJson", fromVersionJson);
                 call.resolve(res);
             } catch (Exception e) {
                 call.reject("No se pudo conectar con GitHub: " + e.getMessage(), e);
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
             }
         });
+    }
+
+    @PluginMethod
+    public void getRemoteConfig(PluginCall call) {
+        String repo = call.getString("repo", "");
+        String cleanRepo = repo == null
+            ? ""
+            : repo.trim().replaceAll("^https?://github\\.com/", "").replaceAll("/+$", "");
+
+        if (cleanRepo.isEmpty() || !cleanRepo.contains("/") || cleanRepo.contains("tu-usuario")) {
+            JSObject fallback = new JSObject();
+            fallback.put("maintenanceMode", false);
+            fallback.put("appsOnlyMode", false);
+            call.resolve(fallback);
+            return;
+        }
+
+        executor.execute(() -> {
+            long ts = System.currentTimeMillis();
+            String[] candidates = new String[] {
+                "https://raw.githubusercontent.com/" + cleanRepo + "/main/public/launcher-status.json?t=" + ts,
+                "https://raw.githubusercontent.com/" + cleanRepo + "/master/public/launcher-status.json?t=" + ts
+            };
+
+            for (String candidateUrl : candidates) {
+                try {
+                    HttpTextResponse resp = fetchTextUrl(candidateUrl, "application/json", 7000, 9000);
+                    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+                        JSONObject json = new JSONObject(resp.body);
+                        JSObject res = new JSObject();
+                        res.put("maintenanceMode", json.optBoolean("maintenanceMode", false));
+                        res.put("appsOnlyMode", json.optBoolean("appsOnlyMode", false));
+                        res.put("title", json.optString("title", "Mantenimiento · Próxima actualización"));
+                        res.put("message", json.optString("message", "El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS."));
+                        res.put("updatedAt", json.optString("updatedAt", ""));
+                        call.resolve(res);
+                        return;
+                    }
+                } catch (Exception ignored) {
+                    // Probar siguiente rama o fallback
+                }
+            }
+
+            JSObject fallback = new JSObject();
+            fallback.put("maintenanceMode", false);
+            fallback.put("appsOnlyMode", false);
+            call.resolve(fallback);
+        });
+    }
+
+    private static class HttpTextResponse {
+        final int statusCode;
+        final String body;
+        HttpTextResponse(int statusCode, String body) {
+            this.statusCode = statusCode;
+            this.body = body;
+        }
+    }
+
+    private HttpTextResponse fetchTextUrl(
+        String urlStr,
+        String acceptHeader,
+        int connectTimeoutMs,
+        int readTimeoutMs
+    ) throws Exception {
+        HttpURLConnection conn = null;
+        try {
+            String currentUrl = urlStr;
+            int redirects = 0;
+            while (redirects < 6) {
+                URL url = new URL(currentUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(false);
+                conn.setRequestMethod("GET");
+                conn.setUseCaches(false);
+                conn.setRequestProperty("User-Agent", "VORATVOS-Launcher-AndroidTV");
+                conn.setRequestProperty("Cache-Control", "no-cache");
+                if (acceptHeader != null) {
+                    conn.setRequestProperty("Accept", acceptHeader);
+                }
+                conn.setConnectTimeout(connectTimeoutMs);
+                conn.setReadTimeout(readTimeoutMs);
+
+                int code = conn.getResponseCode();
+                if (code == HttpURLConnection.HTTP_MOVED_PERM
+                    || code == HttpURLConnection.HTTP_MOVED_TEMP
+                    || code == HttpURLConnection.HTTP_SEE_OTHER
+                    || code == 307
+                    || code == 308) {
+                    String location = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    if (location == null || location.isEmpty()) {
+                        return new HttpTextResponse(code, "");
+                    }
+                    currentUrl = new URL(url, location).toString();
+                    redirects++;
+                } else {
+                    break;
+                }
+            }
+
+            if (conn == null) {
+                return new HttpTextResponse(500, "");
+            }
+
+            int code = conn.getResponseCode();
+            if (code < 200 || code >= 300) {
+                return new HttpTextResponse(code, "");
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+            return new HttpTextResponse(code, sb.toString());
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     private long parseLongSafe(String str, long fallback) {

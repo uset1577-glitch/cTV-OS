@@ -84,7 +84,7 @@ jobs:
                 -validity 10000 \
                 -storepass "$DEFAULT_PASS" \
                 -keypass "$DEFAULT_PASS" \
-                -dname "CN=CTV OS, OU=TV, O=CgamesTV, L=Local, ST=Local, C=ES"
+                -dname "CN=VORA TV OS, OU=TV, O=VORA, L=Local, ST=Local, C=ES"
             else
               echo "Usando keystore persistente restaurado de caché."
             fi
@@ -167,6 +167,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: "VORA TV OS ${{ steps.version.outputs.tag_name }}"
+          body: "VORA TV OS ${{ steps.version.outputs.tag_name }} (Build ${{ steps.version.outputs.version_code }})"
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -181,8 +182,8 @@ jobs:
           TAG_NAME: ${{ steps.version.outputs.tag_name }}
           USING_SECRETS: ${{ steps.signing.outputs.using_secrets }}
         run: |
-          echo "### CTV OS ${TAG_NAME} compilado correctamente" >> "$GITHUB_STEP_SUMMARY"
-          echo "- APK: \`CTVOS-v${VERSION_NAME}.apk\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "### VORA TV OS ${TAG_NAME} compilado correctamente" >> "$GITHUB_STEP_SUMMARY"
+          echo "- APK: \`VORA-TV-OS-v${VERSION_NAME}.apk\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Build (versionCode): \`${VERSION_CODE}\`" >> "$GITHUB_STEP_SUMMARY"
           if [ "$USING_SECRETS" = "false" ]; then
             echo "- Firma: Keystore automático persistente en caché de GitHub Actions." >> "$GITHUB_STEP_SUMMARY"

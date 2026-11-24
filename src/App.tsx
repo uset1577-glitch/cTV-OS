@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { GoogleTvHome } from './components/GoogleTvHome';
 import { LivePlatformsView } from './components/LivePlatformsView';
+import { MaintenanceNoticeModal } from './components/MaintenanceNoticeModal';
 import { NavaAppsDrawer } from './components/NavaAppsDrawer';
 import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
@@ -19,8 +20,10 @@ import {
 import { focusElementById, useSpatialNavigation } from './hooks/useSpatialNavigation';
 import {
   checkAppUpdate,
+  fetchLauncherRemoteStatus,
   getCurrentAppVersion,
   getInstalledApps,
+  isRemoteVersionNewer,
   launchAndroidApp,
   launchSuggestionUri,
   openTvSettings,
@@ -36,10 +39,12 @@ import type {
   HomeTab,
   InstalledApp,
   LauncherOverlay,
+  LauncherRemoteStatus,
   LauncherSettings,
 } from './types/launcher';
 
 const SETTINGS_STORAGE_KEY = 'cgamestv_launcher_settings_v2';
+const DISMISSED_UPDATE_SESSION_KEY = 'vora_dismissed_update_version';
 
 function loadSavedSettings(): LauncherSettings {
   try {
@@ -79,18 +84,32 @@ export default function App() {
   const [isVersionLoaded, setIsVersionLoaded] = useState(false);
   const [topBarVisible, setTopBarVisible] = useState(true);
   const lastCatalogFetchRef = useRef<number>(0);
+  const lastRemoteStatusFetchRef = useRef<number>(0);
   const hasAutoPromptedUpdateRef = useRef(false);
+
+  // Estado global de mantenimiento / próxima actualización (controlado remotamente)
+  const [remoteStatus, setRemoteStatus] = useState<LauncherRemoteStatus>({
+    maintenanceMode: false,
+    appsOnlyMode: false,
+    title: 'Mantenimiento · Próxima actualización',
+    message:
+      'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
+  });
+  const wasMaintenanceForcedRef = useRef(false);
 
   // Notificación sutil
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
-  // Estado actualización de la aplicación estilo Xuper TV
+  // Estado actualización de la aplicación
   const [updateStatus, setUpdateStatus] = useState<AppUpdateModalStatus>('idle');
   const [remoteManifest, setRemoteManifest] = useState<AppUpdateManifest | null>(null);
   const [updateProgress, setUpdateProgress] = useState<AppDownloadProgress | null>(null);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const cleanupUpdateRef = useRef<(() => void) | null>(null);
+
+  const isMaintenanceForced = Boolean(remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode);
+  const effectiveAppsOnly = isMaintenanceForced || settings.appsOnlyMode;
 
   // Sincronizar clase .dark en <html>
   useEffect(() => {
@@ -101,6 +120,14 @@ export default function App() {
       root.classList.remove('dark');
     }
   }, [settings.themeMode]);
+
+  // Si está activo el Modo Solo Apps, garantizar pestaña Inicio (ocultar En vivo)
+  useEffect(() => {
+    if (effectiveAppsOnly && activeTab === 'envivo') {
+      setActiveTab('inicio');
+      setTopBarVisible(true);
+    }
+  }, [effectiveAppsOnly, activeTab]);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -155,25 +182,66 @@ export default function App() {
     }
   }, []);
 
+  const loadRemoteStatus = useCallback(
+    async (repoSlug: string) => {
+      try {
+        lastRemoteStatusFetchRef.current = Date.now();
+        const status = await fetchLauncherRemoteStatus(repoSlug);
+        setRemoteStatus(status);
+
+        const forcedNow = Boolean(status.maintenanceMode || status.appsOnlyMode);
+        if (forcedNow && !wasMaintenanceForcedRef.current) {
+          wasMaintenanceForcedRef.current = true;
+          setActiveTab('inicio');
+          setTopBarVisible(true);
+          setOverlay((curr) => (curr === 'none' || curr === 'update' ? 'maintenance' : curr));
+        } else if (!forcedNow && wasMaintenanceForcedRef.current) {
+          wasMaintenanceForcedRef.current = false;
+          setOverlay((curr) => (curr === 'maintenance' ? 'none' : curr));
+          void loadLiveCatalog(true);
+        }
+      } catch {
+        // Silencioso si no hay conexión
+      }
+    },
+    [loadLiveCatalog]
+  );
+
   useEffect(() => {
     void loadLauncherData(false);
-    void loadLiveCatalog(true);
-  }, [loadLauncherData, loadLiveCatalog]);
+    void loadRemoteStatus(settings.updateRepo);
+  }, [loadLauncherData, loadRemoteStatus, settings.updateRepo]);
 
-  // Refrescar recomendaciones y apps automáticamente cada vez que sales/entras de una app o enciendes la TV
+  useEffect(() => {
+    if (!effectiveAppsOnly) {
+      void loadLiveCatalog(true);
+    }
+  }, [effectiveAppsOnly, loadLiveCatalog]);
+
+  // Refrescar recomendaciones, apps y estado remoto de mantenimiento al volver a la TV
   useEffect(() => {
     const refreshOnReturn = () => {
       if (document.visibilityState === 'hidden') return;
-      const elapsed = Date.now() - lastCatalogFetchRef.current;
-      // Solo evitar duplicados simultáneos en el mismo instante (2.5s)
-      if (elapsed > 2_500) {
-        void loadLiveCatalog(true);
+      const now = Date.now();
+      if (now - lastRemoteStatusFetchRef.current > 15_000) {
+        void loadRemoteStatus(settings.updateRepo);
+      }
+      if (now - lastCatalogFetchRef.current > 2_500) {
+        if (!effectiveAppsOnly) {
+          void loadLiveCatalog(true);
+        }
         void loadLauncherData(true);
       }
     };
 
-    const periodicId = window.setInterval(() => {
+    const periodicStatusId = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
+        void loadRemoteStatus(settings.updateRepo);
+      }
+    }, 5 * 60_000);
+
+    const periodicCatalogId = window.setInterval(() => {
+      if (document.visibilityState === 'visible' && !effectiveAppsOnly) {
         void loadLiveCatalog(true);
       }
     }, 30 * 60_000);
@@ -183,30 +251,37 @@ export default function App() {
     window.addEventListener('pageshow', refreshOnReturn);
     window.addEventListener('voraTvResume', refreshOnReturn);
     return () => {
-      window.clearInterval(periodicId);
+      window.clearInterval(periodicStatusId);
+      window.clearInterval(periodicCatalogId);
       document.removeEventListener('visibilitychange', refreshOnReturn);
       window.removeEventListener('focus', refreshOnReturn);
       window.removeEventListener('pageshow', refreshOnReturn);
       window.removeEventListener('voraTvResume', refreshOnReturn);
     };
-  }, [loadLiveCatalog, loadLauncherData]);
+  }, [effectiveAppsOnly, loadLiveCatalog, loadLauncherData, loadRemoteStatus, settings.updateRepo]);
 
-  // Verificación automática al entrar a la app: muestra pantalla opcional si hay nueva versión
+  // Verificación automática al entrar a la app: solo notifica si la versión remota es realmente mayor
   useEffect(() => {
     if (!isVersionLoaded) return;
     if (!settings.updateRepo || settings.updateRepo.startsWith('tu-usuario/')) return;
     let cancelled = false;
-    checkAppUpdate(settings.updateRepo, appVersion.versionCode)
+    checkAppUpdate(settings.updateRepo, appVersion.versionCode, appVersion.versionName)
       .then((res) => {
         if (cancelled) return;
         if (res.hasUpdate && res.manifest) {
           setRemoteManifest(res.manifest);
-          if (!hasAutoPromptedUpdateRef.current) {
+          const dismissedVer = sessionStorage.getItem(DISMISSED_UPDATE_SESSION_KEY);
+          if (
+            !hasAutoPromptedUpdateRef.current &&
+            dismissedVer !== res.manifest.versionName
+          ) {
             hasAutoPromptedUpdateRef.current = true;
             setUpdateStatus('update_available');
             setUpdateMessage(res.message);
             setOverlay((curr) => (curr === 'none' ? 'update' : curr));
           }
+        } else {
+          setRemoteManifest(null);
         }
       })
       .catch(() => {
@@ -215,7 +290,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [isVersionLoaded, settings.updateRepo, appVersion.versionCode]);
+  }, [isVersionLoaded, settings.updateRepo, appVersion.versionCode, appVersion.versionName]);
 
   const closeOverlayToHome = useCallback(
     (focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
@@ -223,12 +298,19 @@ export default function App() {
         cleanupUpdateRef.current();
         cleanupUpdateRef.current = null;
       }
+      if (overlay === 'update' && remoteManifest?.versionName) {
+        try {
+          sessionStorage.setItem(DISMISSED_UPDATE_SESSION_KEY, remoteManifest.versionName);
+        } catch {
+          // Ignorar
+        }
+      }
       setOverlay('none');
       window.requestAnimationFrame(() => {
         focusElementById(focusTargetId);
       });
     },
-    []
+    [overlay, remoteManifest]
   );
 
   useSpatialNavigation({
@@ -247,14 +329,20 @@ export default function App() {
     scopeSelector: '#gtv-home-shell',
   });
 
-  const handleSelectTab = useCallback((tab: HomeTab) => {
-    if (tab === 'apps') {
-      setOverlay('apps');
-      return;
-    }
-    setTopBarVisible(true);
-    setActiveTab(tab);
-  }, []);
+  const handleSelectTab = useCallback(
+    (tab: HomeTab) => {
+      if (tab === 'apps') {
+        setOverlay('apps');
+        return;
+      }
+      if (effectiveAppsOnly && tab === 'envivo') {
+        return;
+      }
+      setTopBarVisible(true);
+      setActiveTab(tab);
+    },
+    [effectiveAppsOnly]
+  );
 
   const handleLaunchPackage = useCallback(
     async (packageName: string, displayName: string, icon?: string) => {
@@ -326,21 +414,29 @@ export default function App() {
     [showToast]
   );
 
-  const runUpdateCheck = useCallback(async (customRepo?: string) => {
-    const targetRepo = (customRepo !== undefined ? customRepo : settings.updateRepo).trim();
-    setUpdateStatus('checking');
-    setUpdateMessage(null);
-    setUpdateProgress(null);
+  const runUpdateCheck = useCallback(
+    async (customRepo?: string) => {
+      const targetRepo = (customRepo !== undefined ? customRepo : settings.updateRepo).trim();
+      setUpdateStatus('checking');
+      setUpdateMessage(null);
+      setUpdateProgress(null);
 
-    const result = await checkAppUpdate(targetRepo, appVersion.versionCode);
-    setUpdateMessage(result.message);
-    if (result.hasUpdate && result.manifest) {
-      setRemoteManifest(result.manifest);
-      setUpdateStatus('update_available');
-    } else {
-      setUpdateStatus('up_to_date');
-    }
-  }, [settings.updateRepo, appVersion.versionCode]);
+      const result = await checkAppUpdate(
+        targetRepo,
+        appVersion.versionCode,
+        appVersion.versionName
+      );
+      setUpdateMessage(result.message);
+      if (result.hasUpdate && result.manifest) {
+        setRemoteManifest(result.manifest);
+        setUpdateStatus('update_available');
+      } else {
+        setRemoteManifest(null);
+        setUpdateStatus('up_to_date');
+      }
+    },
+    [settings.updateRepo, appVersion.versionCode, appVersion.versionName]
+  );
 
   const handleOpenUpdateModal = useCallback(() => {
     setOverlay('update');
@@ -401,8 +497,10 @@ export default function App() {
       .filter((a): a is InstalledApp => Boolean(a));
   }, [apps, settings.favoritePackages]);
 
-  const hasAvailableUpdate = Boolean(
-    remoteManifest && remoteManifest.versionCode > appVersion.versionCode
+  const hasAvailableUpdate = isRemoteVersionNewer(
+    remoteManifest,
+    appVersion.versionCode,
+    appVersion.versionName
   );
 
   const isLight = settings.themeMode === 'light';
@@ -431,7 +529,8 @@ export default function App() {
           use24HourClock={settings.use24HourClock}
           hasAvailableUpdate={hasAvailableUpdate}
           isVisible={topBarVisible}
-          isOverHero={activeTab === 'inicio'}
+          isOverHero={activeTab === 'inicio' && !effectiveAppsOnly}
+          appsOnlyMode={effectiveAppsOnly}
           onSelectTab={handleSelectTab}
           onToggleTheme={() =>
             updateSettings({
@@ -443,13 +542,15 @@ export default function App() {
           onOpenSettings={() => setOverlay('settings')}
         />
 
-        {activeTab === 'inicio' ? (
+        {activeTab === 'inicio' || effectiveAppsOnly ? (
           <GoogleTvHome
             allApps={apps}
             favoriteApps={favoriteApps}
             liveCatalog={liveCatalog}
             isNative={isNative}
             showSuggestions={settings.showSuggestions}
+            appsOnlyMode={effectiveAppsOnly}
+            maintenanceNotice={isMaintenanceForced ? remoteStatus : null}
             heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
             onScrollTopChange={setTopBarVisible}
             onLaunchFeatured={() =>
@@ -459,6 +560,7 @@ export default function App() {
             onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
             onToggleFavorite={handleToggleFavorite}
             onOpenAllApps={() => setOverlay('apps')}
+            onOpenMaintenanceInfo={() => setOverlay('maintenance')}
           />
         ) : (
           <LivePlatformsView
@@ -479,7 +581,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.04 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-50 bg-[#DCE3EE] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
           >
             {launchingApp.icon && (
@@ -523,6 +625,7 @@ export default function App() {
         settings={settings}
         appVersion={appVersion}
         isNative={isNative}
+        isMaintenanceForced={isMaintenanceForced}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
         onOpenUpdateModal={handleOpenUpdateModal}
@@ -543,6 +646,12 @@ export default function App() {
         onStartDownload={() => void handleStartUpdateDownload()}
         onOpenUnknownSources={() => void handleOpenAndroidSettings('unknown_sources')}
         onClose={() => closeOverlayToHome(hasAvailableUpdate ? 'top-update' : 'top-settings')}
+      />
+
+      <MaintenanceNoticeModal
+        isOpen={overlay === 'maintenance'}
+        status={remoteStatus}
+        onAcknowledge={() => closeOverlayToHome(`row-app-${FEATURED_GAME.packageName}`)}
       />
 
       {/* Toast minimalista */}

@@ -39,14 +39,18 @@
 /* Android TV focus transitions: ultra-snappy compositor-only */
 .tv-focusable {
   outline: none;
-  transition: transform 125ms cubic-bezier(0.2, 0.9, 0.3, 1),
-    border-color 110ms ease,
-    background-color 110ms ease,
-    color 110ms ease;
+  transition: transform 95ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 90ms ease,
+    background-color 90ms ease,
+    color 90ms ease;
 }
 
 .tv-focusable:focus-visible {
   outline: none;
+}
+
+[data-tv-row] {
+  contain: layout style;
 }
 
 .tv-row-offscreen {

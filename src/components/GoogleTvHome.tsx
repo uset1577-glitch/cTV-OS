@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppWindow,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
   Play,
+  ShieldAlert,
 } from 'lucide-react';
 import { FEATURED_GAME } from '../data/presets';
 import { resolvePackageAlias } from '../data/suggestions';
-import type { AppSuggestion, GoogleTvLiveCatalog, InstalledApp } from '../types/launcher';
+import type {
+  AppSuggestion,
+  GoogleTvLiveCatalog,
+  InstalledApp,
+  LauncherRemoteStatus,
+} from '../types/launcher';
 
 interface GoogleTvHomeProps {
   allApps: InstalledApp[];
@@ -16,6 +22,8 @@ interface GoogleTvHomeProps {
   liveCatalog: GoogleTvLiveCatalog;
   isNative: boolean;
   showSuggestions: boolean;
+  appsOnlyMode?: boolean;
+  maintenanceNotice?: LauncherRemoteStatus | null;
   heroFadeColor: string;
   onScrollTopChange: (atTop: boolean) => void;
   onLaunchFeatured: () => void;
@@ -23,6 +31,7 @@ interface GoogleTvHomeProps {
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
   onToggleFavorite: (app: InstalledApp) => void;
   onOpenAllApps: () => void;
+  onOpenMaintenanceInfo?: () => void;
 }
 
 const STREAMING_FILTERS = [
@@ -34,7 +43,7 @@ const STREAMING_FILTERS = [
   { id: 'com.google.android.youtube.tv', label: 'YouTube' },
 ];
 
-function CircularAppShortcut({
+const CircularAppShortcut = memo(function CircularAppShortcut({
   app,
   isInitial = false,
   onLaunch,
@@ -90,7 +99,256 @@ function CircularAppShortcut({
       </span>
     </button>
   );
-}
+});
+
+const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
+  app,
+  onLaunch,
+  onToggleFavorite,
+}: {
+  app: InstalledApp;
+  onLaunch: (app: InstalledApp) => void;
+  onToggleFavorite: (app: InstalledApp) => void;
+}) {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const [imgErr, setImgErr] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handler = () => onToggleFavorite(app);
+    el.addEventListener('tv-longpress', handler);
+    return () => el.removeEventListener('tv-longpress', handler);
+  }, [app, onToggleFavorite]);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-tv-focusable="true"
+      data-tv-supports-longpress="true"
+      data-tv-id={`apps-only-${app.packageName}`}
+      onClick={() => onLaunch(app)}
+      className="tv-focusable group rounded-2xl bg-[#EEF2F7]/85 dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-3.5 flex flex-col items-center gap-2.5 text-center focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-amber-500 focus:scale-[1.05] shadow-sm"
+    >
+      <div
+        data-tv-focus-box="true"
+        className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200 dark:bg-zinc-800 flex items-center justify-center shrink-0"
+      >
+        {app.icon && !imgErr ? (
+          <img
+            src={app.icon}
+            alt={app.name}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImgErr(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <AppWindow className="w-7 h-7 text-slate-400" />
+        )}
+      </div>
+      <span className="w-full text-[13px] font-semibold truncate text-slate-900 dark:text-zinc-100 group-focus:text-white dark:group-focus:text-zinc-950">
+        {app.name}
+      </span>
+    </button>
+  );
+});
+
+const MoviesSection = memo(function MoviesSection({
+  movies,
+  allApps,
+  formattedUpdatedTime,
+  failedImages,
+  onMarkFailed,
+  onLaunchSuggestion,
+}: {
+  movies: AppSuggestion[];
+  allApps: InstalledApp[];
+  formattedUpdatedTime: string;
+  failedImages: Record<string, boolean>;
+  onMarkFailed: (url: string) => void;
+  onLaunchSuggestion: (suggestion: AppSuggestion) => void;
+}) {
+  if (movies.length === 0) return null;
+
+  return (
+    <section className="tv-row-offscreen" aria-label="Estrenos y películas populares">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+          Estrenos y películas populares
+        </h2>
+        <span className="text-xs text-slate-600 dark:text-zinc-400">
+          Actualizado hoy · {formattedUpdatedTime}
+        </span>
+      </div>
+
+      <div
+        data-tv-row="movies"
+        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
+      >
+        {movies.slice(0, 14).map((movie) => {
+          const resolvedPkg = resolvePackageAlias(movie.packageName, allApps);
+          return (
+            <button
+              key={movie.id}
+              type="button"
+              data-tv-focusable="true"
+              data-tv-id={`movie-${movie.id}`}
+              onClick={() => onLaunchSuggestion({ ...movie, packageName: resolvedPkg })}
+              className="tv-focusable group w-[152px] shrink-0 text-left focus:outline-none scroll-my-12"
+            >
+              <div
+                data-tv-focus-box="true"
+                className="tv-focusable w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06] shadow-md"
+              >
+                {movie.posterUrl && !failedImages[movie.posterUrl] ? (
+                  <img
+                    src={movie.posterUrl}
+                    alt={movie.title}
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => onMarkFailed(movie.posterUrl)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-end p-3.5"
+                    style={{ background: movie.accentGradient }}
+                  >
+                    <span className="font-display text-sm font-bold text-white line-clamp-3">
+                      {movie.title}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2.5 px-0.5">
+                <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                  {movie.title}
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
+                  {movie.genre || movie.tag}
+                  {movie.releaseDate ? ` · ${movie.releaseDate}` : ''}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+});
+
+const SeriesSection = memo(function SeriesSection({
+  filteredSeries,
+  allApps,
+  platformFilter,
+  failedImages,
+  onSelectFilter,
+  onMarkFailed,
+  onLaunchSuggestion,
+}: {
+  filteredSeries: AppSuggestion[];
+  allApps: InstalledApp[];
+  platformFilter: string;
+  failedImages: Record<string, boolean>;
+  onSelectFilter: (id: string) => void;
+  onMarkFailed: (url: string) => void;
+  onLaunchSuggestion: (suggestion: AppSuggestion) => void;
+}) {
+  if (filteredSeries.length === 0 && platformFilter === 'all') return null;
+
+  return (
+    <section className="tv-row-offscreen" aria-label="En tus plataformas">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+        <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+          Series y emisiones en tus plataformas
+        </h2>
+
+        <div
+          data-tv-row="series-filters"
+          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1"
+        >
+          {STREAMING_FILTERS.map((f) => {
+            const active = platformFilter === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id={`home-plat-${f.id}`}
+                onClick={() => onSelectFilter(f.id)}
+                className={`tv-focusable px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
+                  active
+                    ? 'bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 shadow-sm'
+                    : 'bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300'
+                } focus:scale-105`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div
+        data-tv-row="series"
+        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
+      >
+        {filteredSeries.map((show) => {
+          const resolvedPkg = resolvePackageAlias(show.packageName, allApps);
+          const landscapeImage = show.backdropUrl || show.posterUrl;
+          return (
+            <button
+              key={show.id}
+              type="button"
+              data-tv-focusable="true"
+              data-tv-id={`series-${show.id}`}
+              onClick={() => onLaunchSuggestion({ ...show, packageName: resolvedPkg })}
+              className="tv-focusable group w-[248px] shrink-0 text-left focus:outline-none scroll-my-12"
+            >
+              <div
+                data-tv-focus-box="true"
+                className="tv-focusable w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05] shadow-md"
+              >
+                {landscapeImage && !failedImages[landscapeImage] ? (
+                  <img
+                    src={landscapeImage}
+                    alt={show.title}
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => onMarkFailed(landscapeImage)}
+                    className="w-full h-full object-cover object-center"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-end p-3.5"
+                    style={{ background: show.accentGradient }}
+                  >
+                    <span className="font-display text-sm font-bold text-white line-clamp-2">
+                      {show.title}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2.5 px-0.5">
+                <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                  {show.title}
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
+                  {show.tag} · {show.subtitle}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+});
 
 export function GoogleTvHome({
   allApps,
@@ -98,6 +356,8 @@ export function GoogleTvHome({
   liveCatalog,
   isNative,
   showSuggestions,
+  appsOnlyMode = false,
+  maintenanceNotice = null,
   heroFadeColor,
   onScrollTopChange,
   onLaunchFeatured,
@@ -105,6 +365,7 @@ export function GoogleTvHome({
   onLaunchSuggestion,
   onToggleFavorite,
   onOpenAllApps,
+  onOpenMaintenanceInfo,
 }: GoogleTvHomeProps) {
   const [heroIdx, setHeroIdx] = useState(0);
   const [platformFilter, setPlatformFilter] = useState<string>('all');
@@ -114,11 +375,12 @@ export function GoogleTvHome({
   const fadeVeilRef = useRef<HTMLDivElement | null>(null);
   const appsSectionRef = useRef<HTMLElement | null>(null);
   const atTopRef = useRef(true);
+  const appsOverHeroRef = useRef(true);
   const scrollRafRef = useRef<number>(0);
 
-  const markImageFailed = (url: string) => {
+  const markImageFailed = useCallback((url: string) => {
     setFailedImages((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
-  };
+  }, []);
 
   // Lista circular de apps estilo Google TV (CgamesTVPARTY primero + favoritos)
   const circularApps = useMemo(() => {
@@ -136,21 +398,38 @@ export function GoogleTvHome({
     return [featuredItem, ...rest];
   }, [allApps, favoriteApps]);
 
-  const spotlightList = liveCatalog.spotlight;
-  const activeHero = spotlightList[heroIdx % Math.max(1, spotlightList.length)] || spotlightList[0];
+  // Todas las apps ordenadas para la cuadrícula limpia de Modo Solo Apps
+  const allAppsForGrid = useMemo(() => {
+    const seen = new Set<string>();
+    const combined: InstalledApp[] = [];
+    for (const app of [...circularApps, ...allApps]) {
+      if (!seen.has(app.packageName)) {
+        seen.add(app.packageName);
+        combined.push(app);
+      }
+    }
+    return combined;
+  }, [circularApps, allApps]);
+
+  const spotlightList = appsOnlyMode ? [] : liveCatalog.spotlight;
+  const activeHero =
+    !appsOnlyMode && spotlightList.length > 0
+      ? spotlightList[heroIdx % spotlightList.length] || spotlightList[0]
+      : undefined;
 
   const filteredSeries = useMemo(() => {
+    if (appsOnlyMode) return [];
     if (platformFilter === 'all') return liveCatalog.series.slice(0, 14);
     return liveCatalog.series.filter((s) => s.packageName === platformFilter).slice(0, 14);
-  }, [liveCatalog.series, platformFilter]);
+  }, [appsOnlyMode, liveCatalog.series, platformFilter]);
 
   useEffect(() => {
-    if (spotlightList.length <= 1) return;
+    if (appsOnlyMode || spotlightList.length <= 1) return;
     const timer = window.setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % spotlightList.length);
     }, 10500);
     return () => window.clearInterval(timer);
-  }, [spotlightList.length]);
+  }, [appsOnlyMode, spotlightList.length]);
 
   useEffect(() => {
     return () => {
@@ -170,7 +449,18 @@ export function GoogleTvHome({
     onLaunchSuggestion({ ...activeHero, packageName: resolvedPkg });
   };
 
-  // Actualiza únicamente 2 capas compositoras (opacity) sin invalidar estilos del resto del árbol DOM
+  const handleCircleLaunch = useCallback(
+    (clicked: InstalledApp) => {
+      if (clicked.packageName === FEATURED_GAME.packageName) {
+        onLaunchFeatured();
+      } else {
+        onLaunchApp(clicked);
+      }
+    },
+    [onLaunchFeatured, onLaunchApp]
+  );
+
+  // Actualiza únicamente 2 capas compositoras (opacity) y evita mutar atributos si no cambia el estado
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     if (scrollRafRef.current) return;
@@ -184,18 +474,19 @@ export function GoogleTvHome({
         onScrollTopChange(atTop);
       }
 
-      const progress = Math.min(1, Math.max(0, top / 300));
-      if (backdropLayerRef.current) {
-        backdropLayerRef.current.style.opacity = (1 - progress * 0.92).toFixed(2);
-      }
-      if (fadeVeilRef.current) {
-        fadeVeilRef.current.style.opacity = progress.toFixed(2);
-      }
-      if (appsSectionRef.current) {
-        appsSectionRef.current.setAttribute(
-          'data-apps-over-hero',
-          activeHero && progress < 0.45 ? 'true' : 'false'
-        );
+      if (!appsOnlyMode) {
+        const progress = Math.min(1, Math.max(0, top / 300));
+        if (backdropLayerRef.current) {
+          backdropLayerRef.current.style.opacity = (1 - progress * 0.92).toFixed(2);
+        }
+        if (fadeVeilRef.current) {
+          fadeVeilRef.current.style.opacity = progress.toFixed(2);
+        }
+        const overHero = Boolean(activeHero && progress < 0.45);
+        if (overHero !== appsOverHeroRef.current && appsSectionRef.current) {
+          appsOverHeroRef.current = overHero;
+          appsSectionRef.current.setAttribute('data-apps-over-hero', overHero ? 'true' : 'false');
+        }
       }
     });
   };
@@ -210,6 +501,131 @@ export function GoogleTvHome({
     }
   }, [liveCatalog.updatedAt]);
 
+  // MODO SOLO APPS: Sin recomendaciones ni fondos pesados, máxima fluidez en TV
+  if (appsOnlyMode) {
+    const isMaintenance = Boolean(
+      maintenanceNotice?.maintenanceMode || maintenanceNotice?.appsOnlyMode
+    );
+    return (
+      <div
+        ref={scrollRef}
+        data-tv-scroll-container="true"
+        onScroll={handleScroll}
+        className="relative flex-1 overflow-y-auto no-scrollbar pb-14 pt-24 px-12 space-y-7"
+      >
+        {isMaintenance && (
+          <div
+            data-tv-row="maintenance-banner"
+            data-tv-scroll-top="true"
+            className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.07] border border-amber-500/40 px-5 py-4 flex items-center justify-between gap-6"
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  {maintenanceNotice?.title || 'Mantenimiento · Próxima actualización'}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-zinc-300 truncate mt-0.5">
+                  El modo solo apps está activado ·{' '}
+                  {maintenanceNotice?.message ||
+                    'Preparando la próxima actualización de VORA TV OS.'}
+                </div>
+              </div>
+            </div>
+            {onOpenMaintenanceInfo && (
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="home-maintenance-info"
+                onClick={onOpenMaintenanceInfo}
+                className="tv-focusable px-4 py-2 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold whitespace-nowrap shrink-0 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+              >
+                Ver aviso
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Fila rápida de favoritas */}
+        <section
+          aria-label="Tus aplicaciones fijadas"
+          data-apps-over-hero="false"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
+                Modo solo apps
+              </h1>
+              <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
+                Acceso directo a tus aplicaciones · Mantén OK o pulsa M para fijar favoritas
+              </p>
+            </div>
+          </div>
+
+          <div
+            data-tv-row="apps"
+            data-tv-scroll-top="true"
+            className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3 px-3 -mx-3"
+          >
+            {circularApps.map((app, index) => (
+              <CircularAppShortcut
+                key={app.packageName}
+                app={app}
+                isInitial={index === 0}
+                onLaunch={handleCircleLaunch}
+                onToggleFavorite={onToggleFavorite}
+              />
+            ))}
+
+            <button
+              type="button"
+              data-tv-focusable="true"
+              data-tv-id="row-all-apps"
+              onClick={onOpenAllApps}
+              className="tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
+            >
+              <div
+                data-tv-focus-box="true"
+                className="apps-all-circle tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
+              >
+                <LayoutGrid className="w-7 h-7" />
+              </div>
+              <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
+                Ver todas
+              </span>
+            </button>
+          </div>
+        </section>
+
+        {/* Cuadrícula completa de aplicaciones instaladas */}
+        <section aria-label="Todas tus aplicaciones">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+              Todas tus aplicaciones ({allAppsForGrid.length})
+            </h2>
+          </div>
+
+          <div
+            data-tv-row="apps-only-grid"
+            data-tv-row-type="grid"
+            className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4"
+          >
+            {allAppsForGrid.map((app) => (
+              <AppsOnlyGridTile
+                key={app.packageName}
+                app={app}
+                onLaunch={handleCircleLaunch}
+                onToggleFavorite={onToggleFavorite}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={scrollRef}
@@ -221,9 +637,9 @@ export function GoogleTvHome({
       {activeHero && (
         <div
           aria-hidden="true"
-          className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015]"
+          className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015] contain-layout"
         >
-          <div ref={backdropLayerRef} className="absolute inset-0">
+          <div ref={backdropLayerRef} className="absolute inset-0 will-change-[opacity]">
             {activeHero.backdropUrl && !failedImages[activeHero.backdropUrl] ? (
               <img
                 key={activeHero.id}
@@ -272,7 +688,7 @@ export function GoogleTvHome({
           {/* Velo progresivo al hacer scroll */}
           <div
             ref={fadeVeilRef}
-            className="absolute inset-0"
+            className="absolute inset-0 will-change-[opacity]"
             style={{ backgroundColor: heroFadeColor, opacity: 0 }}
           />
         </div>
@@ -423,11 +839,7 @@ export function GoogleTvHome({
                 key={app.packageName}
                 app={app}
                 isInitial={index === 0}
-                onLaunch={(clicked) =>
-                  clicked.packageName === FEATURED_GAME.packageName
-                    ? onLaunchFeatured()
-                    : onLaunchApp(clicked)
-                }
+                onLaunch={handleCircleLaunch}
                 onToggleFavorite={onToggleFavorite}
               />
             ))}
@@ -453,164 +865,29 @@ export function GoogleTvHome({
         </section>
       </div>
 
-      {/* Filas inferiores con content-visibility para máximo FPS */}
+      {/* Filas inferiores con content-visibility y memoización para máximo FPS */}
       <div className="relative z-10 px-12 pt-4 space-y-8">
-        {/* 3. Películas reales actuales (pósters verticales 2:3) */}
-        {showSuggestions && liveCatalog.movies.length > 0 && (
-          <section className="tv-row-offscreen" aria-label="Estrenos y películas populares">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-                Estrenos y películas populares
-              </h2>
-              <span className="text-xs text-slate-600 dark:text-zinc-400">
-                Actualizado hoy · {formattedUpdatedTime}
-              </span>
-            </div>
-
-            <div
-              data-tv-row="movies"
-              className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
-            >
-              {liveCatalog.movies.slice(0, 14).map((movie) => {
-                const resolvedPkg = resolvePackageAlias(movie.packageName, allApps);
-                return (
-                  <button
-                    key={movie.id}
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id={`movie-${movie.id}`}
-                    onClick={() => onLaunchSuggestion({ ...movie, packageName: resolvedPkg })}
-                    className="tv-focusable group w-[152px] shrink-0 text-left focus:outline-none scroll-my-12"
-                  >
-                    <div
-                      data-tv-focus-box="true"
-                      className="tv-focusable w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06] shadow-md"
-                    >
-                      {movie.posterUrl && !failedImages[movie.posterUrl] ? (
-                        <img
-                          src={movie.posterUrl}
-                          alt={movie.title}
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                          onError={() => markImageFailed(movie.posterUrl)}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-end p-3.5"
-                          style={{ background: movie.accentGradient }}
-                        >
-                          <span className="font-display text-sm font-bold text-white line-clamp-3">
-                            {movie.title}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-2.5 px-0.5">
-                      <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
-                        {movie.title}
-                      </div>
-                      <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-                        {movie.genre || movie.tag}
-                        {movie.releaseDate ? ` · ${movie.releaseDate}` : ''}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+        {showSuggestions && (
+          <MoviesSection
+            movies={liveCatalog.movies}
+            allApps={allApps}
+            formattedUpdatedTime={formattedUpdatedTime}
+            failedImages={failedImages}
+            onMarkFailed={markImageFailed}
+            onLaunchSuggestion={onLaunchSuggestion}
+          />
         )}
 
-        {/* 4. Series y emisiones en tus plataformas (banners reales 16:9 horizontales) */}
-        {showSuggestions && liveCatalog.series.length > 0 && (
-          <section className="tv-row-offscreen" aria-label="En tus plataformas">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-              <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-                Series y emisiones en tus plataformas
-              </h2>
-
-              <div
-                data-tv-row="series-filters"
-                className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1"
-              >
-                {STREAMING_FILTERS.map((f) => {
-                  const active = platformFilter === f.id;
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      data-tv-focusable="true"
-                      data-tv-id={`home-plat-${f.id}`}
-                      onClick={() => setPlatformFilter(f.id)}
-                      className={`tv-focusable px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
-                        active
-                          ? 'bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 shadow-sm'
-                          : 'bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-300'
-                      } focus:scale-105`}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              data-tv-row="series"
-              className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
-            >
-              {filteredSeries.map((show) => {
-                const resolvedPkg = resolvePackageAlias(show.packageName, allApps);
-                const landscapeImage = show.backdropUrl || show.posterUrl;
-                return (
-                  <button
-                    key={show.id}
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id={`series-${show.id}`}
-                    onClick={() => onLaunchSuggestion({ ...show, packageName: resolvedPkg })}
-                    className="tv-focusable group w-[248px] shrink-0 text-left focus:outline-none scroll-my-12"
-                  >
-                    <div
-                      data-tv-focus-box="true"
-                      className="tv-focusable w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05] shadow-md"
-                    >
-                      {landscapeImage && !failedImages[landscapeImage] ? (
-                        <img
-                          src={landscapeImage}
-                          alt={show.title}
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                          onError={() => markImageFailed(landscapeImage)}
-                          className="w-full h-full object-cover object-center"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-end p-3.5"
-                          style={{ background: show.accentGradient }}
-                        >
-                          <span className="font-display text-sm font-bold text-white line-clamp-2">
-                            {show.title}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-2.5 px-0.5">
-                      <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
-                        {show.title}
-                      </div>
-                      <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-                        {show.tag} · {show.subtitle}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+        {showSuggestions && (
+          <SeriesSection
+            filteredSeries={filteredSeries}
+            allApps={allApps}
+            platformFilter={platformFilter}
+            failedImages={failedImages}
+            onSelectFilter={setPlatformFilter}
+            onMarkFailed={markImageFailed}
+            onLaunchSuggestion={onLaunchSuggestion}
+          />
         )}
       </div>
     </div>

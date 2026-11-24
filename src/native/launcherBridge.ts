@@ -5,6 +5,7 @@ import type {
   AppUpdateManifest,
   AppVersionInfo,
   InstalledApp,
+  LauncherRemoteStatus,
 } from '../types/launcher';
 
 export interface LauncherNativePlugin {
@@ -17,6 +18,7 @@ export interface LauncherNativePlugin {
   openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'unknown_sources' }): Promise<{ opened: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
+  getRemoteConfig(options: { repo: string }): Promise<LauncherRemoteStatus>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
   addListener(
     eventName: 'otaDownloadProgress',
@@ -123,10 +125,107 @@ export async function getCurrentAppVersion(): Promise<AppVersionInfo> {
   };
 }
 
-// Sistema de actualización estilo Xuper TV: sin errores técnicos de CORS ni configuraciones obligatorias
+export function compareSemver(a: string, b: string): number {
+  const parse = (v: string) =>
+    v
+      .trim()
+      .replace(/^v/i, '')
+      .split(/[-+]/)[0]
+      .split('.')
+      .map((n) => parseInt(n, 10) || 0);
+  const pa = parse(a);
+  const pb = parse(b);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
+export function isRemoteVersionNewer(
+  manifest: AppUpdateManifest | null | undefined,
+  currentVersionCode: number,
+  currentVersionName: string
+): boolean {
+  if (!manifest || !manifest.apkUrl) return false;
+  const cmp = compareSemver(manifest.versionName || '', currentVersionName || '1.0.0');
+  if (cmp > 0) return true;
+  if (cmp < 0) return false;
+  // Si el tag/versión coincide exactamente (ej. v1.0.12 == v1.0.12), evitar falsos positivos.
+  // Solo marcar actualización si version.json trae explícitamente un Build mayor.
+  return Boolean(
+    manifest.fromVersionJson &&
+      manifest.versionCode > 0 &&
+      currentVersionCode > 0 &&
+      manifest.versionCode > currentVersionCode
+  );
+}
+
+const DEFAULT_REMOTE_STATUS: LauncherRemoteStatus = {
+  maintenanceMode: false,
+  appsOnlyMode: false,
+  title: 'Mantenimiento · Próxima actualización',
+  message: 'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
+};
+
+export async function fetchLauncherRemoteStatus(repoSlug: string): Promise<LauncherRemoteStatus> {
+  const cleanRepo = repoSlug.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
+
+  if (isNativeAndroid()) {
+    if (!cleanRepo || !cleanRepo.includes('/') || cleanRepo.includes('tu-usuario')) {
+      return DEFAULT_REMOTE_STATUS;
+    }
+    try {
+      const res = await LauncherNative.getRemoteConfig({ repo: cleanRepo });
+      return {
+        maintenanceMode: Boolean(res?.maintenanceMode),
+        appsOnlyMode: Boolean(res?.appsOnlyMode),
+        title: res?.title || DEFAULT_REMOTE_STATUS.title,
+        message: res?.message || DEFAULT_REMOTE_STATUS.message,
+        updatedAt: res?.updatedAt,
+      };
+    } catch {
+      return DEFAULT_REMOTE_STATUS;
+    }
+  }
+
+  const ts = Date.now();
+  const urls: string[] = [];
+  if (cleanRepo && cleanRepo.includes('/') && !cleanRepo.includes('tu-usuario')) {
+    urls.push(
+      `https://raw.githubusercontent.com/${cleanRepo}/main/public/launcher-status.json?t=${ts}`,
+      `https://raw.githubusercontent.com/${cleanRepo}/master/public/launcher-status.json?t=${ts}`
+    );
+  }
+  urls.push(`/launcher-status.json?t=${ts}`);
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = (await res.json()) as Partial<LauncherRemoteStatus>;
+      return {
+        maintenanceMode: Boolean(data.maintenanceMode),
+        appsOnlyMode: Boolean(data.appsOnlyMode),
+        title: data.title || DEFAULT_REMOTE_STATUS.title,
+        message: data.message || DEFAULT_REMOTE_STATUS.message,
+        updatedAt: data.updatedAt,
+      };
+    } catch {
+      // Probar siguiente origen
+    }
+  }
+
+  return DEFAULT_REMOTE_STATUS;
+}
+
 export async function checkAppUpdate(
   repoSlug: string,
-  currentVersionCode: number
+  currentVersionCode: number,
+  currentVersionName = '1.0.0'
 ): Promise<{
   hasUpdate: boolean;
   manifest?: AppUpdateManifest;
@@ -134,7 +233,6 @@ export async function checkAppUpdate(
 }> {
   const cleanRepo = repoSlug.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
 
-  // Si no hay repositorio configurado o es el placeholder de ejemplo, no intentar llamar a GitHub
   if (!cleanRepo || !cleanRepo.includes('/') || cleanRepo.includes('tu-usuario')) {
     return {
       hasUpdate: false,
@@ -146,7 +244,7 @@ export async function checkAppUpdate(
   if (isNativeAndroid()) {
     try {
       const manifest = await LauncherNative.checkOtaUpdate({ repo: cleanRepo });
-      if (manifest && manifest.versionCode > currentVersionCode && manifest.apkUrl) {
+      if (isRemoteVersionNewer(manifest, currentVersionCode, currentVersionName)) {
         return {
           hasUpdate: true,
           manifest,
@@ -195,25 +293,24 @@ export async function checkAppUpdate(
       };
     }
 
-    const cleanTag = (release.tag_name || '1.0.0').replace(/^v/i, '');
-    const numericParts = cleanTag.split('.').map((n) => parseInt(n, 10) || 0);
-
+    const cleanTag = (release.tag_name || '1.0.0').replace(/^v/i, '').trim();
     const buildMatch = (release.body || '').match(/versionCode[":\s]+(\d+)|Build\s+(\d+)/i);
-    const computedCode = buildMatch
-      ? parseInt(buildMatch[1] || buildMatch[2], 10)
-      : (numericParts[0] || 1) * 10000 + (numericParts[1] || 0) * 100 + (numericParts[2] || 0);
+    const parsedBuildCode = buildMatch ? parseInt(buildMatch[1] || buildMatch[2], 10) : 0;
 
-    if (computedCode > currentVersionCode) {
+    const manifest: AppUpdateManifest = {
+      versionCode: parsedBuildCode,
+      versionName: cleanTag,
+      apkUrl: apkAsset.browser_download_url,
+      releaseNotes: release.body || 'Mejoras de rendimiento y estabilidad.',
+      publishedAt: release.published_at,
+      fileSizeBytes: apkAsset.size,
+      fromVersionJson: parsedBuildCode > 0,
+    };
+
+    if (isRemoteVersionNewer(manifest, currentVersionCode, currentVersionName)) {
       return {
         hasUpdate: true,
-        manifest: {
-          versionCode: computedCode,
-          versionName: cleanTag,
-          apkUrl: apkAsset.browser_download_url,
-          releaseNotes: release.body || 'Mejoras de rendimiento y estabilidad.',
-          publishedAt: release.published_at,
-          fileSizeBytes: apkAsset.size,
-        },
+        manifest,
         message: `Nueva versión v${cleanTag} lista para actualizar.`,
       };
     }

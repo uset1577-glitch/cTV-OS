@@ -20,6 +20,7 @@ interface NavaSettingsDrawerProps {
   settings: LauncherSettings;
   appVersion: AppVersionInfo;
   isNative: boolean;
+  isMaintenanceForced?: boolean;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
   onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'unknown_sources') => void;
   onOpenUpdateModal: () => void;
@@ -31,6 +32,7 @@ export function NavaSettingsDrawer({
   settings,
   appVersion,
   isNative,
+  isMaintenanceForced = false,
   onUpdateSettings,
   onOpenAndroidSettings,
   onOpenUpdateModal,
@@ -181,6 +183,34 @@ export function NavaSettingsDrawer({
               <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                 Preferencias
               </h3>
+
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-apps-only"
+                onClick={() => {
+                  if (!isMaintenanceForced) {
+                    onUpdateSettings({ appsOnlyMode: !settings.appsOnlyMode });
+                  }
+                }}
+                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
+              >
+                <div>
+                  <div className="text-sm font-semibold">Modo solo apps</div>
+                  <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                    {isMaintenanceForced
+                      ? 'Activado de forma obligatoria por mantenimiento'
+                      : 'Muestra únicamente tus aplicaciones sin recomendaciones'}
+                  </div>
+                </div>
+                <span className="text-sm font-semibold shrink-0">
+                  {isMaintenanceForced
+                    ? 'Obligatorio'
+                    : settings.appsOnlyMode
+                      ? 'Activado'
+                      : 'Desactivado'}
+                </span>
+              </button>
 
               <button
                 type="button"

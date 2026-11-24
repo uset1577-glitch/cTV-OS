@@ -255,21 +255,27 @@ function findHorizontalRail(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
-// Desplazamiento nativo por compositor de Chromium: cero loops JS ni layout thrashing
-function scrollFocusedElementIntoView(el: HTMLElement) {
-  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+// Desplazamiento nativo por compositor de Chromium: lecturas agrupadas antes de escribir para evitar reflow
+function scrollFocusedElementIntoView(el: HTMLElement, instant = false) {
+  const behavior: ScrollBehavior =
+    instant || prefersReducedMotion() ? 'auto' : 'smooth';
   const visualBox = el.querySelector<HTMLElement>('[data-tv-focus-box="true"]') || el;
   const vParent = findVerticalScrollContainer(el);
+  const hRail = findHorizontalRail(el);
+
+  let nextScrollTop: number | null = null;
+  let nextScrollLeft: number | null = null;
+
+  // Fase 1: Lectura única de geometría
+  const boxRect = visualBox.getBoundingClientRect();
 
   if (vParent) {
     if (el.closest('[data-tv-scroll-top="true"]')) {
       if (vParent.scrollTop > 1) {
-        vParent.scrollTo({ top: 0, behavior });
+        nextScrollTop = 0;
       }
     } else {
       const parentRect = vParent.getBoundingClientRect();
-      const boxRect = visualBox.getBoundingClientRect();
-
       const needsScrollDown = boxRect.bottom > parentRect.bottom - 18;
       const needsScrollUp = boxRect.top < parentRect.top + 84;
 
@@ -279,24 +285,28 @@ function scrollFocusedElementIntoView(el: HTMLElement) {
         const deltaY = boxRect.top - desiredTop;
         const maxTop = Math.max(0, vParent.scrollHeight - vParent.clientHeight);
         const rawNext = vParent.scrollTop + deltaY;
-        const clampedTop = Math.min(maxTop, Math.max(0, rawNext < 72 ? 0 : rawNext));
-        vParent.scrollTo({ top: clampedTop, behavior });
+        nextScrollTop = Math.min(maxTop, Math.max(0, rawNext < 72 ? 0 : rawNext));
       }
     }
   }
 
-  const hRail = findHorizontalRail(el);
   if (hRail) {
     const railRect = hRail.getBoundingClientRect();
-    const boxRect = visualBox.getBoundingClientRect();
     const boxCenter = boxRect.left + boxRect.width / 2;
     const railCenter = railRect.left + railRect.width / 2;
     const deltaX = boxCenter - railCenter;
     if (Math.abs(deltaX) > 24) {
       const maxLeft = Math.max(0, hRail.scrollWidth - hRail.clientWidth);
-      const clampedLeft = Math.min(maxLeft, Math.max(0, hRail.scrollLeft + deltaX));
-      hRail.scrollTo({ left: clampedLeft, behavior });
+      nextScrollLeft = Math.min(maxLeft, Math.max(0, hRail.scrollLeft + deltaX));
     }
+  }
+
+  // Fase 2: Escrituras agrupadas
+  if (vParent && nextScrollTop !== null) {
+    vParent.scrollTo({ top: nextScrollTop, behavior });
+  }
+  if (hRail && nextScrollLeft !== null) {
+    hRail.scrollTo({ left: nextScrollLeft, behavior });
   }
 }
 
@@ -376,12 +386,12 @@ export function useSpatialNavigation({
         const next = findNextElement(active, direction, candidates, scopeSelector);
         if (next) {
           next.focus({ preventScroll: true });
-          scrollFocusedElementIntoView(next);
+          scrollFocusedElementIntoView(next, e.repeat);
         } else if (candidates.length > 0 && (!active || !candidates.includes(active))) {
           const fallback =
             candidates.find((c) => c.dataset.tvInitial === 'true') || candidates[0];
           fallback.focus({ preventScroll: true });
-          scrollFocusedElementIntoView(fallback);
+          scrollFocusedElementIntoView(fallback, e.repeat);
         }
         return;
       }
