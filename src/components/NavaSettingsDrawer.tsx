@@ -1,22 +1,32 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
+  Accessibility,
+  Bell,
+  Bluetooth,
   Check,
-  Disc3,
+  ChevronRight,
+  CircleUserRound,
   Download,
+  HdmiPort,
   Home,
+  Image as ImageIcon,
   Monitor,
   Moon,
   RotateCcw,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   Sun,
+  Timer,
+  Volume2,
   Wifi,
-  X,
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
 import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
+import type { TvSettingsSection } from '../native/launcherBridge';
 import type { AppVersionInfo, LauncherSettings, MusicServiceStatus } from '../types/launcher';
+import { BrandLogo } from './BrandLogo';
 
 interface NavaSettingsDrawerProps {
   isOpen: boolean;
@@ -24,14 +34,22 @@ interface NavaSettingsDrawerProps {
   appVersion: AppVersionInfo;
   isNative: boolean;
   isMaintenanceForced?: boolean;
+  hasAvailableUpdate?: boolean;
+  remoteVersionName?: string;
+  sleepTimerMinutes?: number | null;
   musicServiceStatus: MusicServiceStatus;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
-  onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources') => void;
+  onOpenAndroidSettings: (section: TvSettingsSection) => void;
+  onCycleSleepTimer?: () => void;
+  onOpenScreensaver?: () => void;
   onOpenAccessibilitySettings: () => void;
   onOpenNotificationSettings: () => void;
   onOpenUpdateModal: () => void;
+  onOpenMaintenanceModal?: () => void;
   onClose: () => void;
 }
+
+type ActiveSubPanel = 'none' | 'notifications' | 'profile';
 
 export function NavaSettingsDrawer({
   isOpen,
@@ -39,489 +57,603 @@ export function NavaSettingsDrawer({
   appVersion,
   isNative,
   isMaintenanceForced = false,
+  hasAvailableUpdate = false,
+  remoteVersionName,
+  sleepTimerMinutes = null,
   musicServiceStatus,
   onUpdateSettings,
   onOpenAndroidSettings,
+  onCycleSleepTimer,
+  onOpenScreensaver,
   onOpenAccessibilitySettings,
   onOpenNotificationSettings,
   onOpenUpdateModal,
+  onOpenMaintenanceModal,
   onClose,
 }: NavaSettingsDrawerProps) {
-  const [repoInput, setRepoInput] = useState(settings.updateRepo || '');
-  const [repoSaved, setRepoSaved] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  const [subPanel, setSubPanel] = useState<ActiveSubPanel>('none');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setNow(new Date());
+    const timer = window.setInterval(() => setNow(new Date()), 15_000);
+    return () => window.clearInterval(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
-      setRepoInput(settings.updateRepo || '');
       window.requestAnimationFrame(() => {
-        focusElementById('settings-close');
+        focusElementById('quick-screensaver');
       });
+    } else {
+      setSubPanel('none');
     }
-  }, [isOpen, settings.updateRepo]);
+  }, [isOpen]);
 
   useSpatialNavigation({
     enabled: isOpen,
-    onBack: onClose,
-    scopeSelector: '#nava-settings-scroll-container',
+    onBack: () => {
+      if (subPanel !== 'none') {
+        setSubPanel('none');
+        window.requestAnimationFrame(() => focusElementById('quick-screensaver'));
+      } else {
+        onClose();
+      }
+    },
+    scopeSelector: '#vora-quick-panel',
   });
 
-  const handleSaveRepo = () => {
-    onUpdateSettings({ updateRepo: repoInput.trim() });
-    setRepoSaved(true);
-    window.setTimeout(() => setRepoSaved(false), 2000);
+  const formattedTime = now.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: !settings.use24HourClock,
+  });
+
+  const formattedDate = now.toLocaleDateString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+
+  const hasAlerts = hasAvailableUpdate || isMaintenanceForced;
+
+  const quickTiles = [
+    {
+      id: 'quick-screensaver',
+      label: 'Salvapantallas',
+      icon: ImageIcon,
+      isInitial: true,
+      onClick: () => {
+        onClose();
+        if (onOpenScreensaver) {
+          onOpenScreensaver();
+        } else {
+          onOpenAndroidSettings('screensaver');
+        }
+      },
+    },
+    {
+      id: 'quick-inputs',
+      label: 'Entradas',
+      icon: HdmiPort,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('inputs');
+      },
+    },
+    {
+      id: 'quick-picture',
+      label: 'Imagen',
+      icon: SlidersHorizontal,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('display');
+      },
+    },
+    {
+      id: 'quick-sound',
+      label: 'Sonido',
+      icon: Volume2,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('sound');
+      },
+    },
+    {
+      id: 'quick-wifi',
+      label: 'Wi-Fi',
+      icon: Wifi,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('wifi');
+      },
+    },
+    {
+      id: 'quick-bluetooth',
+      label: 'Bluetooth',
+      icon: Bluetooth,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('bluetooth');
+      },
+    },
+    {
+      id: 'quick-timer',
+      label: 'Temporizador',
+      badge: sleepTimerMinutes !== null ? `${sleepTimerMinutes}m` : undefined,
+      icon: Timer,
+      onClick: () => {
+        onCycleSleepTimer?.();
+      },
+    },
+    {
+      id: 'quick-accessibility',
+      label: 'Accesibilidad',
+      icon: Accessibility,
+      onClick: () => {
+        onClose();
+        onOpenAndroidSettings('accessibility');
+      },
+    },
+  ];
+
+  const handleFeaturedClick = () => {
+    if (isMaintenanceForced && onOpenMaintenanceModal) {
+      onClose();
+      onOpenMaintenanceModal();
+      return;
+    }
+    if (hasAvailableUpdate) {
+      onClose();
+      onOpenUpdateModal();
+      return;
+    }
+    setSubPanel((prev) => (prev === 'profile' ? 'none' : 'profile'));
   };
 
-  const scrollToSection = (sectionId: string) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  const featuredTitle = isMaintenanceForced
+    ? 'Aviso de mantenimiento activo'
+    : hasAvailableUpdate
+      ? `Actualización v${remoteVersionName || ''}`.trim()
+      : sleepTimerMinutes !== null
+        ? `Reposo programado · ${sleepTimerMinutes} min`
+        : 'Preferencias de VORA TV OS';
+
+  const featuredSubtitle = isMaintenanceForced
+    ? 'Modo solo apps habilitado temporalmente'
+    : hasAvailableUpdate
+      ? 'Nueva versión lista para instalar'
+      : sleepTimerMinutes !== null
+        ? 'Salvapantallas automático al finalizar'
+        : `Tema ${settings.themeMode === 'dark' ? 'Noche' : 'Día'} · Fondos · v${appVersion.versionName}`;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          id="nava-settings-drawer"
+          id="vora-quick-overlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Ajustes de VORA TV OS"
+          aria-label="Panel de configuración rápida de VORA TV OS"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.12 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               onClose();
             }
           }}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex justify-end"
+          className="fixed inset-0 z-40 bg-black/35 flex justify-end p-3 sm:p-5"
         >
-          <motion.div
-            id="nava-settings-scroll-container"
+          <motion.aside
+            id="vora-quick-panel"
             data-tv-scroll-container="true"
             onClick={(e) => e.stopPropagation()}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-            className="w-full max-w-2xl h-full min-h-0 bg-[#DCE3EE] dark:bg-[#0D1017] border-l border-slate-900/12 dark:border-white/10 p-8 pb-32 overflow-y-auto overscroll-contain touch-pan-y tv-drawer-scrollbar flex flex-col gap-6 shadow-2xl"
+            initial={{ x: 40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 40, opacity: 0 }}
+            transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[420px] h-full min-h-0 rounded-3xl bg-[#0D0E11]/88 border border-white/14 text-white px-5 py-5 overflow-y-auto overscroll-contain tv-drawer-scrollbar flex flex-col gap-4 shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
           >
-            {/* Cabecera */}
-            <div className="flex items-center justify-between gap-4 shrink-0 pb-1 border-b border-slate-900/8 dark:border-white/8">
-              <div>
-                <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
-                  Ajustes de VORA TV OS
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
-                  Personalización, apariencia y sistema Android TV
-                </p>
-              </div>
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-initial="true"
-                data-tv-id="settings-close"
-                onClick={onClose}
-                aria-label="Cerrar ajustes"
-                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105 shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Accesos rápidos de salto directo entre secciones */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 shrink-0">
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-nav-appearance"
-                onClick={() => scrollToSection('section-appearance')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
-              >
-                <span>🎨 Apariencia</span>
-              </button>
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-nav-preferences"
-                onClick={() => scrollToSection('section-preferences')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
-              >
-                <span>⚙️ Preferencias</span>
-              </button>
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-nav-system"
-                onClick={() => scrollToSection('section-system')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
-              >
-                <span>📺 Sistema TV</span>
-              </button>
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-nav-update"
-                onClick={() => scrollToSection('section-updates')}
-                className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/8 dark:bg-white/8 text-slate-700 dark:text-zinc-300 font-semibold text-xs hover:bg-slate-900/15 dark:hover:bg-white/15 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
-              >
-                <span>🔄 Actualizaciones</span>
-              </button>
-            </div>
-
-            {/* Apariencia Día / Noche y Fondos */}
-            <div id="section-appearance" className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
-                Apariencia y fondo limpio
-              </h3>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-theme-toggle"
-                onClick={() =>
-                  onUpdateSettings({
-                    themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
-                  })
-                }
-                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div className="flex items-center gap-3.5">
-                  {settings.themeMode === 'dark' ? (
-                    <Moon className="w-5 h-5 shrink-0" />
-                  ) : (
-                    <Sun className="w-5 h-5 shrink-0" />
-                  )}
-                  <div>
-                    <div className="font-semibold text-sm">Modo de tema</div>
-                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                      Alterna entre modo Día suave y Noche oscuro
-                    </div>
-                  </div>
+            {/* 1. Cabecera estilo Google TV: Fecha y hora a la izquierda + Ajustes, Notificaciones y Perfil arriba a la derecha */}
+            <div
+              data-tv-row="quick-header"
+              className="flex items-start justify-between gap-3 shrink-0 pb-1"
+            >
+              <div className="min-w-0">
+                <div className="font-display text-3xl font-semibold tracking-tight text-white tabular-nums leading-none">
+                  {formattedTime}
                 </div>
-                <span className="text-sm font-semibold shrink-0">
-                  {settings.themeMode === 'dark' ? 'Noche' : 'Día'}
-                </span>
-              </button>
-
-              <div className="grid grid-cols-3 gap-3">
-                {BACKGROUND_PRESETS.map((preset) => {
-                  const selected = settings.backgroundId === preset.id;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      data-tv-focusable="true"
-                      data-tv-id={`settings-bg-${preset.id}`}
-                      onClick={() => onUpdateSettings({ backgroundId: preset.id })}
-                      className={`tv-focusable rounded-2xl p-2.5 text-left border ${
-                        selected
-                          ? 'border-amber-500 bg-[#EEF2F7] dark:bg-white/10'
-                          : 'border-slate-900/10 dark:border-white/10 bg-[#E6ECF4] dark:bg-white/[0.04]'
-                      } focus:ring-2 focus:ring-amber-500 focus:scale-[1.03]`}
-                    >
-                      <div
-                        className="h-12 w-full rounded-xl mb-2 relative overflow-hidden border border-black/10"
-                        style={{
-                          background:
-                            settings.themeMode === 'light'
-                              ? preset.lightValue
-                              : preset.swatch,
-                        }}
-                      >
-                        {selected && (
-                          <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                        {preset.name}
-                      </div>
-                    </button>
-                  );
-                })}
+                <div className="text-xs font-medium text-zinc-400 mt-1.5 capitalize">
+                  {formattedDate}
+                </div>
               </div>
-            </div>
 
-            {/* Preferencias rápidas */}
-            <div id="section-preferences" className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
-                Preferencias de navegación
-              </h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-header-settings"
+                  onClick={() => {
+                    onClose();
+                    onOpenAndroidSettings('settings');
+                  }}
+                  aria-label="Ajustes del sistema"
+                  title="Ajustes"
+                  className="tv-focusable w-9 h-9 rounded-full bg-white/[0.08] border border-white/12 text-zinc-200 flex items-center justify-center hover:bg-white/[0.15] focus:bg-white focus:text-black focus:border-white focus:scale-105"
+                >
+                  <Settings className="w-4 h-4 stroke-[2]" />
+                </button>
 
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-apps-only"
-                onClick={() => {
-                  if (!isMaintenanceForced) {
-                    onUpdateSettings({ appsOnlyMode: !settings.appsOnlyMode });
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-header-notifications"
+                  onClick={() =>
+                    setSubPanel((prev) =>
+                      prev === 'notifications' ? 'none' : 'notifications'
+                    )
                   }
-                }}
-                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div>
-                  <div className="text-sm font-semibold">Modo solo apps local</div>
-                  <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                    {isMaintenanceForced
-                      ? 'Activado de forma obligatoria por mantenimiento'
-                      : 'Muestra únicamente tus aplicaciones sin recomendaciones en esta TV'}
-                  </div>
-                </div>
-                <span className="text-sm font-semibold shrink-0">
-                  {isMaintenanceForced
-                    ? 'Obligatorio'
-                    : settings.appsOnlyMode
-                      ? 'Activado'
-                      : 'Desactivado'}
-                </span>
-              </button>
+                  aria-label="Notificaciones"
+                  title="Notificaciones"
+                  className={`tv-focusable relative w-9 h-9 rounded-full border flex items-center justify-center focus:bg-white focus:text-black focus:border-white focus:scale-105 ${
+                    subPanel === 'notifications'
+                      ? 'bg-white text-black border-white'
+                      : 'bg-white/[0.08] border-white/12 text-zinc-200 hover:bg-white/[0.15]'
+                  }`}
+                >
+                  <Bell className="w-4 h-4 stroke-[2]" />
+                  {hasAlerts && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white"
+                    />
+                  )}
+                </button>
 
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-suggestions"
-                onClick={() => onUpdateSettings({ showSuggestions: !settings.showSuggestions })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
-              >
-                <span className="text-sm font-semibold">Sugerencias de películas y series</span>
-                <span className="text-sm font-semibold">
-                  {settings.showSuggestions ? 'Visibles' : 'Ocultas'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-clock"
-                onClick={() => onUpdateSettings({ use24HourClock: !settings.use24HourClock })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
-              >
-                <span className="text-sm font-semibold">Formato de reloj</span>
-                <span className="font-mono-tabular text-sm font-semibold">
-                  {settings.use24HourClock ? '24h' : '12h'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-pkg"
-                onClick={() => onUpdateSettings({ showPackageNames: !settings.showPackageNames })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
-              >
-                <span className="text-sm font-semibold">Mostrar nombre de paquete Android</span>
-                <span className="text-sm font-semibold">
-                  {settings.showPackageNames ? 'Visible' : 'Oculto'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-reset-favs"
-                onClick={() => onUpdateSettings({ favoritePackages: DEFAULT_FAVORITES })}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015]"
-              >
-                <span className="text-sm font-semibold">Restaurar fila de favoritos inicial</span>
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Sistema Android TV */}
-            <div id="section-system" className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
-                Sistema Android TV
-              </h3>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-home"
-                onClick={() => onOpenAndroidSettings('home')}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div>
-                  <div className="text-sm font-semibold">Definir como Launcher principal</div>
-                  <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                    {isNative ? 'Selector de pantalla de inicio' : 'Disponible en Android TV'}
-                  </div>
-                </div>
-                <Home className="w-4 h-4 shrink-0" />
-              </button>
-
-              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   data-tv-focusable="true"
-                  data-tv-id="settings-wifi"
-                  onClick={() => onOpenAndroidSettings('wifi')}
-                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-sm font-semibold focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02]"
+                  data-tv-id="quick-header-profile"
+                  onClick={() =>
+                    setSubPanel((prev) => (prev === 'profile' ? 'none' : 'profile'))
+                  }
+                  aria-label="Cuenta y perfil"
+                  title="Cuenta y perfil"
+                  className={`tv-focusable w-9 h-9 rounded-full border flex items-center justify-center focus:bg-white focus:text-black focus:border-white focus:scale-105 ${
+                    subPanel === 'profile'
+                      ? 'bg-white text-black border-white'
+                      : 'bg-white/[0.08] border-white/12 text-zinc-200 hover:bg-white/[0.15]'
+                  }`}
                 >
-                  <span>Wi-Fi</span>
-                  <Wifi className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="settings-android"
-                  onClick={() => onOpenAndroidSettings('settings')}
-                  className="tv-focusable flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-sm font-semibold focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02]"
-                >
-                  <span>Ajustes TV</span>
-                  <Settings className="w-4 h-4" />
+                  <CircleUserRound className="w-4.5 h-4.5 stroke-[2]" />
                 </button>
               </div>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-accessibility-service"
-                onClick={onOpenAccessibilitySettings}
-                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div className="flex items-start gap-3">
-                  <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
-                  <div>
-                    <div className="text-sm font-semibold">
-                      Servicio VORA en Google TV (Accesibilidad)
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                      Reemplaza el salvapantallas de Google TV y detecta Spotify sin permisos ocultos
-                    </div>
-                  </div>
-                </div>
-                <span
-                  className={`text-xs font-bold shrink-0 ${
-                    musicServiceStatus.hasAccessibilityAccess
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  {isNative
-                    ? musicServiceStatus.hasAccessibilityAccess
-                      ? 'Activo'
-                      : 'Activar'
-                    : 'Android TV'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-spotify-listener"
-                onClick={onOpenNotificationSettings}
-                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div className="flex items-start gap-3">
-                  <Disc3 className="w-4 h-4 mt-0.5 shrink-0 text-[#1DB954]" />
-                  <div>
-                    <div className="text-sm font-semibold">
-                      Acceso multimedia en segundo plano (Spotify)
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                      Lee sesiones activas de Spotify TV y Google Cast incluso en segundo plano
-                    </div>
-                  </div>
-                </div>
-                <span
-                  className={`text-xs font-bold shrink-0 ${
-                    musicServiceStatus.hasNotificationAccess
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-slate-600 dark:text-zinc-300'
-                  }`}
-                >
-                  {isNative
-                    ? musicServiceStatus.hasNotificationAccess
-                      ? 'Activo'
-                      : 'Configurar'
-                    : 'Android TV'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-system-screensaver"
-                onClick={() => onOpenAndroidSettings('screensaver')}
-                className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
-              >
-                <div>
-                  <div className="text-sm font-semibold">Elegir salvapantallas del sistema</div>
-                  <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                    {isNative
-                      ? musicServiceStatus.isGoogleTv
-                        ? 'En Google TV usa el Servicio VORA de arriba para reemplazar Modo Ambiente'
-                        : 'Selecciona VORA TV OS como salvapantallas del sistema'
-                      : 'Disponible en Android TV'}
-                  </div>
-                </div>
-                <Monitor className="w-4 h-4 shrink-0" />
-              </button>
             </div>
 
-            {/* Actualización de la aplicación estilo Xuper TV */}
-            <div id="section-updates" className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Actualización de la aplicación
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                    Comprueba e instala nuevas versiones de VORA TV OS
-                  </p>
-                </div>
-                <span className="font-mono-tabular text-xs font-semibold text-slate-600 dark:text-zinc-300">
-                  v{appVersion.versionName} · {appVersion.versionCode}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="settings-update-check"
-                onClick={onOpenUpdateModal}
-                className="tv-focusable w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-sm focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.02] shadow-sm"
-              >
-                <Download className="w-4 h-4 shrink-0" />
-                <span>Buscar actualizaciones</span>
-              </button>
-
-              <div className="pt-2 border-t border-slate-900/8 dark:border-white/8 space-y-2">
-                <label htmlFor="settings-update-repo-input" className="block text-xs text-slate-500 dark:text-zinc-400">
-                  Servidor o repositorio de descargas (opcional)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="settings-update-repo-input"
-                    type="text"
-                    value={repoInput}
-                    onChange={(e) => setRepoInput(e.target.value)}
+            {/* 2. Cuadrícula de tarjetas redondeadas en 2 columnas: icono + etiqueta corta a la izquierda */}
+            <div
+              data-tv-row="quick-grid"
+              data-tv-row-type="grid"
+              className="grid grid-cols-2 gap-2.5 shrink-0"
+            >
+              {quickTiles.map((tile) => {
+                const Icon = tile.icon;
+                return (
+                  <button
+                    key={tile.id}
+                    type="button"
                     data-tv-focusable="true"
-                    data-tv-id="settings-update-repo"
-                    placeholder="ej: usuario/vora-tv-os o vacío por defecto"
-                    className="tv-focusable flex-1 px-3.5 py-2.5 rounded-xl bg-[#DCE3EE] dark:bg-[#090B10] border border-slate-900/12 dark:border-white/12 text-sm font-mono-tabular text-slate-900 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-amber-500"
-                  />
+                    data-tv-initial={tile.isInitial ? 'true' : undefined}
+                    data-tv-id={tile.id}
+                    onClick={tile.onClick}
+                    className="tv-focusable group flex items-center justify-between gap-2 px-3.5 py-3.5 rounded-2xl bg-white/[0.08] border border-white/10 text-zinc-100 hover:bg-white/[0.14] hover:border-white/20 focus:bg-white focus:text-black focus:border-white focus:scale-[1.03] text-left min-w-0"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className="w-5 h-5 shrink-0 stroke-[1.9] text-zinc-200 group-focus:text-black" />
+                      <span className="text-[13.5px] font-medium tracking-tight truncate">
+                        {tile.label}
+                      </span>
+                    </div>
+                    {tile.badge && (
+                      <span className="font-mono-tabular text-[11px] font-semibold text-zinc-300 group-focus:text-black shrink-0">
+                        {tile.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 3. Tarjeta destacada más clara/translúcida para accesos o avisos */}
+            <div data-tv-row="quick-featured" className="shrink-0">
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="quick-featured-card"
+                onClick={handleFeaturedClick}
+                className="tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-white/[0.14] border border-white/20 text-left text-white hover:bg-white/[0.18] focus:bg-white focus:text-black focus:border-white focus:scale-[1.02]"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold tracking-tight truncate">
+                    {featuredTitle}
+                  </div>
+                  <div className="text-xs text-zinc-300 group-focus:text-zinc-700 truncate mt-0.5">
+                    {featuredSubtitle}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 text-zinc-300 group-focus:text-black" />
+              </button>
+            </div>
+
+            {/* Subpanel contextual limpio en escala de grises (solo visible al abrir Notificaciones o Perfil) */}
+            {subPanel === 'notifications' && (
+              <div
+                data-tv-row="quick-subpanel"
+                className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2 shrink-0"
+              >
+                <div className="text-xs font-semibold text-zinc-300 px-0.5">
+                  Avisos y estado del sistema
+                </div>
+
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-notif-update"
+                  onClick={() => {
+                    onClose();
+                    onOpenUpdateModal();
+                  }}
+                  className="tv-focusable group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Download className="w-4 h-4 shrink-0" />
+                    <span className="truncate">
+                      {hasAvailableUpdate
+                        ? `Nueva versión v${remoteVersionName || ''}`
+                        : 'Buscar actualizaciones'}
+                    </span>
+                  </div>
+                  <span className="font-mono-tabular text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
+                    v{appVersion.versionName}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-notif-media"
+                  onClick={onOpenNotificationSettings}
+                  className="tv-focusable group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                >
+                  <span className="truncate">Acceso multimedia Spotify</span>
+                  <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
+                    {isNative
+                      ? musicServiceStatus.hasNotificationAccess
+                        ? 'Activo'
+                        : 'Configurar'
+                      : 'TV'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-notif-service"
+                  onClick={onOpenAccessibilitySettings}
+                  className="tv-focusable group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Servicio VORA en Google TV</span>
+                  </div>
+                  <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
+                    {isNative
+                      ? musicServiceStatus.hasAccessibilityAccess
+                        ? 'Activo'
+                        : 'Activar'
+                      : 'TV'}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {subPanel === 'profile' && (
+              <div
+                data-tv-row="quick-subpanel"
+                className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0"
+              >
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-xs font-semibold text-zinc-300">
+                    Perfil y apariencia
+                  </span>
+                  <span className="font-mono-tabular text-[11px] text-zinc-400">
+                    v{appVersion.versionName}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     data-tv-focusable="true"
-                    data-tv-id="settings-update-save"
-                    onClick={handleSaveRepo}
-                    className="tv-focusable px-4 py-2.5 rounded-xl bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
+                    data-tv-id="quick-profile-theme"
+                    onClick={() =>
+                      onUpdateSettings({
+                        themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
+                      })
+                    }
+                    className="tv-focusable group flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    {repoSaved ? 'Guardado' : 'Guardar'}
+                    <span className="flex items-center gap-2">
+                      {settings.themeMode === 'dark' ? (
+                        <Moon className="w-3.5 h-3.5" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5" />
+                      )}
+                      <span>Tema</span>
+                    </span>
+                    <span className="text-zinc-400 group-focus:text-zinc-700">
+                      {settings.themeMode === 'dark' ? 'Noche' : 'Día'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-clock"
+                    onClick={() =>
+                      onUpdateSettings({ use24HourClock: !settings.use24HourClock })
+                    }
+                    className="tv-focusable group flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span>Reloj</span>
+                    <span className="font-mono-tabular text-zinc-400 group-focus:text-zinc-700">
+                      {settings.use24HourClock ? '24h' : '12h'}
+                    </span>
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* Pie del menú de ajustes */}
-            <div className="pt-2 pb-6 text-center text-xs text-slate-500 dark:text-zinc-500 font-medium shrink-0">
-              VORA TV OS · Ajustes listos para mando y pantalla de Android TV
+                <div className="grid grid-cols-3 gap-1.5">
+                  {BACKGROUND_PRESETS.map((preset) => {
+                    const selected = settings.backgroundId === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        data-tv-focusable="true"
+                        data-tv-id={`quick-bg-${preset.id}`}
+                        onClick={() => onUpdateSettings({ backgroundId: preset.id })}
+                        className={`tv-focusable rounded-xl p-1.5 text-left border ${
+                          selected
+                            ? 'border-white bg-white/15'
+                            : 'border-white/10 bg-white/[0.04]'
+                        } focus:ring-2 focus:ring-white focus:scale-[1.03]`}
+                      >
+                        <div
+                          className="h-7 w-full rounded-lg relative overflow-hidden mb-1 grayscale"
+                          style={{
+                            background:
+                              settings.themeMode === 'light'
+                                ? preset.lightValue
+                                : preset.swatch,
+                          }}
+                        >
+                          {selected && (
+                            <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-white text-black flex items-center justify-center">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-medium text-zinc-200 truncate">
+                          {preset.name}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-account"
+                    onClick={() => {
+                      onClose();
+                      onOpenAndroidSettings('account');
+                    }}
+                    className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span className="truncate">Cuentas TV</span>
+                    <CircleUserRound className="w-3.5 h-3.5 shrink-0" />
+                  </button>
+
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-home"
+                    onClick={() => {
+                      onClose();
+                      onOpenAndroidSettings('home');
+                    }}
+                    className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span className="truncate">Inicio TV</span>
+                    <Home className="w-3.5 h-3.5 shrink-0" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-appsonly"
+                    onClick={() => {
+                      if (!isMaintenanceForced) {
+                        onUpdateSettings({ appsOnlyMode: !settings.appsOnlyMode });
+                      }
+                    }}
+                    className="tv-focusable group flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span className="truncate">Solo apps</span>
+                    <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
+                      {settings.appsOnlyMode ? 'Sí' : 'No'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-reset"
+                    onClick={() =>
+                      onUpdateSettings({ favoritePackages: DEFAULT_FAVORITES })
+                    }
+                    className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span className="truncate">Favoritos</span>
+                    <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="quick-profile-update"
+                  onClick={() => {
+                    onClose();
+                    onOpenUpdateModal();
+                  }}
+                  className="tv-focusable w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                >
+                  <span>Buscar actualizaciones OTA</span>
+                  <Monitor className="w-3.5 h-3.5 shrink-0" />
+                </button>
+              </div>
+            )}
+
+            {/* 4. Pie limpio con logotipo/texto "VORA TV OS" y acceso rápido a Ajustes */}
+            <div
+              data-tv-row="quick-footer"
+              className="mt-auto pt-3 border-t border-white/12 flex items-center justify-between gap-3 shrink-0"
+            >
+              <BrandLogo size="sm" showWordmark forceLightText />
+
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="quick-footer-settings"
+                onClick={() => {
+                  onClose();
+                  onOpenAndroidSettings('settings');
+                }}
+                className="tv-focusable inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/[0.08] border border-white/14 text-xs font-medium text-zinc-100 hover:bg-white/[0.15] focus:bg-white focus:text-black focus:border-white focus:scale-105 shrink-0"
+              >
+                <Settings className="w-3.5 h-3.5 stroke-[2]" />
+                <span>Ajustes</span>
+              </button>
             </div>
-          </motion.div>
+          </motion.aside>
         </motion.div>
       )}
     </AnimatePresence>

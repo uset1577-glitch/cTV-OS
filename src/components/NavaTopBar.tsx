@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Download, Monitor, Moon, Search, Settings, Sun } from 'lucide-react';
 import type { HomeTab, ThemeMode } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
@@ -19,7 +19,7 @@ interface NavaTopBarProps {
   onOpenSettings: () => void;
 }
 
-export function NavaTopBar({
+export const NavaTopBar = memo(function NavaTopBar({
   activeTab,
   themeMode,
   use24HourClock,
@@ -199,4 +199,4 @@ export function NavaTopBar({
       </div>
     </header>
   );
-}
+});

@@ -1,10 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, RefreshCw, Tv } from 'lucide-react';
-import { resolvePackageAlias } from '../data/suggestions';
+import {
+  deduplicateSuggestions,
+  filterSeriesByPlatform,
+  getActiveStreamingPlatforms,
+  resolvePackageAlias,
+} from '../data/suggestions';
 import type { AppSuggestion, InstalledApp } from '../types/launcher';
 
 interface LivePlatformsViewProps {
   allApps: InstalledApp[];
+  favoritePackages?: string[];
   series: AppSuggestion[];
   isLoading: boolean;
   onScrollTopChange: (atTop: boolean) => void;
@@ -12,17 +18,9 @@ interface LivePlatformsViewProps {
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
 }
 
-const PLATFORM_TABS = [
-  { id: 'all', label: 'Todas las plataformas' },
-  { id: 'com.netflix.ninja', label: 'Netflix' },
-  { id: 'com.wbd.stream', label: 'Max' },
-  { id: 'com.amazon.amazonvideo.livingroom', label: 'Prime Video' },
-  { id: 'com.disney.disneyplus', label: 'Disney+' },
-  { id: 'com.google.android.youtube.tv', label: 'YouTube' },
-];
-
 export function LivePlatformsView({
   allApps,
+  favoritePackages = [],
   series,
   isLoading,
   onScrollTopChange,
@@ -32,10 +30,29 @@ export function LivePlatformsView({
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
   const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
 
-  const filteredItems = useMemo(() => {
-    if (selectedPlatform === 'all') return series;
-    return series.filter((item) => item.packageName === selectedPlatform);
-  }, [series, selectedPlatform]);
+  const platformTabs = useMemo(() => {
+    const active = getActiveStreamingPlatforms(allApps, favoritePackages);
+    return [
+      { id: 'all', label: 'Todas las plataformas' },
+      ...active.map((p) => ({ id: p.packageName, label: p.appName })),
+    ];
+  }, [allApps, favoritePackages]);
+
+  useEffect(() => {
+    if (
+      selectedPlatform !== 'all' &&
+      !platformTabs.some((tab) => tab.id === selectedPlatform)
+    ) {
+      setSelectedPlatform('all');
+    }
+  }, [platformTabs, selectedPlatform]);
+
+  const dedupedSeries = useMemo(() => deduplicateSuggestions(series), [series]);
+
+  const filteredItems = useMemo(
+    () => filterSeriesByPlatform(dedupedSeries, selectedPlatform, allApps),
+    [dedupedSeries, selectedPlatform, allApps]
+  );
 
   const markFailed = (url: string) => {
     setFailedUrls((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
@@ -73,12 +90,12 @@ export function LivePlatformsView({
         </button>
       </div>
 
-      {/* Selector por plataforma */}
+      {/* Selector dinámico por plataforma */}
       <div
         data-tv-row="live-filters"
         className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-1 -mx-1 mb-6"
       >
-        {PLATFORM_TABS.map((tab, idx) => {
+        {platformTabs.map((tab, idx) => {
           const active = selectedPlatform === tab.id;
           return (
             <button

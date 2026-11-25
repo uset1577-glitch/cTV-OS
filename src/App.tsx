@@ -17,10 +17,15 @@ import {
   FEATURED_GAME,
 } from './data/presets';
 import {
+  deduplicateCatalog,
   fetchGoogleTvLiveCatalog,
   OFFLINE_FALLBACK_CATALOG,
 } from './data/suggestions';
-import { focusElementById, useSpatialNavigation } from './hooks/useSpatialNavigation';
+import {
+  focusElementById,
+  smoothScrollVerticalTo,
+  useSpatialNavigation,
+} from './hooks/useSpatialNavigation';
 import { useSpotifyNowPlaying } from './hooks/useSpotifyNowPlaying';
 import {
   checkAppUpdate,
@@ -36,6 +41,7 @@ import {
   openTvSettings,
   setNativeKeepScreenOn,
   startAppUpdateInstall,
+  type TvSettingsSection,
 } from './native/launcherBridge';
 import {
   setGlobalLauncherStatus,
@@ -68,6 +74,8 @@ function loadSavedSettings(): LauncherSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      maintenanceMode: false,
+      appsOnlyMode: false,
       updateRepo: parsed.updateRepo?.trim() ? parsed.updateRepo : DEFAULT_SETTINGS.updateRepo,
       favoritePackages: Array.isArray(parsed.favoritePackages)
         ? parsed.favoritePackages
@@ -97,9 +105,16 @@ export default function App() {
   });
   const [isVersionLoaded, setIsVersionLoaded] = useState(false);
   const [topBarVisible, setTopBarVisible] = useState(true);
+  const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
   const lastCatalogFetchRef = useRef<number>(0);
   const lastRemoteStatusFetchRef = useRef<number>(0);
   const hasAutoPromptedUpdateRef = useRef(false);
+  const appsRef = useRef<InstalledApp[]>(apps);
+  const favoritePackagesRef = useRef<string[]>(settings.favoritePackages);
+  const catalogInFlightRef = useRef<Promise<void> | null>(null);
+  const catalogInitializedRef = useRef(false);
+  appsRef.current = apps;
+  favoritePackagesRef.current = settings.favoritePackages;
 
   // Estado del Panel de Control de Creador (Exclusivo para PC / Navegador)
   const [showCreatorAdmin, setShowCreatorAdmin] = useState<boolean>(() => {
@@ -155,6 +170,21 @@ export default function App() {
     setIsScreensaverActive(true);
     void refreshSpotify();
   }, [refreshSpotify]);
+
+  useEffect(() => {
+    if (sleepTimerMinutes === null || sleepTimerMinutes <= 0) return;
+    const id = window.setInterval(() => {
+      setSleepTimerMinutes((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          activateScreensaver();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [sleepTimerMinutes, activateScreensaver]);
 
   const refreshMusicServiceStatus = useCallback(async () => {
     const status = await getMusicServiceStatus();
@@ -234,6 +264,40 @@ export default function App() {
   });
   const wasMaintenanceForcedRef = useRef(false);
 
+  const loadLiveCatalog = useCallback((mode: boolean | 'immediate' = false) => {
+    const isImmediate = mode === 'immediate';
+    const force = Boolean(mode);
+    const now = Date.now();
+
+    if (!isImmediate && catalogInitializedRef.current && now - lastCatalogFetchRef.current < 1800) {
+      return catalogInFlightRef.current ?? Promise.resolve();
+    }
+
+    if (catalogInFlightRef.current && !isImmediate) {
+      return catalogInFlightRef.current;
+    }
+
+    setIsLoadingCatalog(true);
+    const task = (async () => {
+      try {
+        const catalog = await fetchGoogleTvLiveCatalog({
+          force,
+          installedApps: appsRef.current,
+          favoritePackages: favoritePackagesRef.current,
+        });
+        lastCatalogFetchRef.current = Date.now();
+        catalogInitializedRef.current = true;
+        setLiveCatalog(catalog);
+      } finally {
+        catalogInFlightRef.current = null;
+        setIsLoadingCatalog(false);
+      }
+    })();
+
+    catalogInFlightRef.current = task;
+    return task;
+  }, []);
+
   const loadLauncherData = useCallback(async (silent = false) => {
     if (!silent) {
       setIsLoadingApps(true);
@@ -243,25 +307,18 @@ export default function App() {
         getInstalledApps(),
         getCurrentAppVersion(),
       ]);
+      appsRef.current = appsResult.apps;
       setApps(appsResult.apps);
       setIsNative(appsResult.isNative);
       setAppVersion(versionInfo);
       setIsVersionLoaded(true);
+      setLiveCatalog((prev) =>
+        deduplicateCatalog(prev, appsResult.apps, favoritePackagesRef.current)
+      );
     } finally {
       if (!silent) {
         setIsLoadingApps(false);
       }
-    }
-  }, []);
-
-  const loadLiveCatalog = useCallback(async (force = false) => {
-    setIsLoadingCatalog(true);
-    try {
-      const catalog = await fetchGoogleTvLiveCatalog(force);
-      lastCatalogFetchRef.current = Date.now();
-      setLiveCatalog(catalog);
-    } finally {
-      setIsLoadingCatalog(false);
     }
   }, []);
 
@@ -270,9 +327,13 @@ export default function App() {
       try {
         lastRemoteStatusFetchRef.current = Date.now();
         const status = await fetchLauncherRemoteStatus(repoSlug);
-        setRemoteStatus(status);
+        const forcedNow = Boolean(status.maintenanceMode);
+        setRemoteStatus({
+          ...status,
+          maintenanceMode: forcedNow,
+          appsOnlyMode: Boolean(status.appsOnlyMode && forcedNow),
+        });
 
-        const forcedNow = Boolean(status.maintenanceMode || status.appsOnlyMode);
         if (forcedNow && !wasMaintenanceForcedRef.current) {
           wasMaintenanceForcedRef.current = true;
           setActiveTab('inicio');
@@ -306,12 +367,22 @@ export default function App() {
   );
   const effectiveAppsOnly = isMaintenanceForced || settings.appsOnlyMode;
 
-  const activeMaintenanceStatus: LauncherRemoteStatus = {
-    maintenanceMode: isMaintenanceForced,
-    appsOnlyMode: effectiveAppsOnly,
-    title: remoteStatus.title || settings.maintenanceTitle,
-    message: remoteStatus.message || settings.maintenanceMessage,
-  };
+  const activeMaintenanceStatus = useMemo<LauncherRemoteStatus>(
+    () => ({
+      maintenanceMode: isMaintenanceForced,
+      appsOnlyMode: effectiveAppsOnly,
+      title: remoteStatus.title || settings.maintenanceTitle,
+      message: remoteStatus.message || settings.maintenanceMessage,
+    }),
+    [
+      isMaintenanceForced,
+      effectiveAppsOnly,
+      remoteStatus.title,
+      remoteStatus.message,
+      settings.maintenanceTitle,
+      settings.maintenanceMessage,
+    ]
+  );
 
   // Sincronizar clase .dark en <html>
   useEffect(() => {
@@ -372,30 +443,43 @@ export default function App() {
   useEffect(() => {
     void loadLauncherData(false);
     void testFirestoreConnection();
-    const unsubscribe = subscribeToLauncherStatus((status) => {
-      setRemoteStatus(status);
-      const forcedNow = Boolean(status.maintenanceMode);
-      if (forcedNow && !wasMaintenanceForcedRef.current) {
-        wasMaintenanceForcedRef.current = true;
-        setActiveTab('inicio');
-        setTopBarVisible(true);
-        setOverlay((curr) => (curr === 'none' || curr === 'update' ? 'maintenance' : curr));
-      } else if (!forcedNow && wasMaintenanceForcedRef.current) {
-        wasMaintenanceForcedRef.current = false;
-        setOverlay((curr) => (curr === 'maintenance' ? 'none' : curr));
-        void loadLiveCatalog(true);
-      }
-    });
+    const unsubscribe = subscribeToLauncherStatus(
+      (status) => {
+        setRemoteStatus(status);
+        const forcedNow = Boolean(status.maintenanceMode);
+        if (forcedNow && !wasMaintenanceForcedRef.current) {
+          wasMaintenanceForcedRef.current = true;
+          setActiveTab('inicio');
+          setTopBarVisible(true);
+          setOverlay((curr) => (curr === 'none' || curr === 'update' ? 'maintenance' : curr));
+        } else if (!forcedNow && wasMaintenanceForcedRef.current) {
+          wasMaintenanceForcedRef.current = false;
+          setOverlay((curr) => (curr === 'maintenance' ? 'none' : curr));
+          void loadLiveCatalog(true);
+        }
+      },
+      undefined,
+      { ignoreInitialMaintenance: true }
+    );
     return () => {
       unsubscribe();
     };
   }, [loadLauncherData, loadLiveCatalog]);
 
+  const appsSignature = useMemo(
+    () => apps.map((a) => a.packageName).sort().join('|'),
+    [apps]
+  );
+  const favoritesSignature = useMemo(
+    () => settings.favoritePackages.join('|'),
+    [settings.favoritePackages]
+  );
+
   useEffect(() => {
     if (!effectiveAppsOnly) {
       void loadLiveCatalog(true);
     }
-  }, [effectiveAppsOnly, loadLiveCatalog]);
+  }, [effectiveAppsOnly, appsSignature, favoritesSignature, loadLiveCatalog]);
 
   // Refrescar recomendaciones, apps y estado remoto de mantenimiento al volver a la TV
   useEffect(() => {
@@ -485,11 +569,15 @@ export default function App() {
         }
       }
       setOverlay('none');
+      void loadLauncherData(true);
+      if (!effectiveAppsOnly) {
+        void loadLiveCatalog(false);
+      }
       window.requestAnimationFrame(() => {
         focusElementById(focusTargetId);
       });
     },
-    [overlay, remoteManifest]
+    [overlay, remoteManifest, effectiveAppsOnly, loadLauncherData, loadLiveCatalog]
   );
 
   useSpatialNavigation({
@@ -497,7 +585,9 @@ export default function App() {
     onBack: () => {
       setTopBarVisible(true);
       const scrollEl = document.querySelector<HTMLElement>('[data-tv-scroll-container="true"]');
-      scrollEl?.scrollTo({ top: 0, behavior: 'smooth' });
+      if (scrollEl) {
+        smoothScrollVerticalTo(scrollEl, 0);
+      }
       if (activeTab !== 'inicio') {
         setActiveTab('inicio');
       }
@@ -519,8 +609,11 @@ export default function App() {
       }
       setTopBarVisible(true);
       setActiveTab(tab);
+      if (!effectiveAppsOnly) {
+        void loadLiveCatalog(false);
+      }
     },
-    [effectiveAppsOnly]
+    [effectiveAppsOnly, loadLiveCatalog]
   );
 
   const handleLaunchPackage = useCallback(
@@ -584,14 +677,41 @@ export default function App() {
   );
 
   const handleOpenAndroidSettings = useCallback(
-    async (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources') => {
+    async (section: TvSettingsSection) => {
       const opened = await openTvSettings(section);
       if (!opened) {
-        showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
+        const labels: Record<TvSettingsSection, string> = {
+          wifi: 'Wi-Fi',
+          bluetooth: 'Bluetooth',
+          display: 'Imagen y pantalla',
+          sound: 'Sonido',
+          inputs: 'Entradas HDMI / TV',
+          accessibility: 'Accesibilidad',
+          account: 'Cuenta y perfil',
+          screensaver: 'Salvapantallas del sistema',
+          home: 'Launcher principal',
+          unknown_sources: 'Orígenes desconocidos',
+          settings: 'Ajustes de Android TV',
+        };
+        showToast(`${labels[section]} · Disponible en Android TV`);
       }
     },
     [showToast]
   );
+
+  const handleCycleSleepTimer = useCallback(() => {
+    const steps: Array<number | null> = [null, 15, 30, 60, 90];
+    setSleepTimerMinutes((prev) => {
+      const idx = steps.indexOf(prev);
+      const next = steps[(idx + 1) % steps.length];
+      showToast(
+        next === null
+          ? 'Temporizador desactivado'
+          : `Temporizador: ${next} min para reposo`
+      );
+      return next;
+    });
+  }, [showToast]);
 
   const runUpdateCheck = useCallback(
     async (customRepo?: string) => {
@@ -691,6 +811,38 @@ export default function App() {
       ? { backgroundColor: currentBackground.value }
       : { backgroundImage: currentBackground.value };
 
+  const handleLaunchFeatured = useCallback(() => {
+    void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name);
+  }, [handleLaunchPackage]);
+
+  const handleLaunchSuggestionCb = useCallback(
+    (sug: AppSuggestion) => {
+      void handleLaunchSuggestion(sug);
+    },
+    [handleLaunchSuggestion]
+  );
+
+  const handleOpenAllApps = useCallback(() => {
+    setOverlay('apps');
+  }, []);
+
+  const handleOpenMaintenanceInfo = useCallback(() => {
+    setOverlay('maintenance');
+  }, []);
+
+  const handleRefreshCatalogMemo = useCallback(() => {
+    void loadLiveCatalog(false);
+  }, [loadLiveCatalog]);
+
+  const handleToggleTheme = useCallback(() => {
+    updateSettings({
+      themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
+    });
+  }, [settings.themeMode, updateSettings]);
+
+  const handleOpenSearch = useCallback(() => setOverlay('search'), []);
+  const handleOpenSettings = useCallback(() => setOverlay('settings'), []);
+
   if (showCreatorAdmin) {
     return <CreatorAdminPanel onExit={() => setShowCreatorAdmin(false)} />;
   }
@@ -703,7 +855,11 @@ export default function App() {
     >
       <div
         className={`relative z-10 flex flex-col h-full min-h-0 transition-opacity duration-150 ${
-          overlay !== 'none' ? 'opacity-35 pointer-events-none' : 'opacity-100'
+          overlay === 'settings'
+            ? 'opacity-70 pointer-events-none'
+            : overlay !== 'none'
+              ? 'opacity-35 pointer-events-none'
+              : 'opacity-100'
         }`}
       >
         <NavaTopBar
@@ -715,21 +871,18 @@ export default function App() {
           isOverHero={activeTab === 'inicio' && !effectiveAppsOnly}
           appsOnlyMode={effectiveAppsOnly}
           onSelectTab={handleSelectTab}
-          onToggleTheme={() =>
-            updateSettings({
-              themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
-            })
-          }
+          onToggleTheme={handleToggleTheme}
           onOpenScreensaver={activateScreensaver}
-          onOpenSearch={() => setOverlay('search')}
+          onOpenSearch={handleOpenSearch}
           onOpenUpdate={handleOpenUpdateModal}
-          onOpenSettings={() => setOverlay('settings')}
+          onOpenSettings={handleOpenSettings}
         />
 
         {activeTab === 'inicio' || effectiveAppsOnly ? (
           <GoogleTvHome
             allApps={apps}
             favoriteApps={favoriteApps}
+            favoritePackages={settings.favoritePackages}
             liveCatalog={liveCatalog}
             isNative={isNative}
             showSuggestions={settings.showSuggestions}
@@ -737,23 +890,23 @@ export default function App() {
             maintenanceNotice={isMaintenanceForced ? activeMaintenanceStatus : null}
             heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
             onScrollTopChange={setTopBarVisible}
-            onLaunchFeatured={() =>
-              void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name)
-            }
+            onLaunchFeatured={handleLaunchFeatured}
             onLaunchApp={handleLaunchApp}
-            onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
+            onLaunchSuggestion={handleLaunchSuggestionCb}
             onToggleFavorite={handleToggleFavorite}
-            onOpenAllApps={() => setOverlay('apps')}
-            onOpenMaintenanceInfo={() => setOverlay('maintenance')}
+            onOpenAllApps={handleOpenAllApps}
+            onOpenMaintenanceInfo={handleOpenMaintenanceInfo}
+            onRefreshCatalog={handleRefreshCatalogMemo}
           />
         ) : (
           <LivePlatformsView
             allApps={apps}
+            favoritePackages={settings.favoritePackages}
             series={liveCatalog.series}
             isLoading={isLoadingCatalog}
             onScrollTopChange={setTopBarVisible}
-            onRefreshFeed={() => void loadLiveCatalog(true)}
-            onLaunchSuggestion={(sug) => void handleLaunchSuggestion(sug)}
+            onRefreshFeed={() => void loadLiveCatalog('immediate')}
+            onLaunchSuggestion={handleLaunchSuggestionCb}
           />
         )}
       </div>
@@ -810,24 +963,33 @@ export default function App() {
         appVersion={appVersion}
         isNative={isNative}
         isMaintenanceForced={isMaintenanceForced}
+        hasAvailableUpdate={hasAvailableUpdate}
+        remoteVersionName={remoteManifest?.versionName}
+        sleepTimerMinutes={sleepTimerMinutes}
         musicServiceStatus={musicServiceStatus}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
+        onCycleSleepTimer={handleCycleSleepTimer}
+        onOpenScreensaver={() => {
+          setOverlay('none');
+          activateScreensaver();
+        }}
         onOpenAccessibilitySettings={() => {
           void openSpotifyAccessibilitySettings().then((opened) => {
             if (!opened) {
-              showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
+              showToast('Accesibilidad · Disponible en Android TV');
             }
           });
         }}
         onOpenNotificationSettings={() => {
           void openSpotifyNotificationSettings().then((opened) => {
             if (!opened) {
-              showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
+              showToast('Notificaciones · Disponible en Android TV');
             }
           });
         }}
         onOpenUpdateModal={handleOpenUpdateModal}
+        onOpenMaintenanceModal={() => setOverlay('maintenance')}
         onClose={() => closeOverlayToHome('top-settings')}
       />
 
@@ -884,7 +1046,7 @@ export default function App() {
           type="button"
           onClick={() => setShowCreatorAdmin(true)}
           title="Panel de Control del Creador (Solo PC - Atajo: Ctrl+Shift+A)"
-          className="fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/85 dark:bg-zinc-900/85 backdrop-blur-md border border-amber-500/35 text-amber-400 hover:text-zinc-950 hover:bg-amber-400 text-xs font-bold shadow-xl transition-all active:scale-95 cursor-pointer"
+          className="fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/95 dark:bg-zinc-900/95 border border-amber-500/35 text-amber-400 hover:text-zinc-950 hover:bg-amber-400 text-xs font-bold shadow-md transition-colors active:scale-95 cursor-pointer"
         >
           <Shield className="w-3.5 h-3.5" />
           <span>Panel Creador (PC)</span>

@@ -283,6 +283,25 @@ public class LauncherPlugin extends Plugin {
             Intent intent;
             if ("wifi".equals(section)) {
                 intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+            } else if ("bluetooth".equals(section)) {
+                intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+            } else if ("display".equals(section)) {
+                intent = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+            } else if ("sound".equals(section) || "image_sound".equals(section)) {
+                intent = new Intent(Settings.ACTION_SOUND_SETTINGS);
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+                }
+            } else if ("inputs".equals(section)) {
+                intent = new Intent("com.android.tv.action.VIEW_INPUTS");
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+                }
+            } else if ("account".equals(section)) {
+                intent = new Intent(Settings.ACTION_SYNC_SETTINGS);
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_SETTINGS);
+                }
             } else if ("home".equals(section)) {
                 intent = new Intent(Settings.ACTION_HOME_SETTINGS);
             } else if ("accessibility".equals(section)) {

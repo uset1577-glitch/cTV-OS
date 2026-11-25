@@ -10,6 +10,19 @@ import type {
   SpotifyNowPlaying,
 } from '../types/launcher';
 
+export type TvSettingsSection =
+  | 'settings'
+  | 'wifi'
+  | 'bluetooth'
+  | 'sound'
+  | 'display'
+  | 'inputs'
+  | 'account'
+  | 'home'
+  | 'screensaver'
+  | 'accessibility'
+  | 'unknown_sources';
+
 export interface LauncherNativePlugin {
   getInstalledApps(): Promise<{ apps: InstalledApp[] }>;
   launchApp(options: { packageName: string }): Promise<{ launched: boolean; packageName: string }>;
@@ -17,7 +30,7 @@ export interface LauncherNativePlugin {
     url: string;
     packageName?: string;
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
-  openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources' }): Promise<{ opened: boolean }>;
+  openSettings(options: { section: TvSettingsSection }): Promise<{ opened: boolean }>;
   setKeepScreenOn(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
@@ -104,7 +117,7 @@ export async function launchSuggestionUri(
 }
 
 export async function openTvSettings(
-  section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources'
+  section: TvSettingsSection
 ): Promise<boolean> {
   if (isNativeAndroid()) {
     try {

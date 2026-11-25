@@ -1,12 +1,55 @@
 import type { AppSuggestion, GoogleTvLiveCatalog, InstalledApp } from '../types/launcher';
 
+export interface ActiveStreamingPlatform {
+  id: string;
+  packageName: string;
+  appName: string;
+  deepLinkUrl: string;
+  accentGradient: string;
+  isInstalled: boolean;
+  isFavorite: boolean;
+}
+
 const PACKAGE_ALIASES: Record<string, string[]> = {
   'com.wbd.stream': ['com.hbo.hbonow', 'com.hbomax', 'com.hbo.android.app'],
   'com.google.android.youtube.tv': ['com.liskovsoft.smarttubetv.beta', 'com.liskovsoft.smarttubetv'],
   'com.amazon.amazonvideo.livingroom': ['com.amazon.avod.thirdpartyclient'],
 };
 
-const LIVE_FEED_CACHE_KEY = 'ctvos_gtv_live_feed_v3';
+const KNOWN_STREAMING_PLATFORMS = [
+  {
+    appName: 'Netflix',
+    packageName: 'com.netflix.ninja',
+    deepLinkUrl: 'https://www.netflix.com/browse',
+    accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
+  },
+  {
+    appName: 'Max',
+    packageName: 'com.wbd.stream',
+    deepLinkUrl: 'https://play.max.com/',
+    accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
+  },
+  {
+    appName: 'Prime Video',
+    packageName: 'com.amazon.amazonvideo.livingroom',
+    deepLinkUrl: 'https://app.primevideo.com/',
+    accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
+  },
+  {
+    appName: 'Disney+',
+    packageName: 'com.disney.disneyplus',
+    deepLinkUrl: 'https://www.disneyplus.com/home',
+    accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
+  },
+  {
+    appName: 'YouTube',
+    packageName: 'com.google.android.youtube.tv',
+    deepLinkUrl: 'https://www.youtube.com/tv#/explore',
+    accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
+  },
+];
+
+const LIVE_FEED_CACHE_KEY = 'ctvos_gtv_live_feed_v4';
 
 interface CinemetaMeta {
   id?: string;
@@ -92,7 +135,7 @@ function upscaleAppleImage(url: string, size = '600x900bb'): string {
 
 function shuffleWithSeed<T>(items: T[], seed: number): T[] {
   const arr = [...items];
-  let s = seed || 1;
+  let s = Math.abs(seed) || 1;
   for (let i = arr.length - 1; i > 0; i--) {
     s = (s * 1664525 + 1013904223) % 4294967296;
     const j = s % (i + 1);
@@ -103,94 +146,206 @@ function shuffleWithSeed<T>(items: T[], seed: number): T[] {
   return arr;
 }
 
-function mapPlatformToPackage(channelName: string): {
-  appName: string;
-  packageName: string;
-  deepLinkUrl: string;
-  accentGradient: string;
-  tag: string;
-} | null {
-  const lower = channelName.toLowerCase();
-  if (lower.includes('netflix')) {
-    return {
-      appName: 'Netflix',
-      packageName: 'com.netflix.ninja',
-      deepLinkUrl: 'https://www.netflix.com/browse',
-      accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
-      tag: 'Netflix',
-    };
-  }
-  if (lower.includes('hbo') || lower.includes('max')) {
-    return {
-      appName: 'Max',
-      packageName: 'com.wbd.stream',
-      deepLinkUrl: 'https://play.max.com/',
-      accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
-      tag: 'Max',
-    };
-  }
-  if (lower.includes('amazon') || lower.includes('prime')) {
-    return {
-      appName: 'Prime Video',
-      packageName: 'com.amazon.amazonvideo.livingroom',
-      deepLinkUrl: 'https://app.primevideo.com/',
-      accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
-      tag: 'Prime Video',
-    };
-  }
-  if (lower.includes('disney')) {
-    return {
-      appName: 'Disney+',
-      packageName: 'com.disney.disneyplus',
-      deepLinkUrl: 'https://www.disneyplus.com/home',
-      accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
-      tag: 'Disney+',
-    };
-  }
-  if (lower.includes('youtube')) {
-    return {
-      appName: 'YouTube',
-      packageName: 'com.google.android.youtube.tv',
-      deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-      accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
-      tag: 'YouTube',
-    };
-  }
-  return null;
+export function normalizeSuggestionTitle(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\((?:19|20)\d{2}\)/g, '')
+    .replace(/\b(?:temporada|season|parte|part|vol\.?)\s*\d+\b/gi, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
-const STREAMING_ROTATION = [
-  {
-    appName: 'Netflix',
-    packageName: 'com.netflix.ninja',
-    deepLinkUrl: 'https://www.netflix.com/browse',
-    accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
-  },
-  {
-    appName: 'Max',
-    packageName: 'com.wbd.stream',
-    deepLinkUrl: 'https://play.max.com/',
-    accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
-  },
-  {
-    appName: 'Prime Video',
-    packageName: 'com.amazon.amazonvideo.livingroom',
-    deepLinkUrl: 'https://app.primevideo.com/',
-    accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
-  },
-  {
-    appName: 'Disney+',
-    packageName: 'com.disney.disneyplus',
-    deepLinkUrl: 'https://www.disneyplus.com/home',
-    accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
-  },
-  {
-    appName: 'YouTube',
-    packageName: 'com.google.android.youtube.tv',
-    deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-    accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
-  },
-];
+export function getCanonicalWorkKey(item: Pick<AppSuggestion, 'id' | 'title'>): string {
+  const rawId = (item.id || '').trim().toLowerCase();
+  if (rawId.startsWith('cm-')) return `imdb:${rawId.slice(3)}`;
+  if (rawId.startsWith('cms-')) return `imdb:${rawId.slice(4)}`;
+  return `id:${rawId || normalizeSuggestionTitle(item.title)}`;
+}
+
+export function resolvePackageAlias(
+  preferredPkg: string,
+  installedApps: InstalledApp[]
+): string {
+  const installedSet = new Set(installedApps.map((a) => a.packageName));
+  if (installedSet.has(preferredPkg)) return preferredPkg;
+  const aliases = PACKAGE_ALIASES[preferredPkg] || [];
+  for (const alias of aliases) {
+    if (installedSet.has(alias)) return alias;
+  }
+  return preferredPkg;
+}
+
+export function getCanonicalPlatformPackage(pkg: string): string {
+  for (const [canonical, aliases] of Object.entries(PACKAGE_ALIASES)) {
+    if (pkg === canonical || aliases.includes(pkg)) {
+      return canonical;
+    }
+  }
+  return pkg;
+}
+
+export function getActiveStreamingPlatforms(
+  installedApps: InstalledApp[],
+  favoritePackages: string[] = []
+): ActiveStreamingPlatform[] {
+  const installedSet = new Set(installedApps.map((a) => a.packageName));
+  const favoriteSet = new Set(favoritePackages);
+
+  const enriched = KNOWN_STREAMING_PLATFORMS.map((plat) => {
+    const resolvedPkg = resolvePackageAlias(plat.packageName, installedApps);
+    const appMatch = installedApps.find((a) => a.packageName === resolvedPkg);
+    const isInstalled = installedApps.length === 0 ? true : installedSet.has(resolvedPkg);
+    const isFavorite =
+      favoriteSet.has(plat.packageName) || favoriteSet.has(resolvedPkg);
+
+    return {
+      id: plat.packageName,
+      packageName: resolvedPkg,
+      appName: appMatch?.name || plat.appName,
+      deepLinkUrl: plat.deepLinkUrl,
+      accentGradient: plat.accentGradient,
+      isInstalled,
+      isFavorite,
+    };
+  });
+
+  // Priorizar plataformas instaladas y fijadas como favoritas
+  const activeOnly = enriched.filter((p) => p.isInstalled || p.isFavorite);
+  const baseList = activeOnly.length > 0 ? activeOnly : enriched;
+
+  return [...baseList].sort((a, b) => {
+    const scoreA = (a.isFavorite ? 2 : 0) + (a.isInstalled ? 1 : 0);
+    const scoreB = (b.isFavorite ? 2 : 0) + (b.isInstalled ? 1 : 0);
+    return scoreB - scoreA;
+  });
+}
+
+export function deduplicateSuggestions(
+  items: AppSuggestion[],
+  excludeItems: AppSuggestion[] = []
+): AppSuggestion[] {
+  const seenIds = new Set<string>();
+  const seenWorkKeys = new Set<string>();
+  const seenTitles = new Set<string>();
+
+  for (const ex of excludeItems) {
+    if (ex.id) seenIds.add(ex.id.toLowerCase());
+    seenWorkKeys.add(getCanonicalWorkKey(ex));
+    const t = normalizeSuggestionTitle(ex.title);
+    if (t) seenTitles.add(t);
+  }
+
+  const result: AppSuggestion[] = [];
+  for (const item of items) {
+    const idKey = (item.id || '').toLowerCase();
+    const workKey = getCanonicalWorkKey(item);
+    const titleKey = normalizeSuggestionTitle(item.title);
+
+    if (idKey && seenIds.has(idKey)) continue;
+    if (seenWorkKeys.has(workKey)) continue;
+    if (titleKey && seenTitles.has(titleKey)) continue;
+
+    if (idKey) seenIds.add(idKey);
+    seenWorkKeys.add(workKey);
+    if (titleKey) seenTitles.add(titleKey);
+    result.push(item);
+  }
+
+  return result;
+}
+
+export function deduplicateCatalog(
+  catalog: GoogleTvLiveCatalog,
+  installedApps: InstalledApp[] = [],
+  favoritePackages: string[] = []
+): GoogleTvLiveCatalog {
+  const activePlatforms = getActiveStreamingPlatforms(installedApps, favoritePackages);
+  const activeByCanonical = new Map(activePlatforms.map((p) => [p.id, p]));
+
+  const normalizeItemPlatform = (item: AppSuggestion): AppSuggestion => {
+    const canonical = getCanonicalPlatformPackage(item.packageName);
+    const matched = activeByCanonical.get(canonical);
+    const resolvedPkg = resolvePackageAlias(item.packageName, installedApps);
+    if (matched) {
+      return {
+        ...item,
+        packageName: matched.packageName,
+        appName: matched.appName,
+      };
+    }
+    return {
+      ...item,
+      packageName: resolvedPkg,
+    };
+  };
+
+  const spotlight = deduplicateSuggestions(catalog.spotlight).map(normalizeItemPlatform);
+  const movies = deduplicateSuggestions(catalog.movies, spotlight).map(normalizeItemPlatform);
+  const series = deduplicateSuggestions(catalog.series, [...spotlight, ...movies]).map(
+    normalizeItemPlatform
+  );
+
+  return {
+    spotlight,
+    movies,
+    series,
+    updatedAt: catalog.updatedAt,
+  };
+}
+
+export function filterSeriesByPlatform(
+  series: AppSuggestion[],
+  platformId: string,
+  installedApps: InstalledApp[] = []
+): AppSuggestion[] {
+  const deduped = deduplicateSuggestions(series);
+  if (!platformId || platformId === 'all') {
+    return deduped;
+  }
+  const canonicalFilter = getCanonicalPlatformPackage(platformId);
+  const resolvedFilter = resolvePackageAlias(platformId, installedApps);
+  return deduped.filter((item) => {
+    const itemCanonical = getCanonicalPlatformPackage(item.packageName);
+    const itemResolved = resolvePackageAlias(item.packageName, installedApps);
+    return (
+      item.packageName === platformId ||
+      itemResolved === resolvedFilter ||
+      itemCanonical === canonicalFilter
+    );
+  });
+}
+
+function mapPlatformToPackage(
+  channelName: string,
+  activePlatforms: ActiveStreamingPlatform[]
+): ActiveStreamingPlatform | null {
+  const lower = channelName.toLowerCase();
+  let canonicalId = '';
+  if (lower.includes('netflix')) canonicalId = 'com.netflix.ninja';
+  else if (lower.includes('hbo') || lower.includes('max')) canonicalId = 'com.wbd.stream';
+  else if (lower.includes('amazon') || lower.includes('prime'))
+    canonicalId = 'com.amazon.amazonvideo.livingroom';
+  else if (lower.includes('disney')) canonicalId = 'com.disney.disneyplus';
+  else if (lower.includes('youtube')) canonicalId = 'com.google.android.youtube.tv';
+
+  if (!canonicalId) return null;
+  const active = activePlatforms.find((p) => p.id === canonicalId);
+  if (active) return active;
+
+  const fallback = KNOWN_STREAMING_PLATFORMS.find((p) => p.packageName === canonicalId);
+  if (!fallback) return null;
+  return {
+    id: fallback.packageName,
+    packageName: fallback.packageName,
+    appName: fallback.appName,
+    deepLinkUrl: fallback.deepLinkUrl,
+    accentGradient: fallback.accentGradient,
+    isInstalled: true,
+    isFavorite: false,
+  };
+}
 
 // Respaldo limpio sin imágenes rotas si el TV está completamente sin internet
 export const OFFLINE_FALLBACK_CATALOG: GoogleTvLiveCatalog = {
@@ -278,8 +433,22 @@ export const OFFLINE_FALLBACK_CATALOG: GoogleTvLiveCatalog = {
 
 let refreshNonce = 0;
 
-// Siempre consulta catálogos reales actualizados en vivo (16:9 horizontal para banners/series y 2:3 vertical para películas)
-export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<GoogleTvLiveCatalog> {
+export interface FetchCatalogOptions {
+  force?: boolean;
+  installedApps?: InstalledApp[];
+  favoritePackages?: string[];
+}
+
+export async function fetchGoogleTvLiveCatalog(
+  forceOrOptions: boolean | FetchCatalogOptions = false
+): Promise<GoogleTvLiveCatalog> {
+  const options: FetchCatalogOptions =
+    typeof forceOrOptions === 'boolean' ? { force: forceOrOptions } : forceOrOptions;
+  const forceRefresh = Boolean(options.force);
+  const installedApps = options.installedApps || [];
+  const favoritePackages = options.favoritePackages || [];
+  const activePlatforms = getActiveStreamingPlatforms(installedApps, favoritePackages);
+
   refreshNonce += 1;
   const seed = Math.floor(Date.now() / 1000) + refreshNonce * 97 + (forceRefresh ? 503 : 0);
 
@@ -301,7 +470,7 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         signal: controller.signal,
         cache: 'no-store',
       }).then((r) => (r.ok ? r.json() : null)),
-      fetch('https://itunes.apple.com/mx/rss/topmovies/limit=20/json', {
+      fetch('https://itunes.apple.com/mx/rss/topmovies/limit=25/json', {
         signal: controller.signal,
         cache: 'no-store',
       }).then((r) => (r.ok ? r.json() : null)),
@@ -313,19 +482,13 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
 
     window.clearTimeout(timer);
 
-    const seenMovieTitles = new Set<string>();
-    const seenSeriesTitles = new Set<string>();
-
-    // 1. Películas reales actuales (Cinemeta Top Movies: póster 2:3 vertical + fondo 16:9 horizontal real)
+    // 1. Películas reales actuales (Cinemeta Top Movies)
     if (cineMoviesRes.status === 'fulfilled' && Array.isArray(cineMoviesRes.value?.metas)) {
       const metas = cineMoviesRes.value.metas as CinemetaMeta[];
       for (const meta of metas) {
         const imdbId = meta.imdb_id || meta.id;
         const title = meta.name?.trim();
         if (!imdbId || !title) continue;
-        const norm = title.toLowerCase();
-        if (seenMovieTitles.has(norm)) continue;
-        seenMovieTitles.add(norm);
 
         const posterUrl = `https://images.metahub.space/poster/medium/${imdbId}/img`;
         const backdropUrl = `https://images.metahub.space/background/large/${imdbId}/img`;
@@ -333,6 +496,10 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         const genreText = translateGenres(meta.genres || meta.genre);
         const year = (meta.releaseInfo || meta.year || '').slice(0, 4);
         const ytTrailer = meta.trailerStreams?.[0]?.ytId || meta.trailers?.[0]?.source;
+        const youtubeTarget = resolvePackageAlias(
+          'com.google.android.youtube.tv',
+          installedApps
+        );
         const deepLinkUrl = ytTrailer
           ? `https://www.youtube.com/watch?v=${ytTrailer}`
           : `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer español`)}`;
@@ -340,7 +507,7 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         const item: AppSuggestion = {
           id: `cm-${imdbId}`,
           appName: 'YouTube',
-          packageName: 'com.google.android.youtube.tv',
+          packageName: youtubeTarget,
           title,
           subtitle: meta.description?.trim() || `${genreText} · En tendencia hoy`,
           deepLinkUrl,
@@ -356,21 +523,21 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         };
 
         movies.push(item);
-        spotlightCandidates.push(item);
+        if (spotlightCandidates.length < 10) {
+          spotlightCandidates.push(item);
+        }
       }
     }
 
-    // 2. Enriquecer películas con cartelera Apple MX en español (solo pósteres 2:3 verticales)
+    // 2. Cartelera Apple MX en español (solo pósteres 2:3 verticales)
     if (mxMoviesRes.status === 'fulfilled' && Array.isArray(mxMoviesRes.value?.feed?.entry)) {
       const entries = mxMoviesRes.value.feed.entry as ITunesEntry[];
+      const youtubeTarget = resolvePackageAlias('com.google.android.youtube.tv', installedApps);
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         const title = entry['im:name']?.label?.trim();
         const rawImg = entry['im:image']?.[entry['im:image'].length - 1]?.label;
         if (!title || !rawImg) continue;
-        const norm = title.toLowerCase();
-        if (seenMovieTitles.has(norm)) continue;
-        seenMovieTitles.add(norm);
 
         const posterUrl = upscaleAppleImage(rawImg, '600x900bb');
         const genre = entry.category?.attributes?.label || 'Cine';
@@ -381,14 +548,13 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         movies.push({
           id: `itunes-${entry.id?.attributes?.['im:id'] || i}`,
           appName: 'YouTube',
-          packageName: 'com.google.android.youtube.tv',
+          packageName: youtubeTarget,
           title,
           subtitle: synopsis,
           deepLinkUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(
             `${title} trailer español`
           )}`,
           posterUrl,
-          // No asignamos póster vertical como backdrop horizontal para evitar recortes
           accentGradient: 'linear-gradient(135deg, #141923 0%, #273244 100%)',
           tag: genre,
           genre,
@@ -398,21 +564,16 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
       }
     }
 
-    // 3. Emisiones de HOY en plataformas con imagen horizontal real (TVMaze episode landscape still)
+    // 3. Emisiones de HOY en plataformas activas (TVMaze episode landscape still)
     if (tvMazeWebRes.status === 'fulfilled' && Array.isArray(tvMazeWebRes.value)) {
       const schedule = tvMazeWebRes.value as TvMazeScheduleItem[];
       for (const ep of schedule) {
         const show = ep._embedded?.show;
         const epImg = ep.image?.original || ep.image?.medium;
-        // Solo aceptar imágenes landscape de episodio (16:9), nunca póster vertical
         if (!show?.name || !epImg || !epImg.includes('landscape')) continue;
         const channelName = show.webChannel?.name || show.network?.name || '';
-        const mapped = mapPlatformToPackage(channelName);
+        const mapped = mapPlatformToPackage(channelName, activePlatforms);
         if (!mapped) continue;
-
-        const norm = show.name.toLowerCase();
-        if (seenSeriesTitles.has(norm)) continue;
-        seenSeriesTitles.add(norm);
 
         const landscapeUrl = epImg.replace(/^http:\/\//i, 'https://');
         const genres = translateGenres(show.genres);
@@ -428,26 +589,36 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
           backdropUrl: landscapeUrl,
           imdbRating: show.rating?.average ? String(show.rating.average) : undefined,
           accentGradient: mapped.accentGradient,
-          tag: mapped.tag,
+          tag: mapped.appName,
           genre: genres,
           mediaKind: 'series',
         });
       }
     }
 
-    // 4. Series populares actuales con fondos 16:9 horizontales reales (Cinemeta Top Series)
+    // 4. Series populares actuales distribuidas dinámicamente entre plataformas instaladas/activas
     if (cineSeriesRes.status === 'fulfilled' && Array.isArray(cineSeriesRes.value?.metas)) {
       const metas = cineSeriesRes.value.metas as CinemetaMeta[];
+      const platPool =
+        activePlatforms.length > 0
+          ? activePlatforms
+          : KNOWN_STREAMING_PLATFORMS.map((p) => ({
+              id: p.packageName,
+              packageName: p.packageName,
+              appName: p.appName,
+              deepLinkUrl: p.deepLinkUrl,
+              accentGradient: p.accentGradient,
+              isInstalled: true,
+              isFavorite: false,
+            }));
+
       let platIndex = 0;
       for (const meta of metas) {
         const imdbId = meta.imdb_id || meta.id;
         const title = meta.name?.trim();
         if (!imdbId || !title) continue;
-        const norm = title.toLowerCase();
-        if (seenSeriesTitles.has(norm)) continue;
-        seenSeriesTitles.add(norm);
 
-        const target = STREAMING_ROTATION[platIndex % STREAMING_ROTATION.length];
+        const target = platPool[platIndex % platPool.length];
         platIndex++;
 
         const backdrop16x9 = `https://images.metahub.space/background/medium/${imdbId}/img`;
@@ -464,7 +635,7 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
           title,
           subtitle: `${genreText}${meta.imdbRating ? ` · ★ ${meta.imdbRating}` : ''}`,
           deepLinkUrl:
-            target.packageName === 'com.google.android.youtube.tv' && ytTrailer
+            target.id === 'com.google.android.youtube.tv' && ytTrailer
               ? `https://www.youtube.com/watch?v=${ytTrailer}`
               : target.deepLinkUrl,
           posterUrl: backdrop16x9,
@@ -479,7 +650,7 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         };
 
         series.push(seriesItem);
-        if (platIndex <= 6) {
+        if (platIndex <= 8) {
           spotlightCandidates.push({
             ...seriesItem,
             subtitle: meta.description?.trim() || seriesItem.subtitle,
@@ -488,19 +659,34 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
       }
     }
 
-    // Rotar/mezclar en cada actualización para mostrar novedades frescas al volver al inicio o encender la TV
-    const rotatedSpotlight = shuffleWithSeed(spotlightCandidates.slice(0, 14), seed).slice(0, 6);
-    const rotatedMovies = [
-      ...shuffleWithSeed(movies.slice(0, 8), seed + 5).slice(0, 3),
-      ...shuffleWithSeed(movies.slice(3, 28), seed + 11),
-    ].filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx);
-    const rotatedSeries = [
-      ...shuffleWithSeed(series.slice(0, 8), seed + 17).slice(0, 3),
-      ...shuffleWithSeed(series.slice(3, 28), seed + 23),
-    ].filter((s, idx, arr) => arr.findIndex((x) => x.id === s.id) === idx);
+    // Deduplicar primero y rotar sin permitir duplicados entre Spotlight, Películas y Series
+    const uniqueSpotlightPool = deduplicateSuggestions(spotlightCandidates);
+    const rotatedSpotlight = shuffleWithSeed(uniqueSpotlightPool.slice(0, 14), seed).slice(0, 6);
+
+    const uniqueMoviesPool = deduplicateSuggestions(movies, rotatedSpotlight);
+    const rotatedMovies = deduplicateSuggestions(
+      [
+        ...shuffleWithSeed(uniqueMoviesPool.slice(0, 10), seed + 5).slice(0, 4),
+        ...shuffleWithSeed(uniqueMoviesPool.slice(4, 38), seed + 11),
+      ],
+      rotatedSpotlight
+    );
+
+    const visibleMovies = rotatedMovies.slice(0, 24);
+    const uniqueSeriesPool = deduplicateSuggestions(series, [
+      ...rotatedSpotlight,
+      ...visibleMovies,
+    ]);
+    const rotatedSeries = deduplicateSuggestions(
+      [
+        ...shuffleWithSeed(uniqueSeriesPool.slice(0, 12), seed + 17).slice(0, 5),
+        ...shuffleWithSeed(uniqueSeriesPool.slice(5, 60), seed + 23),
+      ],
+      [...rotatedSpotlight, ...visibleMovies]
+    );
 
     if (rotatedMovies.length > 0 || rotatedSeries.length > 0) {
-      const catalog: GoogleTvLiveCatalog = {
+      const rawCatalog: GoogleTvLiveCatalog = {
         spotlight:
           rotatedSpotlight.length > 0 ? rotatedSpotlight : OFFLINE_FALLBACK_CATALOG.spotlight,
         movies: rotatedMovies,
@@ -508,15 +694,17 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
         updatedAt: new Date().toISOString(),
       };
 
+      const cleanCatalog = deduplicateCatalog(rawCatalog, installedApps, favoritePackages);
+
       try {
-        localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(catalog));
+        localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(cleanCatalog));
       } catch {
         // Ignorar si almacenamiento está lleno
       }
-      return catalog;
+      return cleanCatalog;
     }
   } catch {
-    // Si falla la red, intentar usar la última copia guardada antes de caer al respaldo offline
+    // Si falla la red, usar la última copia guardada antes del respaldo offline
   }
 
   try {
@@ -524,25 +712,12 @@ export async function fetchGoogleTvLiveCatalog(forceRefresh = false): Promise<Go
     if (cachedRaw) {
       const parsed = JSON.parse(cachedRaw) as GoogleTvLiveCatalog;
       if (parsed.movies.length > 0 || parsed.series.length > 0) {
-        return parsed;
+        return deduplicateCatalog(parsed, installedApps, favoritePackages);
       }
     }
   } catch {
     // Ignorar
   }
 
-  return OFFLINE_FALLBACK_CATALOG;
-}
-
-export function resolvePackageAlias(
-  preferredPkg: string,
-  installedApps: InstalledApp[]
-): string {
-  const installedSet = new Set(installedApps.map((a) => a.packageName));
-  if (installedSet.has(preferredPkg)) return preferredPkg;
-  const aliases = PACKAGE_ALIASES[preferredPkg] || [];
-  for (const alias of aliases) {
-    if (installedSet.has(alias)) return alias;
-  }
-  return preferredPkg;
+  return deduplicateCatalog(OFFLINE_FALLBACK_CATALOG, installedApps, favoritePackages);
 }

@@ -40,6 +40,14 @@ export async function testFirestoreConnection(): Promise<boolean> {
 
 const CACHE_KEY = 'cgamestv_remote_status_cache';
 
+export function clearCachedLauncherStatus(): void {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Ignorar
+  }
+}
+
 export function getCachedLauncherStatus(): LauncherRemoteStatus {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -52,11 +60,21 @@ export function getCachedLauncherStatus(): LauncherRemoteStatus {
 
 export function subscribeToLauncherStatus(
   onUpdate: (status: LauncherRemoteStatus) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  options?: { ignoreInitialMaintenance?: boolean }
 ): () => void {
-  // Primero notificar con estado en caché para respuesta instantánea
-  const cached = getCachedLauncherStatus();
-  onUpdate(cached);
+  const ignoreInitial = Boolean(options?.ignoreInitialMaintenance);
+
+  // En arranque/vista previa iniciar siempre limpio (sin mantenimiento bloqueado en caché)
+  if (ignoreInitial) {
+    clearCachedLauncherStatus();
+    onUpdate(DEFAULT_STATUS);
+  } else {
+    onUpdate(getCachedLauncherStatus());
+  }
+
+  let isFirstSnapshot = true;
+  let lastSnapshotUpdatedAt = '';
 
   const handleCustomEvent = (e: Event) => {
     const custom = e as CustomEvent<LauncherRemoteStatus>;
@@ -81,23 +99,46 @@ export function subscribeToLauncherStatus(
     (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+        const remoteUpdatedAt = data.updatedAt?.toDate?.()?.toISOString() || '';
         const updated: LauncherRemoteStatus = {
           maintenanceMode: Boolean(data.maintenanceMode),
           appsOnlyMode: Boolean(data.appsOnlyMode),
           title: data.title || DEFAULT_STATUS.title,
           message: data.message || DEFAULT_STATUS.message,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          updatedAt: remoteUpdatedAt || new Date().toISOString(),
         };
+
+        if (ignoreInitial && isFirstSnapshot) {
+          isFirstSnapshot = false;
+          lastSnapshotUpdatedAt = remoteUpdatedAt;
+          // Desactivar por defecto cualquier estado trabado heredado al iniciar
+          if (updated.maintenanceMode || updated.appsOnlyMode) {
+            onUpdate({
+              ...updated,
+              maintenanceMode: false,
+              appsOnlyMode: false,
+            });
+            return;
+          }
+        } else {
+          isFirstSnapshot = false;
+          if (ignoreInitial && remoteUpdatedAt && remoteUpdatedAt === lastSnapshotUpdatedAt) {
+            return;
+          }
+          lastSnapshotUpdatedAt = remoteUpdatedAt;
+        }
+
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
         } catch {}
         onUpdate(updated);
       } else {
+        isFirstSnapshot = false;
         onUpdate(DEFAULT_STATUS);
       }
     },
     (err) => {
-      console.warn('Firestore subscription fallback to cache:', err);
+      console.warn('Firestore subscription fallback:', err);
       if (onError) onError(err);
     }
   );
