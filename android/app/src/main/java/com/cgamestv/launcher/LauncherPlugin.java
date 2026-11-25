@@ -1,5 +1,6 @@
 package com.cgamestv.launcher;
 
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,7 +14,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
@@ -26,6 +29,7 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Base64;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityManager;
 
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
@@ -51,6 +55,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -84,6 +89,12 @@ public class LauncherPlugin extends Plugin {
         super.load();
         activeInstanceRef = new WeakReference<>(this);
         registerSpotifyReceivers();
+        bindMediaSessionListener();
+    }
+
+    @Override
+    protected void handleOnResume() {
+        super.handleOnResume();
         bindMediaSessionListener();
     }
 
@@ -274,8 +285,13 @@ public class LauncherPlugin extends Plugin {
                 intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
             } else if ("home".equals(section)) {
                 intent = new Intent(Settings.ACTION_HOME_SETTINGS);
+            } else if ("accessibility".equals(section)) {
+                intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             } else if ("screensaver".equals(section)) {
                 intent = new Intent(Settings.ACTION_DREAM_SETTINGS);
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+                }
             } else if ("unknown_sources".equals(section) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent = new Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
@@ -832,11 +848,59 @@ public class LauncherPlugin extends Plugin {
             empty.put("isPlaying", false);
             empty.put("track", "");
             empty.put("hasListenerPermission", false);
+            empty.put("hasAccessibilityPermission", false);
             call.resolve(empty);
             return;
         }
         Context context = rawContext.getApplicationContext();
+        bindMediaSessionListener();
         call.resolve(resolveSpotifyNowPlaying(context));
+    }
+
+    @PluginMethod
+    public void getMusicServiceStatus(PluginCall call) {
+        Context rawContext = getContext();
+        JSObject res = new JSObject();
+        if (rawContext == null) {
+            res.put("hasNotificationAccess", false);
+            res.put("hasAccessibilityAccess", false);
+            res.put("isGoogleTv", false);
+            call.resolve(res);
+            return;
+        }
+        Context context = rawContext.getApplicationContext();
+        res.put("hasNotificationAccess", hasNotificationListenerPermission(context));
+        res.put("hasAccessibilityAccess", isAccessibilityServiceEnabled(context));
+        res.put("isGoogleTv", isGoogleTvDevice(context));
+        call.resolve(res);
+    }
+
+    @PluginMethod
+    public void openAccessibilitySettings(PluginCall call) {
+        Context context = getContext();
+        if (context == null) {
+            call.reject("Contexto Android no disponible");
+            return;
+        }
+        try {
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            JSObject res = new JSObject();
+            res.put("opened", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            try {
+                Intent fallback = new Intent(Settings.ACTION_SETTINGS);
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(fallback);
+                JSObject res = new JSObject();
+                res.put("opened", true);
+                call.resolve(res);
+            } catch (Exception ex) {
+                call.reject("No se pudo abrir ajustes de accesibilidad", ex);
+            }
+        }
     }
 
     @PluginMethod
@@ -849,31 +913,35 @@ public class LauncherPlugin extends Plugin {
 
         try {
             Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-            JSObject res = new JSObject();
-            res.put("opened", true);
-            call.resolve(res);
-        } catch (Exception e) {
-            try {
-                Intent fallback = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:" + context.getPackageName()));
-                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(fallback);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
                 JSObject res = new JSObject();
                 res.put("opened", true);
                 call.resolve(res);
-            } catch (Exception ex) {
-                try {
-                    Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
-                    settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(settingsIntent);
-                    JSObject res = new JSObject();
-                    res.put("opened", true);
-                    call.resolve(res);
-                } catch (Exception finalEx) {
-                    call.reject("No se pudo abrir ajustes de acceso multimedia", finalEx);
-                }
+                return;
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Intent fallback = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + context.getPackageName()));
+            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(fallback);
+            JSObject res = new JSObject();
+            res.put("opened", true);
+            call.resolve(res);
+        } catch (Exception ex) {
+            try {
+                Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(settingsIntent);
+                JSObject res = new JSObject();
+                res.put("opened", true);
+                call.resolve(res);
+            } catch (Exception finalEx) {
+                call.reject("No se pudo abrir ajustes de acceso multimedia", finalEx);
             }
         }
     }
@@ -882,6 +950,50 @@ public class LauncherPlugin extends Plugin {
         try {
             Set<String> enabled = NotificationManagerCompat.getEnabledListenerPackages(context);
             return enabled != null && enabled.contains(context.getPackageName());
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isAccessibilityServiceEnabled(Context context) {
+        if (VoraAccessibilityService.serviceConnected) {
+            return true;
+        }
+        try {
+            AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+            if (am != null) {
+                List<AccessibilityServiceInfo> enabled =
+                    am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+                if (enabled != null) {
+                    String selfPkg = context.getPackageName();
+                    for (AccessibilityServiceInfo info : enabled) {
+                        if (info.getId() != null && info.getId().contains(selfPkg)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            String flat = Settings.Secure.getString(
+                context.getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            );
+            return flat != null && flat.contains(context.getPackageName());
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isGoogleTvDevice(Context context) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo("com.google.android.apps.tv.launcherx", 0);
+            return true;
+        } catch (Exception ignored) {
+        }
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo("com.google.android.apps.tv.dreamx", 0);
+            return true;
         } catch (Exception ignored) {
             return false;
         }
@@ -896,26 +1008,30 @@ public class LauncherPlugin extends Plugin {
             @Override
             public void onReceive(Context ctx, Intent intent) {
                 if (intent == null || intent.getAction() == null) return;
-                String action = intent.getAction();
-                if (action.contains("metadatachanged")) {
-                    String track = intent.getStringExtra("track");
-                    String artist = intent.getStringExtra("artist");
-                    String album = intent.getStringExtra("album");
-                    if (track != null && !track.trim().isEmpty()) {
-                        broadcastTrack = track.trim();
-                        broadcastArtist = artist != null ? artist.trim() : "";
-                        broadcastAlbum = album != null ? album.trim() : "";
+                String lowerAction = intent.getAction().toLowerCase(Locale.ROOT);
+                String track = firstNonEmptyExtra(intent, "track", "trackName", "title", "android.media.metadata.TITLE");
+                String artist = firstNonEmptyExtra(intent, "artist", "artistName", "android.media.metadata.ARTIST");
+                String album = firstNonEmptyExtra(intent, "album", "albumName", "android.media.metadata.ALBUM");
+
+                if (lowerAction.contains("metadata")) {
+                    if (!track.isEmpty()) {
+                        broadcastTrack = track;
+                        broadcastArtist = artist;
+                        broadcastAlbum = album;
                     }
                     if (intent.hasExtra("playing")) {
                         broadcastPlaying = intent.getBooleanExtra("playing", false);
                     } else if (!broadcastTrack.isEmpty()) {
                         broadcastPlaying = true;
                     }
-                } else if (action.contains("playbackstatechanged") || action.contains("playstatechanged")) {
-                    broadcastPlaying = intent.getBooleanExtra("playing", false);
-                    String track = intent.getStringExtra("track");
-                    if (track != null && !track.trim().isEmpty()) {
-                        broadcastTrack = track.trim();
+                } else if (lowerAction.contains("play")) {
+                    if (intent.hasExtra("playing")) {
+                        broadcastPlaying = intent.getBooleanExtra("playing", false);
+                    }
+                    if (!track.isEmpty()) {
+                        broadcastTrack = track;
+                        if (!artist.isEmpty()) broadcastArtist = artist;
+                        if (!album.isEmpty()) broadcastAlbum = album;
                     }
                 }
                 emitCurrentSpotifyState(ctx.getApplicationContext());
@@ -934,6 +1050,16 @@ public class LauncherPlugin extends Plugin {
         filter.addAction("com.android.music.metadatachanged");
         filter.addAction("com.android.music.playstatechanged");
         ContextCompat.registerReceiver(context, spotifyBroadcastReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+    }
+
+    private String firstNonEmptyExtra(Intent intent, String... keys) {
+        for (String key : keys) {
+            String val = intent.getStringExtra(key);
+            if (val != null && !val.trim().isEmpty()) {
+                return val.trim();
+            }
+        }
+        return "";
     }
 
     private void unregisterSpotifyReceivers() {
@@ -1007,26 +1133,36 @@ public class LauncherPlugin extends Plugin {
         }
 
         if (controllers == null) return;
+        MediaController preferred = null;
         for (MediaController controller : controllers) {
             String pkg = controller.getPackageName();
-            if (pkg != null && pkg.toLowerCase().contains("spotify")) {
-                activeSpotifyController = controller;
-                activeSpotifyCallback = new MediaController.Callback() {
-                    @Override
-                    public void onPlaybackStateChanged(PlaybackState state) {
-                        Context raw = getContext();
-                        if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
-                    }
-
-                    @Override
-                    public void onMetadataChanged(MediaMetadata metadata) {
-                        Context raw = getContext();
-                        if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
-                    }
-                };
-                controller.registerCallback(activeSpotifyCallback, new Handler(Looper.getMainLooper()));
+            if (pkg == null) continue;
+            String lower = pkg.toLowerCase(Locale.ROOT);
+            if (lower.contains("spotify")) {
+                preferred = controller;
                 break;
             }
+            if (preferred == null && lower.contains("mediashell")) {
+                preferred = controller;
+            }
+        }
+
+        if (preferred != null) {
+            activeSpotifyController = preferred;
+            activeSpotifyCallback = new MediaController.Callback() {
+                @Override
+                public void onPlaybackStateChanged(PlaybackState state) {
+                    Context raw = getContext();
+                    if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
+                }
+
+                @Override
+                public void onMetadataChanged(MediaMetadata metadata) {
+                    Context raw = getContext();
+                    if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
+                }
+            };
+            preferred.registerCallback(activeSpotifyCallback, new Handler(Looper.getMainLooper()));
         }
     }
 
@@ -1034,16 +1170,33 @@ public class LauncherPlugin extends Plugin {
         notifyListeners("spotifyPlaybackChanged", resolveSpotifyNowPlaying(context));
     }
 
-    private JSObject resolveSpotifyNowPlaying(Context context) {
-        boolean hasPermission = hasNotificationListenerPermission(context);
-        boolean musicAudioActive = false;
+    private static boolean isAudioCurrentlyPlaying(Context context) {
         try {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            musicAudioActive = am != null && am.isMusicActive();
+            if (am == null) return false;
+            if (am.isMusicActive()) return true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                List<AudioPlaybackConfiguration> configs = am.getActivePlaybackConfigurations();
+                if (configs != null) {
+                    for (AudioPlaybackConfiguration cfg : configs) {
+                        AudioAttributes attrs = cfg.getAudioAttributes();
+                        if (attrs != null && attrs.getUsage() == AudioAttributes.USAGE_MEDIA) {
+                            return true;
+                        }
+                    }
+                }
+            }
         } catch (Exception ignored) {
         }
+        return false;
+    }
 
-        // 1. Consultar sesiones multimedia activas (con permiso de listener o intento directo en TV)
+    private JSObject resolveSpotifyNowPlaying(Context context) {
+        boolean hasPermission = hasNotificationListenerPermission(context);
+        boolean hasAccessibility = isAccessibilityServiceEnabled(context);
+        boolean musicAudioActive = isAudioCurrentlyPlaying(context);
+
+        // 1. Consultar sesiones multimedia activas (priorizando Spotify y luego Cast / reproductores de música)
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -1052,9 +1205,17 @@ public class LauncherPlugin extends Plugin {
                     : null;
                 List<MediaController> controllers = msm.getActiveSessions(listenerComp);
                 if (controllers != null) {
+                    JSObject fallbackSession = null;
                     for (MediaController controller : controllers) {
                         String pkg = controller.getPackageName();
-                        if (pkg == null || !pkg.toLowerCase().contains("spotify")) continue;
+                        String lowerPkg = pkg != null ? pkg.toLowerCase(Locale.ROOT) : "";
+                        boolean isSpotifyPkg = lowerPkg.contains("spotify");
+                        boolean isCastOrMusicPkg = lowerPkg.contains("mediashell")
+                            || lowerPkg.contains("music")
+                            || lowerPkg.contains("tidal")
+                            || lowerPkg.contains("deezer");
+
+                        if (!isSpotifyPkg && !isCastOrMusicPkg) continue;
 
                         PlaybackState pbState = controller.getPlaybackState();
                         int state = pbState != null ? pbState.getState() : PlaybackState.STATE_NONE;
@@ -1103,30 +1264,56 @@ public class LauncherPlugin extends Plugin {
                             res.put("albumArt", albumArt);
                             res.put("source", "android-session");
                             res.put("hasListenerPermission", hasPermission);
-                            return res;
+                            res.put("hasAccessibilityPermission", hasAccessibility);
+                            if (isSpotifyPkg) {
+                                return res;
+                            } else if (playing && fallbackSession == null) {
+                                fallbackSession = res;
+                            }
                         }
+                    }
+                    if (fallbackSession != null) {
+                        return fallbackSession;
                     }
                 }
             }
         } catch (Exception ignored) {
         }
 
-        // 2. Fallback: notificación activa de Spotify capturada por VoraMediaListenerService
+        // 2. Fallback: notificación / MediaSession.Token capturada por VoraMediaListenerService
         if (VoraMediaListenerService.latestNotificationActive
             && !VoraMediaListenerService.latestNotificationTrack.isEmpty()
-            && musicAudioActive) {
+            && (VoraMediaListenerService.latestNotificationIsPlaying || musicAudioActive)) {
             JSObject notifRes = new JSObject();
             notifRes.put("isPlaying", true);
             notifRes.put("track", VoraMediaListenerService.latestNotificationTrack);
             notifRes.put("artist", VoraMediaListenerService.latestNotificationArtist);
-            notifRes.put("album", "");
+            notifRes.put("album", VoraMediaListenerService.latestNotificationAlbum);
             notifRes.put("albumArt", "");
             notifRes.put("source", "android-session");
             notifRes.put("hasListenerPermission", hasPermission);
+            notifRes.put("hasAccessibilityPermission", hasAccessibility);
             return notifRes;
         }
 
-        // 3. Fallback: broadcasts directos de Spotify
+        // 3. Fallback Google TV: lectura vía Servicio de Accesibilidad VORA (no requiere Notification Access)
+        if (!VoraAccessibilityService.latestSpotifyTrack.isEmpty()) {
+            long ageMs = System.currentTimeMillis() - VoraAccessibilityService.latestSpotifyCapturedAt;
+            if (musicAudioActive || ageMs < 8_000L) {
+                JSObject accRes = new JSObject();
+                accRes.put("isPlaying", true);
+                accRes.put("track", VoraAccessibilityService.latestSpotifyTrack);
+                accRes.put("artist", VoraAccessibilityService.latestSpotifyArtist);
+                accRes.put("album", "");
+                accRes.put("albumArt", "");
+                accRes.put("source", "android-accessibility");
+                accRes.put("hasListenerPermission", hasPermission);
+                accRes.put("hasAccessibilityPermission", hasAccessibility);
+                return accRes;
+            }
+        }
+
+        // 4. Fallback: broadcasts directos de Spotify
         JSObject broadcastRes = new JSObject();
         broadcastRes.put("isPlaying", (broadcastPlaying || musicAudioActive) && !broadcastTrack.isEmpty());
         broadcastRes.put("track", broadcastTrack);
@@ -1135,6 +1322,7 @@ public class LauncherPlugin extends Plugin {
         broadcastRes.put("albumArt", "");
         broadcastRes.put("source", "android-broadcast");
         broadcastRes.put("hasListenerPermission", hasPermission);
+        broadcastRes.put("hasAccessibilityPermission", hasAccessibility);
         return broadcastRes;
     }
 
@@ -1171,8 +1359,14 @@ public class LauncherPlugin extends Plugin {
         activity.runOnUiThread(() -> {
             if (enabled) {
                 activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    getBridge().getWebView().setKeepScreenOn(true);
+                }
             } else {
                 activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    getBridge().getWebView().setKeepScreenOn(false);
+                }
             }
             JSObject res = new JSObject();
             res.put("ok", true);
@@ -1183,10 +1377,7 @@ public class LauncherPlugin extends Plugin {
     public static String getLatestSpotifyTrackIfPlaying(Context context) {
         if (context == null) return "";
         try {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            boolean musicActive = am != null && am.isMusicActive();
-            if (!musicActive) return "";
-
+            boolean musicActive = isAudioCurrentlyPlaying(context);
             LauncherPlugin instance = activeInstanceRef != null ? activeInstanceRef.get() : null;
             if (instance != null) {
                 JSObject obj = instance.resolveSpotifyNowPlaying(context.getApplicationContext());
@@ -1194,8 +1385,12 @@ public class LauncherPlugin extends Plugin {
                     return obj.optString("track", "");
                 }
             }
-            if (VoraMediaListenerService.latestNotificationActive) {
+            if (VoraMediaListenerService.latestNotificationActive
+                && (VoraMediaListenerService.latestNotificationIsPlaying || musicActive)) {
                 return VoraMediaListenerService.latestNotificationTrack;
+            }
+            if (musicActive && !VoraAccessibilityService.latestSpotifyTrack.isEmpty()) {
+                return VoraAccessibilityService.latestSpotifyTrack;
             }
         } catch (Exception ignored) {
         }

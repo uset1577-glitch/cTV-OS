@@ -224,7 +224,7 @@ public class VoraDreamService extends DreamService {
             ImageView outgoing = showingA ? bgImageA : bgImageB;
             incoming.setImageBitmap(bmp);
             incoming.animate().alpha(1f).setDuration(1400L).start();
-            outgoing.animate().alpha(0f).setDuration(1400L).start();
+            outgoing.animate().alpha(0f).setDuration(1400L).withEndAction(() -> outgoing.setImageDrawable(null)).start();
             showingA = !showingA;
         } catch (Exception ignored) {
         }

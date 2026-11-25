@@ -22,7 +22,7 @@ export function useSpotifyNowPlaying(isScreensaverActive: boolean) {
   });
 
   const refreshSpotify = useCallback(async () => {
-    // 1. En Android TV nativo: consultar MediaSession + Broadcasts de Spotify
+    // 1. En Android TV nativo: consultar MediaSession + Accesibilidad + Broadcasts de Spotify
     if (isNative) {
       const nativeState = await getNativeSpotifyNowPlaying();
       if (nativeState) {
@@ -135,9 +135,9 @@ export function useSpotifyNowPlaying(isScreensaverActive: boolean) {
     };
   }, [fetchWebConfig, isNative, refreshSpotify]);
 
-  // Polling periódico: cada 4s cuando el salvapantallas está abierto, cada 15s en segundo plano
+  // Polling periódico: cada 2.5s cuando el salvapantallas está abierto, cada 10s en segundo plano
   useEffect(() => {
-    const intervalMs = isScreensaverActive ? 4_000 : 15_000;
+    const intervalMs = isScreensaverActive ? 2_500 : 10_000;
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
         void refreshSpotify();

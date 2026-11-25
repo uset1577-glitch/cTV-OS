@@ -6,6 +6,7 @@ import type {
   AppVersionInfo,
   InstalledApp,
   LauncherRemoteStatus,
+  MusicServiceStatus,
   SpotifyNowPlaying,
 } from '../types/launcher';
 
@@ -16,13 +17,15 @@ export interface LauncherNativePlugin {
     url: string;
     packageName?: string;
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
-  openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources' }): Promise<{ opened: boolean }>;
+  openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources' }): Promise<{ opened: boolean }>;
   setKeepScreenOn(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
   getRemoteConfig(options: { repo: string }): Promise<LauncherRemoteStatus>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
   getSpotifyNowPlaying(): Promise<SpotifyNowPlaying>;
+  getMusicServiceStatus(): Promise<MusicServiceStatus>;
+  openAccessibilitySettings(): Promise<{ opened: boolean }>;
   openNotificationAccessSettings(): Promise<{ opened: boolean }>;
   addListener(
     eventName: 'otaDownloadProgress',
@@ -101,7 +104,7 @@ export async function launchSuggestionUri(
 }
 
 export async function openTvSettings(
-  section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources'
+  section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources'
 ): Promise<boolean> {
   if (isNativeAndroid()) {
     try {
@@ -406,6 +409,35 @@ export async function getNativeSpotifyNowPlaying(): Promise<SpotifyNowPlaying | 
     return await LauncherNative.getSpotifyNowPlaying();
   } catch {
     return null;
+  }
+}
+
+export async function getMusicServiceStatus(): Promise<MusicServiceStatus> {
+  if (!isNativeAndroid()) {
+    return {
+      hasNotificationAccess: false,
+      hasAccessibilityAccess: false,
+      isGoogleTv: false,
+    };
+  }
+  try {
+    return await LauncherNative.getMusicServiceStatus();
+  } catch {
+    return {
+      hasNotificationAccess: false,
+      hasAccessibilityAccess: false,
+      isGoogleTv: false,
+    };
+  }
+}
+
+export async function openSpotifyAccessibilitySettings(): Promise<boolean> {
+  if (!isNativeAndroid()) return false;
+  try {
+    const res = await LauncherNative.openAccessibilitySettings();
+    return Boolean(res?.opened);
+  } catch {
+    return false;
   }
 }
 

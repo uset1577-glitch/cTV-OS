@@ -56,6 +56,19 @@
         </service>
 
         <service
+            android:name=".VoraAccessibilityService"
+            android:exported="true"
+            android:label="VORA TV OS (Salvapantallas y Spotify)"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/vora_accessibility_config" />
+        </service>
+
+        <service
             android:name=".VoraDreamService"
             android:exported="true"
             android:label="VORA TV OS"
@@ -64,6 +77,9 @@
                 <action android:name="android.service.dreams.DreamService" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <meta-data
+                android:name="android.service.dream"
+                android:resource="@xml/vora_dream" />
         </service>
 
         <provider

@@ -11,7 +11,10 @@ import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    public static final String EXTRA_LAUNCH_SCREENSAVER = "vora_launch_screensaver";
+
     private boolean hasPausedOnce = false;
+    private boolean pendingLaunchScreensaver = false;
     private BroadcastReceiver screenOnReceiver;
 
     @Override
@@ -19,8 +22,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LauncherPlugin.class);
         super.onCreate(savedInstanceState);
 
-        // Evitar que el salvapantallas nativo de Google TV (Backdrop) se active encima de VORA TV OS
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        applyKeepScreenOn();
+        handleScreensaverIntent(getIntent());
 
         // En un Launcher real, el botón Atrás navega dentro de la interfaz TV y nunca cierra el Home
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -40,12 +43,21 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                    applyKeepScreenOn();
                     dispatchResumeEvent("screen_on");
                 }
             }
         };
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
         ContextCompat.registerReceiver(this, screenOnReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        applyKeepScreenOn();
+        handleScreensaverIntent(intent);
     }
 
     @Override
@@ -57,10 +69,22 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        applyKeepScreenOn();
         if (hasPausedOnce) {
             hasPausedOnce = false;
             dispatchResumeEvent("app_resume");
+        }
+        if (pendingLaunchScreensaver) {
+            pendingLaunchScreensaver = false;
+            dispatchLaunchScreensaver();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            applyKeepScreenOn();
         }
     }
 
@@ -74,6 +98,35 @@ public class MainActivity extends BridgeActivity {
             screenOnReceiver = null;
         }
         super.onDestroy();
+    }
+
+    private void applyKeepScreenOn() {
+        try {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().setKeepScreenOn(true);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void handleScreensaverIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra(EXTRA_LAUNCH_SCREENSAVER, false)) {
+            intent.removeExtra(EXTRA_LAUNCH_SCREENSAVER);
+            pendingLaunchScreensaver = true;
+            dispatchLaunchScreensaver();
+        }
+    }
+
+    private void dispatchLaunchScreensaver() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().post(() ->
+                getBridge().getWebView().evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('voraLaunchScreensaver'));",
+                    null
+                )
+            );
+        }
     }
 
     private void dispatchResumeEvent(String reason) {

@@ -2,19 +2,21 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Check,
+  Disc3,
   Download,
   Home,
   Monitor,
   Moon,
   RotateCcw,
   Settings,
+  ShieldCheck,
   Sun,
   Wifi,
   X,
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
 import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import type { AppVersionInfo, LauncherSettings } from '../types/launcher';
+import type { AppVersionInfo, LauncherSettings, MusicServiceStatus } from '../types/launcher';
 
 interface NavaSettingsDrawerProps {
   isOpen: boolean;
@@ -22,8 +24,11 @@ interface NavaSettingsDrawerProps {
   appVersion: AppVersionInfo;
   isNative: boolean;
   isMaintenanceForced?: boolean;
+  musicServiceStatus: MusicServiceStatus;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
-  onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources') => void;
+  onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources') => void;
+  onOpenAccessibilitySettings: () => void;
+  onOpenNotificationSettings: () => void;
   onOpenUpdateModal: () => void;
   onClose: () => void;
 }
@@ -34,8 +39,11 @@ export function NavaSettingsDrawer({
   appVersion,
   isNative,
   isMaintenanceForced = false,
+  musicServiceStatus,
   onUpdateSettings,
   onOpenAndroidSettings,
+  onOpenAccessibilitySettings,
+  onOpenNotificationSettings,
   onOpenUpdateModal,
   onClose,
 }: NavaSettingsDrawerProps) {
@@ -370,6 +378,72 @@ export function NavaSettingsDrawer({
               <button
                 type="button"
                 data-tv-focusable="true"
+                data-tv-id="settings-accessibility-service"
+                onClick={onOpenAccessibilitySettings}
+                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
+              >
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+                  <div>
+                    <div className="text-sm font-semibold">
+                      Servicio VORA en Google TV (Accesibilidad)
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                      Reemplaza el salvapantallas de Google TV y detecta Spotify sin permisos ocultos
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs font-bold shrink-0 ${
+                    musicServiceStatus.hasAccessibilityAccess
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  {isNative
+                    ? musicServiceStatus.hasAccessibilityAccess
+                      ? 'Activo'
+                      : 'Activar'
+                    : 'Android TV'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="settings-spotify-listener"
+                onClick={onOpenNotificationSettings}
+                className="tv-focusable w-full flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
+              >
+                <div className="flex items-start gap-3">
+                  <Disc3 className="w-4 h-4 mt-0.5 shrink-0 text-[#1DB954]" />
+                  <div>
+                    <div className="text-sm font-semibold">
+                      Acceso multimedia en segundo plano (Spotify)
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
+                      Lee sesiones activas de Spotify TV y Google Cast incluso en segundo plano
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs font-bold shrink-0 ${
+                    musicServiceStatus.hasNotificationAccess
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-600 dark:text-zinc-300'
+                  }`}
+                >
+                  {isNative
+                    ? musicServiceStatus.hasNotificationAccess
+                      ? 'Activo'
+                      : 'Configurar'
+                    : 'Android TV'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-tv-focusable="true"
                 data-tv-id="settings-system-screensaver"
                 onClick={() => onOpenAndroidSettings('screensaver')}
                 className="tv-focusable w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.015] group"
@@ -377,7 +451,11 @@ export function NavaSettingsDrawer({
                 <div>
                   <div className="text-sm font-semibold">Elegir salvapantallas del sistema</div>
                   <div className="text-xs text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                    {isNative ? 'Selecciona VORA TV OS en lugar de Google TV' : 'Disponible en Android TV'}
+                    {isNative
+                      ? musicServiceStatus.isGoogleTv
+                        ? 'En Google TV usa el Servicio VORA de arriba para reemplazar Modo Ambiente'
+                        : 'Selecciona VORA TV OS como salvapantallas del sistema'
+                      : 'Disponible en Android TV'}
                   </div>
                 </div>
                 <Monitor className="w-4 h-4 shrink-0" />

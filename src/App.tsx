@@ -27,9 +27,12 @@ import {
   fetchLauncherRemoteStatus,
   getCurrentAppVersion,
   getInstalledApps,
+  getMusicServiceStatus,
   isRemoteVersionNewer,
   launchAndroidApp,
   launchSuggestionUri,
+  openSpotifyAccessibilitySettings,
+  openSpotifyNotificationSettings,
   openTvSettings,
   setNativeKeepScreenOn,
   startAppUpdateInstall,
@@ -51,6 +54,7 @@ import type {
   LauncherOverlay,
   LauncherRemoteStatus,
   LauncherSettings,
+  MusicServiceStatus,
 } from './types/launcher';
 
 const SETTINGS_STORAGE_KEY = 'cgamestv_launcher_settings_v2';
@@ -130,10 +134,15 @@ export default function App() {
     };
   }, []);
 
-  // Salvapantallas VORA TV OS (inactividad y activación manual)
+  // Salvapantallas VORA TV OS (inactividad, activación manual e intercepción Google TV)
   const [isScreensaverActive, setIsScreensaverActive] = useState(false);
   const screensaverTimerRef = useRef<number | null>(null);
   const screensaverActivatedAtRef = useRef<number>(0);
+  const [musicServiceStatus, setMusicServiceStatus] = useState<MusicServiceStatus>({
+    hasNotificationAccess: false,
+    hasAccessibilityAccess: false,
+    isGoogleTv: false,
+  });
 
   const {
     nowPlaying: spotifyNowPlaying,
@@ -142,9 +151,37 @@ export default function App() {
 
   const activateScreensaver = useCallback(() => {
     screensaverActivatedAtRef.current = Date.now();
+    setOverlay('none');
     setIsScreensaverActive(true);
     void refreshSpotify();
   }, [refreshSpotify]);
+
+  const refreshMusicServiceStatus = useCallback(async () => {
+    const status = await getMusicServiceStatus();
+    setMusicServiceStatus(status);
+  }, []);
+
+  useEffect(() => {
+    void refreshMusicServiceStatus();
+    const handleLaunchScreensaver = () => activateScreensaver();
+    const handleServiceRefresh = () => {
+      void refreshMusicServiceStatus();
+    };
+    window.addEventListener('voraLaunchScreensaver', handleLaunchScreensaver);
+    window.addEventListener('voraTvResume', handleServiceRefresh);
+    window.addEventListener('focus', handleServiceRefresh);
+    return () => {
+      window.removeEventListener('voraLaunchScreensaver', handleLaunchScreensaver);
+      window.removeEventListener('voraTvResume', handleServiceRefresh);
+      window.removeEventListener('focus', handleServiceRefresh);
+    };
+  }, [activateScreensaver, refreshMusicServiceStatus]);
+
+  useEffect(() => {
+    if (overlay === 'settings') {
+      void refreshMusicServiceStatus();
+    }
+  }, [overlay, refreshMusicServiceStatus]);
 
   const resetScreensaverTimer = useCallback(() => {
     if (screensaverTimerRef.current) {
@@ -547,7 +584,7 @@ export default function App() {
   );
 
   const handleOpenAndroidSettings = useCallback(
-    async (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources') => {
+    async (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'accessibility' | 'unknown_sources') => {
       const opened = await openTvSettings(section);
       if (!opened) {
         showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
@@ -773,8 +810,23 @@ export default function App() {
         appVersion={appVersion}
         isNative={isNative}
         isMaintenanceForced={isMaintenanceForced}
+        musicServiceStatus={musicServiceStatus}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
+        onOpenAccessibilitySettings={() => {
+          void openSpotifyAccessibilitySettings().then((opened) => {
+            if (!opened) {
+              showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
+            }
+          });
+        }}
+        onOpenNotificationSettings={() => {
+          void openSpotifyNotificationSettings().then((opened) => {
+            if (!opened) {
+              showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
+            }
+          });
+        }}
         onOpenUpdateModal={handleOpenUpdateModal}
         onClose={() => closeOverlayToHome('top-settings')}
       />

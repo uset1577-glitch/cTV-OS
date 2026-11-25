@@ -115,7 +115,14 @@ export interface SpotifyNowPlaying {
   artist?: string;
   album?: string;
   albumArt?: string;
-  source?: 'android-session' | 'android-broadcast' | 'spotify-api' | 'browser-media';
+  source?: 'android-session' | 'android-accessibility' | 'android-broadcast' | 'spotify-api' | 'browser-media';
   hasListenerPermission?: boolean;
+  hasAccessibilityPermission?: boolean;
+}
+
+export interface MusicServiceStatus {
+  hasNotificationAccess: boolean;
+  hasAccessibilityAccess: boolean;
+  isGoogleTv: boolean;
 }
 
