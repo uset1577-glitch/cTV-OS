@@ -108,3 +108,14 @@ export type AppUpdateModalStatus =
   | 'permission_required'
   | 'installing'
   | 'error';
+
+export interface SpotifyNowPlaying {
+  isPlaying: boolean;
+  track: string;
+  artist?: string;
+  album?: string;
+  albumArt?: string;
+  source?: 'android-session' | 'android-broadcast' | 'spotify-api' | 'browser-media';
+  hasListenerPermission?: boolean;
+}
+

@@ -1,7 +1,10 @@
 package com.cgamestv.launcher;
 
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -10,11 +13,19 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Base64;
 
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.content.pm.PackageInfoCompat;
 
@@ -32,11 +43,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +63,41 @@ public class LauncherPlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private static final Map<String, String> ICON_CACHE = new ConcurrentHashMap<>();
+    private static WeakReference<LauncherPlugin> activeInstanceRef = null;
+
+    private BroadcastReceiver spotifyBroadcastReceiver;
+    private MediaSessionManager mediaSessionManager;
+    private MediaSessionManager.OnActiveSessionsChangedListener activeSessionsListener;
+    private MediaController activeSpotifyController;
+    private MediaController.Callback activeSpotifyCallback;
+
+    private volatile boolean broadcastPlaying = false;
+    private volatile String broadcastTrack = "";
+    private volatile String broadcastArtist = "";
+    private volatile String broadcastAlbum = "";
+
+    @Override
+    public void load() {
+        super.load();
+        activeInstanceRef = new WeakReference<>(this);
+        registerSpotifyReceivers();
+        bindMediaSessionListener();
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        unregisterSpotifyReceivers();
+        unbindMediaSessionListener();
+        super.handleOnDestroy();
+    }
+
+    public static void onMediaListenerChanged(Context context) {
+        LauncherPlugin plugin = activeInstanceRef != null ? activeInstanceRef.get() : null;
+        if (plugin != null && context != null) {
+            plugin.bindMediaSessionListener();
+            plugin.emitCurrentSpotifyState(context.getApplicationContext());
+        }
+    }
 
     @PluginMethod
     public void getInstalledApps(PluginCall call) {
@@ -768,6 +816,308 @@ public class LauncherPlugin extends Plugin {
             this.isLeanback = isLeanback;
             this.isSystemApp = isSystemApp;
             this.category = category;
+        }
+    }
+
+    @PluginMethod
+    public void getSpotifyNowPlaying(PluginCall call) {
+        Context rawContext = getContext();
+        if (rawContext == null) {
+            JSObject empty = new JSObject();
+            empty.put("isPlaying", false);
+            empty.put("track", "");
+            empty.put("hasListenerPermission", false);
+            call.resolve(empty);
+            return;
+        }
+        Context context = rawContext.getApplicationContext();
+        call.resolve(resolveSpotifyNowPlaying(context));
+    }
+
+    @PluginMethod
+    public void openNotificationAccessSettings(PluginCall call) {
+        Context context = getContext();
+        if (context == null) {
+            call.reject("Contexto Android no disponible");
+            return;
+        }
+
+        try {
+            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            JSObject res = new JSObject();
+            res.put("opened", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            try {
+                Intent fallback = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + context.getPackageName()));
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(fallback);
+                JSObject res = new JSObject();
+                res.put("opened", true);
+                call.resolve(res);
+            } catch (Exception ex) {
+                try {
+                    Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                    settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(settingsIntent);
+                    JSObject res = new JSObject();
+                    res.put("opened", true);
+                    call.resolve(res);
+                } catch (Exception finalEx) {
+                    call.reject("No se pudo abrir ajustes de acceso multimedia", finalEx);
+                }
+            }
+        }
+    }
+
+    private boolean hasNotificationListenerPermission(Context context) {
+        try {
+            Set<String> enabled = NotificationManagerCompat.getEnabledListenerPackages(context);
+            return enabled != null && enabled.contains(context.getPackageName());
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void registerSpotifyReceivers() {
+        Context rawContext = getContext();
+        if (rawContext == null || spotifyBroadcastReceiver != null) return;
+        Context context = rawContext.getApplicationContext();
+
+        spotifyBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context ctx, Intent intent) {
+                if (intent == null || intent.getAction() == null) return;
+                String action = intent.getAction();
+                if (action.contains("metadatachanged")) {
+                    String track = intent.getStringExtra("track");
+                    String artist = intent.getStringExtra("artist");
+                    String album = intent.getStringExtra("album");
+                    if (track != null && !track.trim().isEmpty()) {
+                        broadcastTrack = track.trim();
+                        broadcastArtist = artist != null ? artist.trim() : "";
+                        broadcastAlbum = album != null ? album.trim() : "";
+                    }
+                    if (intent.hasExtra("playing")) {
+                        broadcastPlaying = intent.getBooleanExtra("playing", false);
+                    } else if (!broadcastTrack.isEmpty()) {
+                        broadcastPlaying = true;
+                    }
+                } else if (action.contains("playbackstatechanged") || action.contains("playstatechanged")) {
+                    broadcastPlaying = intent.getBooleanExtra("playing", false);
+                    String track = intent.getStringExtra("track");
+                    if (track != null && !track.trim().isEmpty()) {
+                        broadcastTrack = track.trim();
+                    }
+                }
+                emitCurrentSpotifyState(ctx.getApplicationContext());
+            }
+        };
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.spotify.music.metadatachanged");
+        filter.addAction("com.spotify.music.playbackstatechanged");
+        filter.addAction("com.spotify.tv.android.metadatachanged");
+        filter.addAction("com.spotify.tv.android.playbackstatechanged");
+        filter.addAction("com.android.music.metadatachanged");
+        filter.addAction("com.android.music.playstatechanged");
+        ContextCompat.registerReceiver(context, spotifyBroadcastReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+    }
+
+    private void unregisterSpotifyReceivers() {
+        Context rawContext = getContext();
+        if (rawContext != null && spotifyBroadcastReceiver != null) {
+            try {
+                rawContext.getApplicationContext().unregisterReceiver(spotifyBroadcastReceiver);
+            } catch (Exception ignored) {
+            }
+            spotifyBroadcastReceiver = null;
+        }
+    }
+
+    private void bindMediaSessionListener() {
+        Context rawContext = getContext();
+        if (rawContext == null) return;
+        Context context = rawContext.getApplicationContext();
+        if (!hasNotificationListenerPermission(context)) return;
+
+        try {
+            if (mediaSessionManager == null) {
+                mediaSessionManager = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            }
+            if (mediaSessionManager == null) return;
+
+            ComponentName listenerComp = new ComponentName(context, VoraMediaListenerService.class);
+            if (activeSessionsListener == null) {
+                activeSessionsListener = controllers -> {
+                    attachSpotifyControllerCallback(controllers);
+                    emitCurrentSpotifyState(context);
+                };
+                mediaSessionManager.addOnActiveSessionsChangedListener(
+                    activeSessionsListener,
+                    listenerComp,
+                    new Handler(Looper.getMainLooper())
+                );
+            }
+
+            List<MediaController> current = mediaSessionManager.getActiveSessions(listenerComp);
+            attachSpotifyControllerCallback(current);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void unbindMediaSessionListener() {
+        if (mediaSessionManager != null && activeSessionsListener != null) {
+            try {
+                mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener);
+            } catch (Exception ignored) {
+            }
+            activeSessionsListener = null;
+        }
+        if (activeSpotifyController != null && activeSpotifyCallback != null) {
+            try {
+                activeSpotifyController.unregisterCallback(activeSpotifyCallback);
+            } catch (Exception ignored) {
+            }
+            activeSpotifyController = null;
+            activeSpotifyCallback = null;
+        }
+    }
+
+    private void attachSpotifyControllerCallback(List<MediaController> controllers) {
+        if (activeSpotifyController != null && activeSpotifyCallback != null) {
+            try {
+                activeSpotifyController.unregisterCallback(activeSpotifyCallback);
+            } catch (Exception ignored) {
+            }
+            activeSpotifyController = null;
+            activeSpotifyCallback = null;
+        }
+
+        if (controllers == null) return;
+        for (MediaController controller : controllers) {
+            String pkg = controller.getPackageName();
+            if (pkg != null && pkg.toLowerCase().contains("spotify")) {
+                activeSpotifyController = controller;
+                activeSpotifyCallback = new MediaController.Callback() {
+                    @Override
+                    public void onPlaybackStateChanged(PlaybackState state) {
+                        Context raw = getContext();
+                        if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
+                    }
+
+                    @Override
+                    public void onMetadataChanged(MediaMetadata metadata) {
+                        Context raw = getContext();
+                        if (raw != null) emitCurrentSpotifyState(raw.getApplicationContext());
+                    }
+                };
+                controller.registerCallback(activeSpotifyCallback, new Handler(Looper.getMainLooper()));
+                break;
+            }
+        }
+    }
+
+    private void emitCurrentSpotifyState(Context context) {
+        notifyListeners("spotifyPlaybackChanged", resolveSpotifyNowPlaying(context));
+    }
+
+    private JSObject resolveSpotifyNowPlaying(Context context) {
+        boolean hasPermission = hasNotificationListenerPermission(context);
+
+        if (hasPermission) {
+            try {
+                MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (msm != null) {
+                    ComponentName listenerComp = new ComponentName(context, VoraMediaListenerService.class);
+                    List<MediaController> controllers = msm.getActiveSessions(listenerComp);
+                    if (controllers != null) {
+                        for (MediaController controller : controllers) {
+                            String pkg = controller.getPackageName();
+                            if (pkg == null || !pkg.toLowerCase().contains("spotify")) continue;
+
+                            PlaybackState pbState = controller.getPlaybackState();
+                            int state = pbState != null ? pbState.getState() : PlaybackState.STATE_NONE;
+                            boolean playing = state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_BUFFERING;
+                            MediaMetadata meta = controller.getMetadata();
+
+                            String track = "";
+                            String artist = "";
+                            String album = "";
+                            String albumArt = "";
+
+                            if (meta != null) {
+                                CharSequence t = meta.getText(MediaMetadata.METADATA_KEY_TITLE);
+                                if (t == null) t = meta.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+                                CharSequence a = meta.getText(MediaMetadata.METADATA_KEY_ARTIST);
+                                if (a == null) a = meta.getText(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+                                CharSequence al = meta.getText(MediaMetadata.METADATA_KEY_ALBUM);
+
+                                track = t != null ? t.toString().trim() : "";
+                                artist = a != null ? a.toString().trim() : "";
+                                album = al != null ? al.toString().trim() : "";
+
+                                String artUri = meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI);
+                                if (artUri != null && (artUri.startsWith("http://") || artUri.startsWith("https://"))) {
+                                    albumArt = artUri;
+                                } else {
+                                    Bitmap bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+                                    if (bmp == null) {
+                                        bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ART);
+                                    }
+                                    if (bmp != null) {
+                                        albumArt = bitmapToSmallJpegUri(bmp, 160);
+                                    }
+                                }
+                            }
+
+                            JSObject res = new JSObject();
+                            res.put("isPlaying", playing && !track.isEmpty());
+                            res.put("track", track);
+                            res.put("artist", artist);
+                            res.put("album", album);
+                            res.put("albumArt", albumArt);
+                            res.put("source", "android-session");
+                            res.put("hasListenerPermission", true);
+                            return res;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        JSObject broadcastRes = new JSObject();
+        broadcastRes.put("isPlaying", broadcastPlaying && !broadcastTrack.isEmpty());
+        broadcastRes.put("track", broadcastTrack);
+        broadcastRes.put("artist", broadcastArtist);
+        broadcastRes.put("album", broadcastAlbum);
+        broadcastRes.put("albumArt", "");
+        broadcastRes.put("source", "android-broadcast");
+        broadcastRes.put("hasListenerPermission", hasPermission);
+        return broadcastRes;
+    }
+
+    private String bitmapToSmallJpegUri(Bitmap src, int maxDim) {
+        try {
+            int w = src.getWidth();
+            int h = src.getHeight();
+            if (w <= 0 || h <= 0) return "";
+            float scale = Math.min((float) maxDim / w, (float) maxDim / h);
+            int targetW = Math.max(1, Math.round(w * Math.min(1f, scale)));
+            int targetH = Math.max(1, Math.round(h * Math.min(1f, scale)));
+            Bitmap scaled = Bitmap.createScaledBitmap(src, targetW, targetH, true);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            scaled.compress(Bitmap.CompressFormat.JPEG, 82, out);
+            if (scaled != src && !scaled.isRecycled()) {
+                scaled.recycle();
+            }
+            return "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+        } catch (Exception ignored) {
+            return "";
         }
     }
 }

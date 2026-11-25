@@ -4,22 +4,14 @@ import {
   Check,
   CheckCircle2,
   Copy,
-  Database,
-  ExternalLink,
-  Flame,
-  Globe,
   KeyRound,
-  Lock,
   LogOut,
   Monitor,
   Power,
   Radio,
-  RefreshCw,
   Save,
   Send,
   Shield,
-  ShieldAlert,
-  Sparkles,
   Tv,
 } from 'lucide-react';
 import {
@@ -115,8 +107,8 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     const ok = await setGlobalLauncherStatus({
       title: titleInput.trim(),
       message: messageInput.trim(),
-      maintenanceMode: remoteStatus.maintenanceMode,
-      appsOnlyMode: remoteStatus.maintenanceMode,
+      maintenanceMode: true,
+      appsOnlyMode: true,
     });
     setIsSaving(false);
     if (ok) {
@@ -134,7 +126,6 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     });
   };
 
-  // Si no está autenticado, mostrar pantalla de acceso del creador
   if (!isAuthenticated) {
     return (
       <div className="fixed inset-0 z-50 bg-[#090C12] text-zinc-100 flex flex-col items-center justify-center p-6 selection:bg-amber-500 selection:text-black">
@@ -149,7 +140,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               Panel del Creador (PC)
             </h1>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-xs">
-              Acceso exclusivo desde PC o móvil para administrar el modo mantenimiento y emitir avisos a todos los televisores.
+              Acceso exclusivo desde PC o móvil para activar el modo mantenimiento en todos los televisores.
             </p>
           </div>
 
@@ -222,13 +213,12 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Control remoto global · Sincronizado instantáneamente con todos los usuarios
+              Control de mantenimiento global · Sincronizado en tiempo real
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Indicador de conexión Firestore */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-xs">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
@@ -280,10 +270,10 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
             </div>
             <div>
               <div className="font-semibold text-sm text-white">
-                Los usuarios en sus televisores NO pueden ver este panel
+                Control exclusivo de Mantenimiento Global
               </div>
               <p className="text-xs text-blue-200/80 mt-0.5">
-                La aplicación instalada en las TVs solo tiene los ajustes visuales estándar. Únicamente tú desde tu PC controlas el interruptor maestro.
+                Activa o desactiva el modo mantenimiento y personaliza el mensaje que aparecerá en los televisores.
               </p>
             </div>
           </div>
@@ -292,7 +282,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
           </div>
         </div>
 
-        {/* Sección principal: Interruptor Maestro */}
+        {/* Sección principal: Interruptor Maestro de Mantenimiento */}
         <section className={`rounded-3xl border-2 p-6 md:p-8 transition-all duration-300 shadow-2xl relative overflow-hidden ${
           isMaintActive
             ? 'bg-amber-950/20 border-amber-500/60 shadow-amber-950/40'
@@ -302,19 +292,18 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10">
                 <Radio className={`w-3.5 h-3.5 ${isMaintActive ? 'text-amber-400 animate-pulse' : 'text-zinc-500'}`} />
-                <span>Estado Global de Todas las TVs</span>
+                <span>Estado Global de Mantenimiento</span>
               </div>
               <h2 className="text-2xl md:text-3xl font-display font-bold text-white">
                 {isMaintActive ? '🔴 MANTENIMIENTO ACTIVO PARA TODOS' : '🟢 LAUNCHER NORMAL (Sin Mantenimiento)'}
               </h2>
               <p className="text-xs md:text-sm text-zinc-300 leading-relaxed">
                 {isMaintActive
-                  ? 'Todos los televisores con tu APK en el mundo tienen activo el aviso "El modo solo apps será activado" y están bloqueados en modo solo apps sin recomendaciones.'
-                  : 'El launcher opera de forma libre. Los usuarios pueden ver películas, series y todas sus aplicaciones sin carteles obligatorios.'}
+                  ? 'Todos los televisores tienen activo el aviso de mantenimiento y el modo solo apps.'
+                  : 'El launcher opera de forma libre con recomendaciones y En vivo.'}
               </p>
             </div>
 
-            {/* Botón interruptor maestro gigante */}
             <div className="flex flex-col items-center gap-2 shrink-0 w-full lg:w-auto">
               <button
                 type="button"
@@ -332,13 +321,13 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                     ? 'Actualizando...'
                     : isMaintActive
                       ? 'DESACTIVAR MANTENIMIENTO'
-                      : 'ACTIVAR MANTENIMIENTO GLOBAL'}
+                      : 'ACTIVAR MANTENIMIENTO'}
                 </span>
               </button>
               <span className="text-[11px] text-zinc-400">
                 {isMaintActive
-                  ? 'Clic para devolver a todos los usuarios a modo normal'
-                  : 'Clic para activar el cartel y bloquear solo apps en todas las TVs'}
+                  ? 'Clic para devolver las TVs a modo normal'
+                  : 'Clic para activar el mantenimiento en todas las TVs'}
               </span>
             </div>
           </div>
@@ -346,15 +335,15 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
 
         {/* Cuadrícula de 2 columnas: Personalización de Mensaje y Vista Previa */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
-          {/* Columna 1: Editor del Mensaje que verán las TVs */}
+          {/* Columna 1: Editor del Mensaje */}
           <section className="bg-[#111622] border border-white/10 rounded-3xl p-6 md:p-7 space-y-5 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-display font-bold text-lg text-white">
-                  Contenido del Cartel de Aviso
+                  Contenido del Cartel de Mantenimiento
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Personaliza lo que leerán los usuarios en su televisor
+                  Personaliza el título y mensaje del aviso en los televisores
                 </p>
               </div>
               <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
@@ -399,7 +388,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-white/10"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isSaving ? 'Guardando en Firebase...' : 'Guardar y Emitir Texto a las TVs'}</span>
+                  <span>{isSaving ? 'Guardando...' : 'Guardar y Emitir Mensaje a las TVs'}</span>
                 </button>
                 {savedSuccess && (
                   <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 shrink-0 animate-fade-in">
@@ -410,10 +399,10 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               </div>
             </div>
 
-            {/* Presets de mensajes rápidos */}
+            {/* Plantillas rápidas */}
             <div className="pt-4 border-t border-white/8 space-y-2">
               <span className="text-xs font-semibold text-zinc-400">
-                Plantillas de aviso rápido:
+                Plantillas rápidas:
               </span>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -430,27 +419,17 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   type="button"
                   onClick={() => {
                     setTitleInput('Servidores en Mantenimiento');
-                    setMessageInput('Estamos mejorando los servidores de streaming y catálogo en vivo. Tus aplicaciones siguen funcionando con normalidad.');
+                    setMessageInput('Estamos mejorando los servidores de streaming y catálogo en vivo.');
                   }}
                   className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 transition-colors"
                 >
                   Mejora de Servidores
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTitleInput('Nueva Versión Disponible');
-                    setMessageInput('Se ha publicado una nueva actualización en GitHub. Por favor actualiza desde Ajustes.');
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 transition-colors"
-                >
-                  Aviso de Nueva Versión
-                </button>
               </div>
             </div>
           </section>
 
-          {/* Columna 2: Vista Previa en Vivo (Simulador de TV) */}
+          {/* Columna 2: Vista Previa en Vivo */}
           <section className="bg-[#111622] border border-white/10 rounded-3xl p-6 md:p-7 space-y-4 shadow-xl flex flex-col">
             <div className="flex items-center justify-between">
               <div>
@@ -458,7 +437,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   Vista Previa en el Televisor
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Así se ve exactamente en la pantalla de los usuarios
+                  Así se verá el cartel en las pantallas
                 </p>
               </div>
               <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
@@ -466,7 +445,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   : 'bg-zinc-800 text-zinc-400'
               }`}>
-                {isMaintActive ? 'Visible en TV' : 'Oculto en TV'}
+                {isMaintActive ? 'Mantenimiento Activo' : 'Normal'}
               </span>
             </div>
 
@@ -478,21 +457,21 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
 
               {isMaintActive ? (
                 <div className="space-y-4 my-auto">
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-sm font-bold text-amber-300">
+                      <div className="text-sm font-bold">
                         {titleInput || 'Mantenimiento · Próxima actualización'}
                       </div>
                       <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
-                        {messageInput || 'El modo solo apps será activado mientras preparamos la próxima actualización.'}
+                        {messageInput || 'El modo solo apps será activado...'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-zinc-400">
                     <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span>Modo solo apps obligatorio activado en la TV del usuario</span>
+                    <span>Bloqueo activo en modo solo apps</span>
                   </div>
                 </div>
               ) : (
@@ -502,19 +481,19 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                     Televisor en Funcionamiento Normal
                   </div>
                   <p className="text-xs text-zinc-400 max-w-xs mx-auto">
-                    Los usuarios navegan con recomendaciones, películas y series normalmente.
+                    Sin avisos de mantenimiento.
                   </p>
                 </div>
               )}
 
               <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
-                <span>VORA TV OS · Cliente Firebase</span>
-                <span>Último cambio: {remoteStatus.updatedAt ? new Date(remoteStatus.updatedAt).toLocaleTimeString() : 'En vivo'}</span>
+                <span>VORA TV OS · Firebase Cloud</span>
+                <span>En vivo</span>
               </div>
             </div>
 
             <div className="text-xs text-zinc-400 leading-relaxed bg-white/[0.03] p-3.5 rounded-xl border border-white/5">
-              💡 <strong>¿Cómo funciona?</strong> Cuando tocas el botón de arriba, el cambio se transmite vía Firebase Firestore a todos los dispositivos que tengan instalada la app en menos de 1 segundo sin tener que publicar un nuevo APK.
+              💡 Cuando actives el mantenimiento aquí, todas las TVs recibirán el aviso obligatorio y volverán a la normalidad al desactivarlo.
             </div>
           </section>
         </div>

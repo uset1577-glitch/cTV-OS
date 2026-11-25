@@ -6,6 +6,7 @@ import type {
   AppVersionInfo,
   InstalledApp,
   LauncherRemoteStatus,
+  SpotifyNowPlaying,
 } from '../types/launcher';
 
 export interface LauncherNativePlugin {
@@ -20,9 +21,15 @@ export interface LauncherNativePlugin {
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
   getRemoteConfig(options: { repo: string }): Promise<LauncherRemoteStatus>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
+  getSpotifyNowPlaying(): Promise<SpotifyNowPlaying>;
+  openNotificationAccessSettings(): Promise<{ opened: boolean }>;
   addListener(
     eventName: 'otaDownloadProgress',
     listenerFunc: (progress: AppDownloadProgress) => void
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    eventName: 'spotifyPlaybackChanged',
+    listenerFunc: (state: SpotifyNowPlaying) => void
   ): Promise<PluginListenerHandle>;
 }
 
@@ -380,4 +387,37 @@ export async function startAppUpdateInstall(
     cancelled = true;
     window.clearInterval(timer);
   };
+}
+
+export async function getNativeSpotifyNowPlaying(): Promise<SpotifyNowPlaying | null> {
+  if (!isNativeAndroid()) return null;
+  try {
+    return await LauncherNative.getSpotifyNowPlaying();
+  } catch {
+    return null;
+  }
+}
+
+export async function openSpotifyNotificationSettings(): Promise<boolean> {
+  if (!isNativeAndroid()) return false;
+  try {
+    const res = await LauncherNative.openNotificationAccessSettings();
+    return Boolean(res?.opened);
+  } catch {
+    return false;
+  }
+}
+
+export async function subscribeNativeSpotifyPlayback(
+  listener: (state: SpotifyNowPlaying) => void
+): Promise<() => void> {
+  if (!isNativeAndroid()) return () => {};
+  try {
+    const handle = await LauncherNative.addListener('spotifyPlaybackChanged', listener);
+    return () => {
+      void handle.remove();
+    };
+  } catch {
+    return () => {};
+  }
 }

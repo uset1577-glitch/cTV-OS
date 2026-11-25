@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Moon, Search, Settings, Sun } from 'lucide-react';
+import { Download, Monitor, Moon, Search, Settings, Sun } from 'lucide-react';
 import type { HomeTab, ThemeMode } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
 
@@ -13,6 +13,7 @@ interface NavaTopBarProps {
   appsOnlyMode?: boolean;
   onSelectTab: (tab: HomeTab) => void;
   onToggleTheme: () => void;
+  onOpenScreensaver: () => void;
   onOpenSearch: () => void;
   onOpenUpdate?: () => void;
   onOpenSettings: () => void;
@@ -28,6 +29,7 @@ export function NavaTopBar({
   appsOnlyMode = false,
   onSelectTab,
   onToggleTheme,
+  onOpenScreensaver,
   onOpenSearch,
   onOpenUpdate,
   onOpenSettings,
@@ -135,6 +137,23 @@ export function NavaTopBar({
           }`}
         >
           {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+
+        <button
+          type="button"
+          tabIndex={isVisible ? 0 : -1}
+          data-tv-focusable="true"
+          data-tv-id="top-screensaver"
+          onClick={onOpenScreensaver}
+          aria-label="Activar salvapantallas"
+          title="Salvapantallas"
+          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:ring-2 focus:ring-amber-400 focus:scale-110 ${
+            heroTone
+              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
+              : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+          }`}
+        >
+          <Monitor className="w-4 h-4" />
         </button>
 
         {hasAvailableUpdate && (

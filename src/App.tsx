@@ -10,6 +10,7 @@ import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
 import { NavaTopBar } from './components/NavaTopBar';
 import { AppUpdateModal } from './components/AppUpdateModal';
+import { VoraScreensaver } from './components/VoraScreensaver';
 import {
   BACKGROUND_PRESETS,
   DEFAULT_SETTINGS,
@@ -20,6 +21,7 @@ import {
   OFFLINE_FALLBACK_CATALOG,
 } from './data/suggestions';
 import { focusElementById, useSpatialNavigation } from './hooks/useSpatialNavigation';
+import { useSpotifyNowPlaying } from './hooks/useSpotifyNowPlaying';
 import {
   checkAppUpdate,
   fetchLauncherRemoteStatus,
@@ -127,7 +129,62 @@ export default function App() {
     };
   }, []);
 
-  // Estado global de mantenimiento / próxima actualización (controlado remotamente)
+  // Salvapantallas VORA TV OS (inactividad y activación manual)
+  const [isScreensaverActive, setIsScreensaverActive] = useState(false);
+  const screensaverTimerRef = useRef<number | null>(null);
+  const screensaverActivatedAtRef = useRef<number>(0);
+
+  const {
+    nowPlaying: spotifyNowPlaying,
+    webStatus: spotifyWebStatus,
+    connectSpotify,
+    disconnectSpotify,
+    refreshSpotify,
+    openAndroidSpotifyPermission,
+  } = useSpotifyNowPlaying(isScreensaverActive);
+
+  const activateScreensaver = useCallback(() => {
+    screensaverActivatedAtRef.current = Date.now();
+    setIsScreensaverActive(true);
+    void refreshSpotify();
+  }, [refreshSpotify]);
+
+  const resetScreensaverTimer = useCallback(() => {
+    if (screensaverTimerRef.current) {
+      window.clearTimeout(screensaverTimerRef.current);
+    }
+    if (isScreensaverActive) {
+      if (Date.now() - screensaverActivatedAtRef.current < 800) {
+        return;
+      }
+      setIsScreensaverActive(false);
+    }
+    // 3 minutos de inactividad (180,000 ms)
+    screensaverTimerRef.current = window.setTimeout(() => {
+      if (overlay === 'none' && !showCreatorAdmin) {
+        screensaverActivatedAtRef.current = Date.now();
+        setIsScreensaverActive(true);
+      }
+    }, 180_000);
+  }, [isScreensaverActive, overlay, showCreatorAdmin]);
+
+  useEffect(() => {
+    resetScreensaverTimer();
+    const handleActivity = () => resetScreensaverTimer();
+
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+    window.addEventListener('pointerdown', handleActivity);
+
+    return () => {
+      if (screensaverTimerRef.current) {
+        window.clearTimeout(screensaverTimerRef.current);
+      }
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('pointerdown', handleActivity);
+    };
+  }, [resetScreensaverTimer]);
   const [remoteStatus, setRemoteStatus] = useState<LauncherRemoteStatus>({
     maintenanceMode: false,
     appsOnlyMode: false,
@@ -205,15 +262,15 @@ export default function App() {
   const cleanupUpdateRef = useRef<(() => void) | null>(null);
 
   const isMaintenanceForced = Boolean(
-    settings.maintenanceMode || remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode
+    settings.maintenanceMode || remoteStatus.maintenanceMode
   );
   const effectiveAppsOnly = isMaintenanceForced || settings.appsOnlyMode;
 
   const activeMaintenanceStatus: LauncherRemoteStatus = {
     maintenanceMode: isMaintenanceForced,
     appsOnlyMode: effectiveAppsOnly,
-    title: settings.maintenanceTitle || remoteStatus.title,
-    message: settings.maintenanceMessage || remoteStatus.message,
+    title: remoteStatus.title || settings.maintenanceTitle,
+    message: remoteStatus.message || settings.maintenanceMessage,
   };
 
   // Sincronizar clase .dark en <html>
@@ -277,7 +334,7 @@ export default function App() {
     void testFirestoreConnection();
     const unsubscribe = subscribeToLauncherStatus((status) => {
       setRemoteStatus(status);
-      const forcedNow = Boolean(status.maintenanceMode || status.appsOnlyMode);
+      const forcedNow = Boolean(status.maintenanceMode);
       if (forcedNow && !wasMaintenanceForcedRef.current) {
         wasMaintenanceForcedRef.current = true;
         setActiveTab('inicio');
@@ -623,6 +680,7 @@ export default function App() {
               themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
             })
           }
+          onOpenScreensaver={activateScreensaver}
           onOpenSearch={() => setOverlay('search')}
           onOpenUpdate={handleOpenUpdateModal}
           onOpenSettings={() => setOverlay('settings')}
@@ -712,9 +770,23 @@ export default function App() {
         appVersion={appVersion}
         isNative={isNative}
         isMaintenanceForced={isMaintenanceForced}
+        spotify={spotifyNowPlaying}
+        spotifyWebStatus={spotifyWebStatus}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
         onOpenUpdateModal={handleOpenUpdateModal}
+        onOpenScreensaver={activateScreensaver}
+        onConnectSpotify={() => {
+          void connectSpotify().then((res) => {
+            if (!res.ok && res.error) showToast(res.error);
+          });
+        }}
+        onDisconnectSpotify={() => void disconnectSpotify()}
+        onOpenSpotifyPermission={() => {
+          void openAndroidSpotifyPermission().then((opened) => {
+            if (!opened) showToast('Abre Ajustes > Aplicaciones > Acceso especial en tu Android TV.');
+          });
+        }}
         onClose={() => closeOverlayToHome('top-settings')}
       />
 
@@ -756,6 +828,14 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Salvapantallas VORA TV OS (reemplaza salvapantallas de Google TV) */}
+      <VoraScreensaver
+        isActive={isScreensaverActive}
+        use24HourClock={settings.use24HourClock}
+        spotify={spotifyNowPlaying}
+        onDismiss={() => setIsScreensaverActive(false)}
+      />
 
       {/* Botón flotante para el creador en PC (SOLO en navegador web de escritorio, NUNCA en Android TV) */}
       {!isNative && (

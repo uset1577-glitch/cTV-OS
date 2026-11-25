@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Check,
+  Disc3,
   Download,
   Home,
+  Monitor,
   Moon,
   RotateCcw,
   Settings,
@@ -12,8 +14,9 @@ import {
   X,
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
+import type { SpotifyWebStatus } from '../hooks/useSpotifyNowPlaying';
 import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import type { AppVersionInfo, LauncherSettings } from '../types/launcher';
+import type { AppVersionInfo, LauncherSettings, SpotifyNowPlaying } from '../types/launcher';
 
 interface NavaSettingsDrawerProps {
   isOpen: boolean;
@@ -21,9 +24,15 @@ interface NavaSettingsDrawerProps {
   appVersion: AppVersionInfo;
   isNative: boolean;
   isMaintenanceForced?: boolean;
+  spotify?: SpotifyNowPlaying | null;
+  spotifyWebStatus?: SpotifyWebStatus;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
   onOpenAndroidSettings: (section: 'settings' | 'wifi' | 'home' | 'unknown_sources') => void;
   onOpenUpdateModal: () => void;
+  onOpenScreensaver?: () => void;
+  onConnectSpotify?: () => void;
+  onDisconnectSpotify?: () => void;
+  onOpenSpotifyPermission?: () => void;
   onClose: () => void;
 }
 
@@ -33,9 +42,15 @@ export function NavaSettingsDrawer({
   appVersion,
   isNative,
   isMaintenanceForced = false,
+  spotify,
+  spotifyWebStatus,
   onUpdateSettings,
   onOpenAndroidSettings,
   onOpenUpdateModal,
+  onOpenScreensaver,
+  onConnectSpotify,
+  onDisconnectSpotify,
+  onOpenSpotifyPermission,
   onClose,
 }: NavaSettingsDrawerProps) {
   const [repoInput, setRepoInput] = useState(settings.updateRepo || '');
@@ -364,6 +379,93 @@ export function NavaSettingsDrawer({
                   <span>Ajustes TV</span>
                   <Settings className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Salvapantallas y Detección de Spotify */}
+              <div className="rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Disc3 className="w-5 h-5 text-[#1DB954] shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                        Salvapantallas y Spotify
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-zinc-400 truncate">
+                        {spotify?.isPlaying && spotify.track
+                          ? `Estás escuchando: ${spotify.track}`
+                          : isNative
+                            ? spotify?.hasListenerPermission
+                              ? 'Detección automática de Spotify activa en TV'
+                              : 'Activa acceso multimedia para leer Spotify en tu TV'
+                            : spotifyWebStatus?.connected
+                              ? 'Cuenta de Spotify conectada'
+                              : spotifyWebStatus?.configured
+                                ? 'Conecta Spotify para mostrar la canción en el salvapantallas'
+                                : 'Listo en Android TV · Web OAuth sin credenciales'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {onOpenScreensaver && (
+                    <button
+                      type="button"
+                      data-tv-focusable="true"
+                      data-tv-id="settings-open-screensaver"
+                      onClick={() => {
+                        onClose();
+                        onOpenScreensaver();
+                      }}
+                      aria-label="Activar salvapantallas"
+                      title="Activar salvapantallas"
+                      className="tv-focusable p-2.5 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105 shrink-0"
+                    >
+                      <Monitor className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {isNative && !spotify?.hasListenerPermission && onOpenSpotifyPermission && (
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="settings-spotify-permission"
+                    onClick={onOpenSpotifyPermission}
+                    className="tv-focusable w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#1DB954]/15 border border-[#1DB954]/30 text-emerald-700 dark:text-[#1DB954] text-xs font-semibold focus:bg-[#1DB954] focus:text-zinc-950 focus:ring-2 focus:ring-amber-500"
+                  >
+                    <span>Permitir lectura de música en Android TV</span>
+                    <span>Configurar</span>
+                  </button>
+                )}
+
+                {!isNative && spotifyWebStatus?.configured && (
+                  <div className="flex items-center gap-2">
+                    {!spotifyWebStatus.connected ? (
+                      onConnectSpotify && (
+                        <button
+                          type="button"
+                          data-tv-focusable="true"
+                          data-tv-id="settings-spotify-connect"
+                          onClick={onConnectSpotify}
+                          className="tv-focusable w-full px-4 py-2.5 rounded-xl bg-[#1DB954] hover:bg-[#1ed760] text-zinc-950 text-xs font-bold focus:ring-2 focus:ring-amber-500"
+                        >
+                          Conectar cuenta de Spotify
+                        </button>
+                      )
+                    ) : (
+                      onDisconnectSpotify && (
+                        <button
+                          type="button"
+                          data-tv-focusable="true"
+                          data-tv-id="settings-spotify-disconnect"
+                          onClick={onDisconnectSpotify}
+                          className="tv-focusable w-full px-4 py-2.5 rounded-xl bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 text-xs font-semibold focus:ring-2 focus:ring-amber-500"
+                        >
+                          Desconectar Spotify
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
