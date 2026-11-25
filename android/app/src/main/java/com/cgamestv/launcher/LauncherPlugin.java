@@ -13,16 +13,19 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.net.Uri;
+import android.app.Activity;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.util.Base64;
+import android.view.WindowManager;
 
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
@@ -271,6 +274,8 @@ public class LauncherPlugin extends Plugin {
                 intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
             } else if ("home".equals(section)) {
                 intent = new Intent(Settings.ACTION_HOME_SETTINGS);
+            } else if ("screensaver".equals(section)) {
+                intent = new Intent(Settings.ACTION_DREAM_SETTINGS);
             } else if ("unknown_sources".equals(section) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent = new Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
@@ -735,18 +740,18 @@ public class LauncherPlugin extends Plugin {
         if (iconBase64 == null) {
             iconBase64 = "";
             try {
-                Drawable drawable = null;
-                if (isLeanback && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                Drawable drawable = info.loadIcon(pm);
+                if (drawable == null && appInfo != null) {
+                    drawable = pm.getApplicationIcon(appInfo);
+                }
+                if (drawable == null && isLeanback && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
                     drawable = info.activityInfo.loadBanner(pm);
                     if (drawable == null && appInfo != null) {
                         drawable = pm.getApplicationBanner(appInfo);
                     }
                 }
-                if (drawable == null) {
-                    drawable = info.loadIcon(pm);
-                }
                 if (drawable != null) {
-                    iconBase64 = drawableToDataUri(drawable, 96);
+                    iconBase64 = drawableToDataUri(drawable, 128);
                     if (!iconBase64.isEmpty()) {
                         ICON_CACHE.put(pkg, iconBase64);
                     }
@@ -920,8 +925,12 @@ public class LauncherPlugin extends Plugin {
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.spotify.music.metadatachanged");
         filter.addAction("com.spotify.music.playbackstatechanged");
+        filter.addAction("com.spotify.music.queuechanged");
         filter.addAction("com.spotify.tv.android.metadatachanged");
         filter.addAction("com.spotify.tv.android.playbackstatechanged");
+        filter.addAction("com.spotify.tv.android.queuechanged");
+        filter.addAction("com.spotify.mobile.android.ui.widget.METADATA_CHANGED");
+        filter.addAction("com.spotify.mobile.android.ui.widget.PLAYBACK_STATE_CHANGED");
         filter.addAction("com.android.music.metadatachanged");
         filter.addAction("com.android.music.playstatechanged");
         ContextCompat.registerReceiver(context, spotifyBroadcastReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
@@ -1027,71 +1036,99 @@ public class LauncherPlugin extends Plugin {
 
     private JSObject resolveSpotifyNowPlaying(Context context) {
         boolean hasPermission = hasNotificationListenerPermission(context);
+        boolean musicAudioActive = false;
+        try {
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            musicAudioActive = am != null && am.isMusicActive();
+        } catch (Exception ignored) {
+        }
 
-        if (hasPermission) {
-            try {
-                MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-                if (msm != null) {
-                    ComponentName listenerComp = new ComponentName(context, VoraMediaListenerService.class);
-                    List<MediaController> controllers = msm.getActiveSessions(listenerComp);
-                    if (controllers != null) {
-                        for (MediaController controller : controllers) {
-                            String pkg = controller.getPackageName();
-                            if (pkg == null || !pkg.toLowerCase().contains("spotify")) continue;
+        // 1. Consultar sesiones multimedia activas (con permiso de listener o intento directo en TV)
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                ComponentName listenerComp = hasPermission
+                    ? new ComponentName(context, VoraMediaListenerService.class)
+                    : null;
+                List<MediaController> controllers = msm.getActiveSessions(listenerComp);
+                if (controllers != null) {
+                    for (MediaController controller : controllers) {
+                        String pkg = controller.getPackageName();
+                        if (pkg == null || !pkg.toLowerCase().contains("spotify")) continue;
 
-                            PlaybackState pbState = controller.getPlaybackState();
-                            int state = pbState != null ? pbState.getState() : PlaybackState.STATE_NONE;
-                            boolean playing = state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_BUFFERING;
-                            MediaMetadata meta = controller.getMetadata();
+                        PlaybackState pbState = controller.getPlaybackState();
+                        int state = pbState != null ? pbState.getState() : PlaybackState.STATE_NONE;
+                        boolean playing = state == PlaybackState.STATE_PLAYING
+                            || state == PlaybackState.STATE_BUFFERING
+                            || state == PlaybackState.STATE_CONNECTING
+                            || (pbState == null && musicAudioActive);
+                        MediaMetadata meta = controller.getMetadata();
 
-                            String track = "";
-                            String artist = "";
-                            String album = "";
-                            String albumArt = "";
+                        String track = "";
+                        String artist = "";
+                        String album = "";
+                        String albumArt = "";
 
-                            if (meta != null) {
-                                CharSequence t = meta.getText(MediaMetadata.METADATA_KEY_TITLE);
-                                if (t == null) t = meta.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
-                                CharSequence a = meta.getText(MediaMetadata.METADATA_KEY_ARTIST);
-                                if (a == null) a = meta.getText(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
-                                CharSequence al = meta.getText(MediaMetadata.METADATA_KEY_ALBUM);
+                        if (meta != null) {
+                            CharSequence t = meta.getText(MediaMetadata.METADATA_KEY_TITLE);
+                            if (t == null) t = meta.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+                            CharSequence a = meta.getText(MediaMetadata.METADATA_KEY_ARTIST);
+                            if (a == null) a = meta.getText(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+                            CharSequence al = meta.getText(MediaMetadata.METADATA_KEY_ALBUM);
 
-                                track = t != null ? t.toString().trim() : "";
-                                artist = a != null ? a.toString().trim() : "";
-                                album = al != null ? al.toString().trim() : "";
+                            track = t != null ? t.toString().trim() : "";
+                            artist = a != null ? a.toString().trim() : "";
+                            album = al != null ? al.toString().trim() : "";
 
-                                String artUri = meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI);
-                                if (artUri != null && (artUri.startsWith("http://") || artUri.startsWith("https://"))) {
-                                    albumArt = artUri;
-                                } else {
-                                    Bitmap bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
-                                    if (bmp == null) {
-                                        bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ART);
-                                    }
-                                    if (bmp != null) {
-                                        albumArt = bitmapToSmallJpegUri(bmp, 160);
-                                    }
+                            String artUri = meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI);
+                            if (artUri != null && (artUri.startsWith("http://") || artUri.startsWith("https://"))) {
+                                albumArt = artUri;
+                            } else {
+                                Bitmap bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+                                if (bmp == null) {
+                                    bmp = meta.getBitmap(MediaMetadata.METADATA_KEY_ART);
+                                }
+                                if (bmp != null) {
+                                    albumArt = bitmapToSmallJpegUri(bmp, 160);
                                 }
                             }
+                        }
 
+                        if (!track.isEmpty()) {
                             JSObject res = new JSObject();
-                            res.put("isPlaying", playing && !track.isEmpty());
+                            res.put("isPlaying", playing);
                             res.put("track", track);
                             res.put("artist", artist);
                             res.put("album", album);
                             res.put("albumArt", albumArt);
                             res.put("source", "android-session");
-                            res.put("hasListenerPermission", true);
+                            res.put("hasListenerPermission", hasPermission);
                             return res;
                         }
                     }
                 }
-            } catch (Exception ignored) {
             }
+        } catch (Exception ignored) {
         }
 
+        // 2. Fallback: notificación activa de Spotify capturada por VoraMediaListenerService
+        if (VoraMediaListenerService.latestNotificationActive
+            && !VoraMediaListenerService.latestNotificationTrack.isEmpty()
+            && musicAudioActive) {
+            JSObject notifRes = new JSObject();
+            notifRes.put("isPlaying", true);
+            notifRes.put("track", VoraMediaListenerService.latestNotificationTrack);
+            notifRes.put("artist", VoraMediaListenerService.latestNotificationArtist);
+            notifRes.put("album", "");
+            notifRes.put("albumArt", "");
+            notifRes.put("source", "android-session");
+            notifRes.put("hasListenerPermission", hasPermission);
+            return notifRes;
+        }
+
+        // 3. Fallback: broadcasts directos de Spotify
         JSObject broadcastRes = new JSObject();
-        broadcastRes.put("isPlaying", broadcastPlaying && !broadcastTrack.isEmpty());
+        broadcastRes.put("isPlaying", (broadcastPlaying || musicAudioActive) && !broadcastTrack.isEmpty());
         broadcastRes.put("track", broadcastTrack);
         broadcastRes.put("artist", broadcastArtist);
         broadcastRes.put("album", broadcastAlbum);
@@ -1119,5 +1156,49 @@ public class LauncherPlugin extends Plugin {
         } catch (Exception ignored) {
             return "";
         }
+    }
+
+    @PluginMethod
+    public void setKeepScreenOn(PluginCall call) {
+        boolean enabled = call.getBoolean("enabled", true);
+        Activity activity = getActivity();
+        if (activity == null) {
+            JSObject res = new JSObject();
+            res.put("ok", false);
+            call.resolve(res);
+            return;
+        }
+        activity.runOnUiThread(() -> {
+            if (enabled) {
+                activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+            JSObject res = new JSObject();
+            res.put("ok", true);
+            call.resolve(res);
+        });
+    }
+
+    public static String getLatestSpotifyTrackIfPlaying(Context context) {
+        if (context == null) return "";
+        try {
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            boolean musicActive = am != null && am.isMusicActive();
+            if (!musicActive) return "";
+
+            LauncherPlugin instance = activeInstanceRef != null ? activeInstanceRef.get() : null;
+            if (instance != null) {
+                JSObject obj = instance.resolveSpotifyNowPlaying(context.getApplicationContext());
+                if (obj.optBoolean("isPlaying", false)) {
+                    return obj.optString("track", "");
+                }
+            }
+            if (VoraMediaListenerService.latestNotificationActive) {
+                return VoraMediaListenerService.latestNotificationTrack;
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
     }
 }

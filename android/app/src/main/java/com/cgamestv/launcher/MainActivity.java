@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.view.WindowManager;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
@@ -17,6 +18,9 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(LauncherPlugin.class);
         super.onCreate(savedInstanceState);
+
+        // Evitar que el salvapantallas nativo de Google TV (Backdrop) se active encima de VORA TV OS
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // En un Launcher real, el botón Atrás navega dentro de la interfaz TV y nunca cierra el Home
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -53,6 +57,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (hasPausedOnce) {
             hasPausedOnce = false;
             dispatchResumeEvent("app_resume");

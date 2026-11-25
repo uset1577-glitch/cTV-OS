@@ -120,10 +120,18 @@ export function useSpotifyNowPlaying(isScreensaverActive: boolean) {
       }
     };
 
+    const handleResumeOrFocus = () => {
+      void refreshSpotify();
+    };
+
     window.addEventListener('message', handleMessage);
+    window.addEventListener('voraTvResume', handleResumeOrFocus);
+    window.addEventListener('focus', handleResumeOrFocus);
     return () => {
       if (unsubNative) unsubNative();
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('voraTvResume', handleResumeOrFocus);
+      window.removeEventListener('focus', handleResumeOrFocus);
     };
   }, [fetchWebConfig, isNative, refreshSpotify]);
 

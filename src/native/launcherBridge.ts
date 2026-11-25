@@ -16,7 +16,8 @@ export interface LauncherNativePlugin {
     url: string;
     packageName?: string;
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
-  openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'unknown_sources' }): Promise<{ opened: boolean }>;
+  openSettings(options: { section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources' }): Promise<{ opened: boolean }>;
+  setKeepScreenOn(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
   getRemoteConfig(options: { repo: string }): Promise<LauncherRemoteStatus>;
@@ -100,7 +101,7 @@ export async function launchSuggestionUri(
 }
 
 export async function openTvSettings(
-  section: 'settings' | 'wifi' | 'home' | 'unknown_sources'
+  section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources'
 ): Promise<boolean> {
   if (isNativeAndroid()) {
     try {
@@ -111,6 +112,16 @@ export async function openTvSettings(
     }
   }
   return false;
+}
+
+export async function setNativeKeepScreenOn(enabled: boolean): Promise<void> {
+  if (isNativeAndroid()) {
+    try {
+      await LauncherNative.setKeepScreenOn({ enabled });
+    } catch {
+      // Silencioso
+    }
+  }
 }
 
 export async function getCurrentAppVersion(): Promise<AppVersionInfo> {

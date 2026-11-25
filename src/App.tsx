@@ -31,6 +31,7 @@ import {
   launchAndroidApp,
   launchSuggestionUri,
   openTvSettings,
+  setNativeKeepScreenOn,
   startAppUpdateInstall,
 } from './native/launcherBridge';
 import {
@@ -136,11 +137,7 @@ export default function App() {
 
   const {
     nowPlaying: spotifyNowPlaying,
-    webStatus: spotifyWebStatus,
-    connectSpotify,
-    disconnectSpotify,
     refreshSpotify,
-    openAndroidSpotifyPermission,
   } = useSpotifyNowPlaying(isScreensaverActive);
 
   const activateScreensaver = useCallback(() => {
@@ -185,6 +182,12 @@ export default function App() {
       window.removeEventListener('pointerdown', handleActivity);
     };
   }, [resetScreensaverTimer]);
+
+  // Mantener pantalla encendida en Android TV mientras VORA TV OS / Salvapantallas esté activo
+  // para impedir que el salvapantallas de Google TV se superponga
+  useEffect(() => {
+    void setNativeKeepScreenOn(true);
+  }, [isScreensaverActive]);
   const [remoteStatus, setRemoteStatus] = useState<LauncherRemoteStatus>({
     maintenanceMode: false,
     appsOnlyMode: false,
@@ -544,7 +547,7 @@ export default function App() {
   );
 
   const handleOpenAndroidSettings = useCallback(
-    async (section: 'settings' | 'wifi' | 'home' | 'unknown_sources') => {
+    async (section: 'settings' | 'wifi' | 'home' | 'screensaver' | 'unknown_sources') => {
       const opened = await openTvSettings(section);
       if (!opened) {
         showToast('Disponible al ejecutar el APK compilado en tu Android TV.');
@@ -770,23 +773,9 @@ export default function App() {
         appVersion={appVersion}
         isNative={isNative}
         isMaintenanceForced={isMaintenanceForced}
-        spotify={spotifyNowPlaying}
-        spotifyWebStatus={spotifyWebStatus}
         onUpdateSettings={updateSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
         onOpenUpdateModal={handleOpenUpdateModal}
-        onOpenScreensaver={activateScreensaver}
-        onConnectSpotify={() => {
-          void connectSpotify().then((res) => {
-            if (!res.ok && res.error) showToast(res.error);
-          });
-        }}
-        onDisconnectSpotify={() => void disconnectSpotify()}
-        onOpenSpotifyPermission={() => {
-          void openAndroidSpotifyPermission().then((opened) => {
-            if (!opened) showToast('Abre Ajustes > Aplicaciones > Acceso especial en tu Android TV.');
-          });
-        }}
         onClose={() => closeOverlayToHome('top-settings')}
       />
 

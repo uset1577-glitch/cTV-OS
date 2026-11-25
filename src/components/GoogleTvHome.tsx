@@ -78,7 +78,7 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
     >
       <div
         data-tv-focus-box="true"
-        className="tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full overflow-hidden bg-slate-200 dark:bg-zinc-800 border-2 border-white/25 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white flex items-center justify-center shadow-md"
+        className="tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-white/25 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white p-1.5 flex items-center justify-center shadow-md"
       >
         {app.icon && !imgErr ? (
           <img
@@ -87,7 +87,7 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
             decoding="async"
             referrerPolicy="no-referrer"
             onError={() => setImgErr(true)}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain rounded-[16px]"
           />
         ) : (
           <AppWindow className="w-8 h-8 text-slate-400" />
@@ -133,7 +133,7 @@ const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
     >
       <div
         data-tv-focus-box="true"
-        className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200 dark:bg-zinc-800 flex items-center justify-center shrink-0"
+        className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 p-1.5 flex items-center justify-center shrink-0"
       >
         {app.icon && !imgErr ? (
           <img
@@ -143,7 +143,7 @@ const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
             decoding="async"
             referrerPolicy="no-referrer"
             onError={() => setImgErr(true)}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain rounded-[10px]"
           />
         ) : (
           <AppWindow className="w-7 h-7 text-slate-400" />
@@ -588,7 +588,7 @@ export function GoogleTvHome({
             >
               <div
                 data-tv-focus-box="true"
-                className="apps-all-circle tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
+                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
               >
                 <LayoutGrid className="w-7 h-7" />
               </div>
@@ -853,7 +853,7 @@ export function GoogleTvHome({
             >
               <div
                 data-tv-focus-box="true"
-                className="apps-all-circle tv-focusable w-[82px] h-[82px] lg:w-[86px] lg:h-[86px] rounded-full border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
+                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
               >
                 <LayoutGrid className="w-7 h-7" />
               </div>

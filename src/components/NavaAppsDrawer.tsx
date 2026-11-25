@@ -182,7 +182,7 @@ export function NavaAppsDrawer({
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-5">
                 {Array.from({ length: 14 }).map((_, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-3 py-3">
-                    <div className="w-24 h-24 rounded-full bg-slate-900/10 dark:bg-white/8 animate-pulse" />
+                    <div className="w-24 h-24 rounded-[22px] bg-slate-900/10 dark:bg-white/8 animate-pulse" />
                     <div className="w-20 h-3 rounded bg-slate-900/10 dark:bg-white/8 animate-pulse" />
                   </div>
                 ))}
