@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.cgamestv.launcher',
+  appId: 'com.vora.tv',
   appName: 'VORA TV OS',
   webDir: 'dist',
   android: {

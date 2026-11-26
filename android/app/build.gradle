@@ -4,11 +4,11 @@ def resolvedVersionCode = project.hasProperty('appVersionCode') ? project.proper
 def resolvedVersionName = project.hasProperty('appVersionName') ? project.property('appVersionName').toString() : "1.0.0"
 
 android {
-    namespace = "com.cgamestv.launcher"
+    namespace = "com.vora.tv"
     compileSdk = rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "com.cgamestv.launcher"
+        applicationId "com.vora.tv"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode resolvedVersionCode

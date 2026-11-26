@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppWindow,
-  ExternalLink,
   LayoutGrid,
   Play,
   ShieldAlert,
@@ -1017,7 +1016,19 @@ export const GoogleTvHome = memo(function GoogleTvHome({
             aria-label="Destacado de hoy"
             data-tv-row="hero"
             data-tv-scroll-top="true"
-            className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 will-change-[opacity,transform] origin-top-left"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (spotlightList.length > 1) {
+                if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length);
+                } else if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  setHeroIdx((prev) => (prev + 1) % spotlightList.length);
+                }
+              }
+            }}
+            className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 will-change-[opacity,transform] origin-top-left outline-none"
           >
             <div className="max-w-2xl">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
@@ -1068,28 +1079,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                       : `Ver en ${heroAppName}`}
                   </span>
                 </button>
-
-                {activeHero.packageName !== FEATURED_GAME.packageName && (
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="hero-open-app"
-                    onClick={handleHeroOpenApp}
-                    className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/55 border border-white/25 text-white text-sm font-semibold focus:bg-white focus:text-zinc-950 focus:border-white focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
-                  >
-                    {heroMatchedApp?.icon ? (
-                      <img
-                        src={heroMatchedApp.icon}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        className="w-4 h-4 rounded object-contain shrink-0"
-                      />
-                    ) : (
-                      <ExternalLink className="w-4 h-4 shrink-0" />
-                    )}
-                    <span>Ir a {heroAppName}</span>
-                  </button>
-                )}
 
               </div>
             </div>
