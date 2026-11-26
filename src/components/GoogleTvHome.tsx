@@ -1,8 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppWindow,
-  ChevronLeft,
-  ChevronRight,
+  ExternalLink,
   LayoutGrid,
   Play,
   ShieldAlert,
@@ -248,9 +247,11 @@ const MoviePosterCard = memo(function MoviePosterCard({
         <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
           {movie.title}
         </div>
-        <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-          {movie.genre || movie.tag}
-          {movie.releaseDate ? ` · ${movie.releaseDate}` : ''}
+        <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5 tabular-nums">
+          {[movie.appName, movie.releaseDate, movie.genre || movie.tag]
+            .filter(Boolean)
+            .slice(0, 2)
+            .join(' · ')}
         </div>
       </div>
     </button>
@@ -307,7 +308,7 @@ const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
           {show.title}
         </div>
         <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-          {show.tag} · {show.subtitle}
+          {show.appName || show.tag} · {show.subtitle}
         </div>
       </div>
     </button>
@@ -641,15 +642,37 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     };
   }, []);
 
+  const heroResolvedPkg = activeHero ? resolvePackageAlias(activeHero.packageName, allApps) : '';
+  const heroMatchedApp = heroResolvedPkg
+    ? allApps.find((a) => a.packageName === heroResolvedPkg)
+    : undefined;
+  const heroAppName = heroMatchedApp?.name || activeHero?.appName || 'App';
+
   const handleHeroLaunch = useCallback(() => {
     if (!activeHero) return;
     if (activeHero.packageName === FEATURED_GAME.packageName) {
       onLaunchFeatured();
       return;
     }
-    const resolvedPkg = resolvePackageAlias(activeHero.packageName, allApps);
-    onLaunchSuggestion({ ...activeHero, packageName: resolvedPkg });
-  }, [activeHero, allApps, onLaunchFeatured, onLaunchSuggestion]);
+    onLaunchSuggestion({ ...activeHero, packageName: heroResolvedPkg });
+  }, [activeHero, heroResolvedPkg, onLaunchFeatured, onLaunchSuggestion]);
+
+  const handleHeroOpenApp = useCallback(() => {
+    if (!activeHero) return;
+    if (activeHero.packageName === FEATURED_GAME.packageName) {
+      onLaunchFeatured();
+      return;
+    }
+    if (heroMatchedApp) {
+      onLaunchApp(heroMatchedApp);
+      return;
+    }
+    onLaunchSuggestion({
+      ...activeHero,
+      deepLinkUrl: '',
+      packageName: heroResolvedPkg || activeHero.packageName,
+    });
+  }, [activeHero, heroMatchedApp, heroResolvedPkg, onLaunchApp, onLaunchFeatured, onLaunchSuggestion]);
 
   const handleCircleLaunch = useCallback(
     (clicked: InstalledApp) => {
@@ -998,7 +1021,13 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           >
             <div className="max-w-2xl">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
-                <span>{activeHero.tag}</span>
+                <span className="font-semibold text-white">{heroAppName}</span>
+                {(activeHero.genre || (activeHero.tag && activeHero.tag !== heroAppName)) && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{activeHero.genre || activeHero.tag}</span>
+                  </>
+                )}
                 {activeHero.releaseDate && (
                   <>
                     <span aria-hidden="true">·</span>
@@ -1024,7 +1053,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   data-tv-focusable="true"
@@ -1036,55 +1065,34 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                   <span>
                     {activeHero.packageName === FEATURED_GAME.packageName
                       ? 'Jugar ahora'
-                      : isNative
-                        ? 'Ver tráiler en YouTube'
-                        : 'Ver tráiler'}
+                      : `Ver en ${heroAppName}`}
                   </span>
                 </button>
 
-                {spotlightList.length > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      data-tv-focusable="true"
-                      data-tv-id="hero-prev"
-                      aria-label="Destacado anterior"
-                      onClick={() =>
-                        setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length)
-                      }
-                      className="tv-focusable w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      data-tv-focusable="true"
-                      data-tv-id="hero-next"
-                      aria-label="Siguiente destacado"
-                      onClick={() => setHeroIdx((prev) => (prev + 1) % spotlightList.length)}
-                      className="tv-focusable w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center focus:bg-white focus:text-zinc-950 focus:scale-110"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                {activeHero.packageName !== FEATURED_GAME.packageName && (
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="hero-open-app"
+                    onClick={handleHeroOpenApp}
+                    className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/55 border border-white/25 text-white text-sm font-semibold focus:bg-white focus:text-zinc-950 focus:border-white focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
+                  >
+                    {heroMatchedApp?.icon ? (
+                      <img
+                        src={heroMatchedApp.icon}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        className="w-4 h-4 rounded object-contain shrink-0"
+                      />
+                    ) : (
+                      <ExternalLink className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>Ir a {heroAppName}</span>
+                  </button>
                 )}
+
               </div>
             </div>
-
-            {spotlightList.length > 1 && (
-              <div className="flex items-center gap-1.5 pb-1 shrink-0">
-                {spotlightList.map((item, idx) => (
-                  <span
-                    key={item.id}
-                    className={`h-1.5 rounded-full ${
-                      idx === heroIdx % spotlightList.length
-                        ? 'w-6 bg-white'
-                        : 'w-1.5 bg-white/40'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
           </section>
         )}
 

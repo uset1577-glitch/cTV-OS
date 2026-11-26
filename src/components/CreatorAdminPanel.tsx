@@ -22,7 +22,7 @@ import {
 import type { LauncherRemoteStatus } from '../types/launcher';
 
 const CREATOR_KEY = '2026';
-const AUTH_SESSION_KEY = 'cgamestv_creator_authenticated';
+const AUTH_SESSION_KEY = 'vora_creator_authenticated';
 
 interface CreatorAdminPanelProps {
   onExit: () => void;

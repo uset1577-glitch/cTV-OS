@@ -128,7 +128,7 @@ public class LauncherPlugin extends Plugin {
 
                 Map<String, AppRecord> appMap = new LinkedHashMap<>();
 
-                // 1. Consultar primero apps optimizadas para Android TV (LEANBACK_LAUNCHER)
+                // 1. Consultar primero apps optimizadas para Android TV (LEANBACK_LAUNCHER) excluyendo apps del sistema
                 Intent leanbackIntent = new Intent(Intent.ACTION_MAIN);
                 leanbackIntent.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
                 List<ResolveInfo> leanbackApps = pm.queryIntentActivities(leanbackIntent, 0);
@@ -136,10 +136,11 @@ public class LauncherPlugin extends Plugin {
                     if (info.activityInfo == null) continue;
                     String pkg = info.activityInfo.packageName;
                     if (pkg.equals(selfPackage)) continue;
+                    if (isHiddenSystemApp(info.activityInfo.applicationInfo, pkg)) continue;
                     appMap.putIfAbsent(pkg, buildAppRecord(pm, info, true));
                 }
 
-                // 2. Consultar apps estándar (LAUNCHER) para cubrir sideloads y utilidades
+                // 2. Consultar apps estándar (LAUNCHER) para sideloads de usuario, excluyendo apps del sistema
                 Intent launcherIntent = new Intent(Intent.ACTION_MAIN);
                 launcherIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                 List<ResolveInfo> standardApps = pm.queryIntentActivities(launcherIntent, 0);
@@ -147,6 +148,7 @@ public class LauncherPlugin extends Plugin {
                     if (info.activityInfo == null) continue;
                     String pkg = info.activityInfo.packageName;
                     if (pkg.equals(selfPackage)) continue;
+                    if (isHiddenSystemApp(info.activityInfo.applicationInfo, pkg)) continue;
                     appMap.putIfAbsent(pkg, buildAppRecord(pm, info, false));
                 }
 
@@ -809,13 +811,37 @@ public class LauncherPlugin extends Plugin {
         notifyListeners("otaDownloadProgress", data);
     }
 
+    private static boolean isAllowedPreinstalledStreamingApp(String pkg) {
+        if (pkg == null) return false;
+        String lower = pkg.toLowerCase(Locale.ROOT);
+        return lower.equals("com.google.android.youtube.tv")
+            || lower.equals("com.google.android.youtube.tvmusic")
+            || lower.equals("com.netflix.ninja")
+            || lower.equals("com.amazon.amazonvideo.livingroom")
+            || lower.equals("com.amazon.avod.thirdpartyclient")
+            || lower.equals("com.disney.disneyplus")
+            || lower.equals("com.wbd.stream")
+            || lower.equals("com.hbo.hbonow")
+            || lower.equals("com.hbomax")
+            || lower.equals("com.spotify.tv.android")
+            || lower.equals("com.apple.atve.androidtv.appletv")
+            || lower.equals("com.mandoparty.tv");
+    }
+
+    private static boolean isHiddenSystemApp(ApplicationInfo appInfo, String pkg) {
+        if (isAllowedPreinstalledStreamingApp(pkg)) {
+            return false;
+        }
+        return appInfo != null && (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+    }
+
     private AppRecord buildAppRecord(PackageManager pm, ResolveInfo info, boolean isLeanback) {
         String pkg = info.activityInfo.packageName;
         CharSequence labelCs = info.loadLabel(pm);
         String name = labelCs != null ? labelCs.toString().trim() : pkg;
 
         ApplicationInfo appInfo = info.activityInfo.applicationInfo;
-        boolean isSystem = appInfo != null && (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+        boolean isSystem = isHiddenSystemApp(appInfo, pkg);
 
         String category = "other";
         if (appInfo != null) {

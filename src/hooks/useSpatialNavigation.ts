@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 interface SpatialNavigationOptions {
   enabled?: boolean;
   onBack?: () => void;
+  onReachTopBoundary?: (info: { currentElement: HTMLElement | null; centerX: number }) => void;
   scopeSelector?: string;
 }
 
@@ -40,6 +41,12 @@ function isVisibleFocusable(el: HTMLElement, rectCache?: Map<HTMLElement, DOMRec
   return rect.width > 0 && rect.height > 0;
 }
 
+function isLayoutVisible(el: HTMLElement): boolean {
+  if (el.offsetParent !== null) return true;
+  // Elements with position: fixed (e.g. NavaTopBar) always have offsetParent === null
+  return el.getClientRects().length > 0;
+}
+
 function getFocusableElements(
   scopeSelector?: string,
   rectCache?: Map<HTMLElement, DOMRect>
@@ -51,7 +58,7 @@ function getFocusableElements(
   const nodes = Array.from(root.querySelectorAll<HTMLElement>('[data-tv-focusable="true"]'));
   return nodes.filter((el) => {
     if (isElementDisabledOrHidden(el)) return false;
-    if (el.offsetParent === null || isHiddenByAncestors(el)) return false;
+    if (!isLayoutVisible(el) || isHiddenByAncestors(el)) return false;
     const rect = getRect(el, rectCache);
     return rect.width > 0 && rect.height > 0;
   });
@@ -229,6 +236,10 @@ function recordRowFocus(
   if (!rowEl) return;
   const rowKey = rowEl.dataset.tvRow;
   if (!rowKey) return;
+  if (rowEl.dataset.tvNoMemory === 'true') {
+    rowMemory.delete(rowKey);
+    return;
+  }
 
   const items = knownItems || getRowItemsFast(rowEl);
   const index = items.indexOf(el);
@@ -267,8 +278,9 @@ function restoreRowFocus(
   const { rowEl, items } = targetEntry;
   if (items.length === 0) return null;
 
+  const noMemory = rowEl.dataset.tvNoMemory === 'true';
   const rowKey = rowEl.dataset.tvRow;
-  const saved = rowKey ? rowMemory.get(rowKey) : undefined;
+  const saved = !noMemory && rowKey ? rowMemory.get(rowKey) : undefined;
 
   if (rowEl.dataset.tvRowType === 'grid') {
     let edgeY = direction === 'down' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
@@ -320,7 +332,7 @@ function getVisibleRows(scopeSelector?: string): HTMLElement[] {
   const visible: HTMLElement[] = [];
   for (let i = 0; i < rawRows.length; i++) {
     const rowEl = rawRows[i];
-    if (rowEl.offsetParent !== null && !isHiddenByAncestors(rowEl)) {
+    if (isLayoutVisible(rowEl) && !isHiddenByAncestors(rowEl)) {
       visible.push(rowEl);
     }
   }
@@ -336,9 +348,24 @@ function findNextElement(
 ): { next: HTMLElement | null; nextRowItems?: HTMLElement[]; hasAnyCandidates?: boolean } {
   const currentRow = current?.isConnected ? current.closest<HTMLElement>('[data-tv-row]') : null;
 
-  if (current && currentRow && !isHiddenByAncestors(currentRow) && currentRow.offsetParent !== null) {
+  if (current && currentRow && !isHiddenByAncestors(currentRow) && isLayoutVisible(currentRow)) {
     const isGrid = currentRow.dataset.tvRowType === 'grid';
     const currentItems = getRowItemsFast(currentRow);
+    const allowHorizontalExit = currentRow.dataset.tvAllowHorizontalExit === 'true';
+    const currentPane = currentRow.closest<HTMLElement>('[data-tv-pane]');
+
+    const tryHorizontalPaneExit = (): HTMLElement | null => {
+      if (!allowHorizontalExit) return null;
+      const allCandidates = getFocusableElements(scopeSelector, rectCache);
+      const externalCandidates = allCandidates.filter((el) => {
+        if (currentPane) {
+          return !currentPane.contains(el) && Boolean(el.closest('[data-tv-pane]'));
+        }
+        return !currentRow.contains(el);
+      });
+      if (externalCandidates.length === 0) return null;
+      return findNextGeometric(current, direction, externalCandidates, rectCache);
+    };
 
     // Ruta rápida horizontal O(1) dentro de filas estándar (sin medir todo el documento)
     if (!isGrid && (direction === 'left' || direction === 'right')) {
@@ -366,18 +393,26 @@ function findNextElement(
           const cx = r.left + r.width / 2;
           return direction === 'right' ? cx > currCx + 4 : cx < currCx - 4;
         });
+        const inRow = pickClosestHorizontally(directional, currCx, rectCache);
+        if (inRow) {
+          return {
+            next: inRow,
+            nextRowItems: currentItems,
+            hasAnyCandidates: true,
+          };
+        }
         return {
-          next: pickClosestHorizontally(directional, currCx, rectCache),
-          nextRowItems: currentItems,
+          next: tryHorizontalPaneExit(),
           hasAnyCandidates: true,
         };
       }
     }
 
     if (isGrid && (direction === 'left' || direction === 'right')) {
+      const inGrid = findNextInGrid(current, direction, currentItems, rectCache);
       return {
-        next: findNextInGrid(current, direction, currentItems, rectCache),
-        nextRowItems: currentItems,
+        next: inGrid || tryHorizontalPaneExit(),
+        nextRowItems: inGrid ? currentItems : undefined,
         hasAnyCandidates: true,
       };
     }
@@ -390,23 +425,79 @@ function findNextElement(
     }
 
     if (direction === 'left' || direction === 'right') {
-      return { next: null, hasAnyCandidates: true };
+      return { next: tryHorizontalPaneExit(), hasAnyCandidates: true };
     }
 
-    // Navegación vertical: solo inspecciona filas visibles, sin consultar tarjetas de otras filas
+    // Navegación vertical: solo inspecciona filas visibles dentro del mismo panel o compartidas
     const visibleRows = getVisibleRows(scopeSelector);
-    const rowIndex = visibleRows.indexOf(currentRow);
+    const scopedRows = currentPane
+      ? visibleRows.filter((r) => {
+          const pane = r.closest<HTMLElement>('[data-tv-pane]');
+          return pane === currentPane || pane === null;
+        })
+      : visibleRows;
+
+    const rowIndex = scopedRows.indexOf(currentRow);
     if (rowIndex !== -1) {
       recordRowFocus(current, rowMemory, currentItems, rectCache);
 
+      const currRect = getRect(current, rectCache);
+      const currCx = currRect.left + currRect.width / 2;
+
+      // Al bajar desde una barra superior compartida hacia paneles lado a lado, elegir el panel alineado horizontalmente
+      if (!currentPane && direction === 'down') {
+        const paneFirstRow = new Map<HTMLElement, { rowEl: HTMLElement; items: HTMLElement[] }>();
+        for (let idx = rowIndex + 1; idx < scopedRows.length; idx++) {
+          const candRow = scopedRows[idx];
+          const pane = candRow.closest<HTMLElement>('[data-tv-pane]');
+          if (!pane) break;
+          if (paneFirstRow.has(pane)) continue;
+          const items = getRowItemsFast(candRow);
+          if (items.length > 0) {
+            paneFirstRow.set(pane, { rowEl: candRow, items });
+          }
+        }
+
+        if (paneFirstRow.size > 1) {
+          let bestEntry: { rowEl: HTMLElement; items: HTMLElement[] } | null = null;
+          let bestScore = Number.POSITIVE_INFINITY;
+          for (const [pane, entry] of paneFirstRow.entries()) {
+            const paneRect = getRect(pane, rectCache);
+            const rowRect = getRect(entry.rowEl, rectCache);
+            const horizDist =
+              currCx < paneRect.left
+                ? paneRect.left - currCx
+                : currCx > paneRect.right
+                  ? currCx - paneRect.right
+                  : 0;
+            const vertDist = Math.max(0, rowRect.top - currRect.bottom);
+            const score = vertDist + horizDist * 1.5;
+            if (score < bestScore) {
+              bestScore = score;
+              bestEntry = entry;
+            }
+          }
+          if (bestEntry) {
+            const restored = restoreRowFocus(
+              bestEntry,
+              'down',
+              currCx,
+              rowMemory,
+              rectCache
+            );
+            if (restored) {
+              return { next: restored, nextRowItems: bestEntry.items, hasAnyCandidates: true };
+            }
+          }
+        }
+      }
+
       const step = direction === 'up' ? -1 : 1;
-      for (let idx = rowIndex + step; idx >= 0 && idx < visibleRows.length; idx += step) {
-        const targetRow = visibleRows[idx];
+      for (let idx = rowIndex + step; idx >= 0 && idx < scopedRows.length; idx += step) {
+        const targetRow = scopedRows[idx];
         const targetItems = getRowItemsFast(targetRow);
         if (targetItems.length === 0) continue;
 
-        const currRect = getRect(current, rectCache);
-        const currCx = currRect.left + currRect.width / 2;
         const restored = restoreRowFocus(
           { rowEl: targetRow, items: targetItems },
           direction,
@@ -744,19 +835,52 @@ export function focusElementById(id: string): boolean {
   return false;
 }
 
+export function focusClosestInRow(
+  rowEl: HTMLElement | null,
+  targetX?: number,
+  fallbackId?: string
+): boolean {
+  if (!rowEl || isHiddenByAncestors(rowEl) || !isLayoutVisible(rowEl)) return false;
+  const items = getRowItemsFast(rowEl);
+  if (items.length === 0) return false;
+
+  if (targetX !== undefined) {
+    const closest = pickClosestHorizontally(items, targetX);
+    if (closest) {
+      closest.focus({ preventScroll: true });
+      return true;
+    }
+  }
+
+  if (fallbackId) {
+    const byId = items.find((item) => item.dataset.tvId === fallbackId);
+    if (byId) {
+      byId.focus({ preventScroll: true });
+      return true;
+    }
+  }
+
+  items[0].focus({ preventScroll: true });
+  return true;
+}
+
 export function useSpatialNavigation({
   enabled = true,
   onBack,
+  onReachTopBoundary,
   scopeSelector,
 }: SpatialNavigationOptions) {
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
   const onBackRef = useRef(onBack);
   onBackRef.current = onBack;
+  const onReachTopBoundaryRef = useRef(onReachTopBoundary);
+  onReachTopBoundaryRef.current = onReachTopBoundary;
   const rowMemoryRef = useRef<Map<string, RowFocusMemory>>(new Map());
   const lastFocusedRowKeyRef = useRef<string | null>(null);
   const lastPointerDownAtRef = useRef<number>(0);
   const lastRememberedElRef = useRef<HTMLElement | null>(null);
+  const lastCenterXRef = useRef<number | null>(null);
   const programmaticFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -768,6 +892,10 @@ export function useSpatialNavigation({
       rectCache?: Map<HTMLElement, DOMRect>
     ) => {
       lastRememberedElRef.current = el;
+      const rect = getRect(el, rectCache);
+      if (rect.width > 0) {
+        lastCenterXRef.current = rect.left + rect.width / 2;
+      }
       recordRowFocus(el, rowMemoryRef.current, knownItems, rectCache);
       const rowKey = el.closest<HTMLElement>('[data-tv-row]')?.dataset.tvRow;
       if (rowKey) {
@@ -818,7 +946,7 @@ export function useSpatialNavigation({
             const restored = restoreRowFocus(
               { rowEl: targetRow, items },
               'down',
-              saved?.centerX ?? window.innerWidth * 0.25,
+              saved?.centerX ?? lastCenterXRef.current ?? window.innerWidth * 0.25,
               rowMemoryRef.current,
               rectCache
             );
@@ -961,6 +1089,12 @@ export function useSpatialNavigation({
         );
         if (next) {
           navigateToTarget(next, nextRowItems, rectCache);
+        } else if (direction === 'up' && onReachTopBoundaryRef.current) {
+          const activeRect = active ? getRect(active, rectCache) : null;
+          const centerX = activeRect
+            ? activeRect.left + activeRect.width / 2
+            : window.innerWidth * 0.25;
+          onReachTopBoundaryRef.current({ currentElement: active, centerX });
         } else if (hasAnyCandidates && (!active || !active.isConnected || active === document.body)) {
           restoreAfterDomChange();
         }
@@ -1034,6 +1168,10 @@ export function useSpatialNavigation({
       document.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      rowMemoryRef.current.clear();
+      lastFocusedRowKeyRef.current = null;
+      lastRememberedElRef.current = null;
+      lastCenterXRef.current = null;
     };
   }, [enabled, scopeSelector]);
 }

@@ -38,7 +38,7 @@ export async function testFirestoreConnection(): Promise<boolean> {
   }
 }
 
-const CACHE_KEY = 'cgamestv_remote_status_cache';
+const CACHE_KEY = 'vora_remote_status_cache';
 
 export function clearCachedLauncherStatus(): void {
   try {

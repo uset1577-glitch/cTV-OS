@@ -1,7 +1,13 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Download, Monitor, Moon, Search, Settings, Sun } from 'lucide-react';
+import { focusClosestInRow } from '../hooks/useSpatialNavigation';
 import type { HomeTab, ThemeMode } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
+
+export interface TopBarFocusRequest {
+  seq: number;
+  targetX?: number;
+}
 
 interface NavaTopBarProps {
   activeTab: HomeTab;
@@ -11,6 +17,7 @@ interface NavaTopBarProps {
   isVisible: boolean;
   isOverHero?: boolean;
   appsOnlyMode?: boolean;
+  focusRequest?: TopBarFocusRequest | null;
   onSelectTab: (tab: HomeTab) => void;
   onToggleTheme: () => void;
   onOpenScreensaver: () => void;
@@ -27,6 +34,7 @@ export const NavaTopBar = memo(function NavaTopBar({
   isVisible,
   isOverHero = false,
   appsOnlyMode = false,
+  focusRequest = null,
   onSelectTab,
   onToggleTheme,
   onOpenScreensaver,
@@ -35,11 +43,39 @@ export const NavaTopBar = memo(function NavaTopBar({
   onOpenSettings,
 }: NavaTopBarProps) {
   const [now, setNow] = useState(() => new Date());
+  const headerRef = useRef<HTMLElement | null>(null);
+  const pendingFocusRef = useRef<TopBarFocusRequest | null>(null);
+  const lastHandledSeqRef = useRef<number>(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 10_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!focusRequest || focusRequest.seq === lastHandledSeqRef.current) return;
+    pendingFocusRef.current = focusRequest;
+  }, [focusRequest]);
+
+  useEffect(() => {
+    const pending = pendingFocusRef.current;
+    if (!isVisible || !pending || pending.seq === lastHandledSeqRef.current) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      if (!headerRef.current) return;
+      const focused = focusClosestInRow(
+        headerRef.current,
+        pending.targetX,
+        `top-tab-${activeTab}`
+      );
+      if (focused) {
+        lastHandledSeqRef.current = pending.seq;
+        pendingFocusRef.current = null;
+      }
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isVisible, focusRequest, activeTab]);
 
   const formattedTime = now.toLocaleTimeString('es-ES', {
     hour: '2-digit',
@@ -62,6 +98,7 @@ export const NavaTopBar = memo(function NavaTopBar({
 
   return (
     <header
+      ref={headerRef}
       data-tv-row="topbar"
       data-tv-hidden={isVisible ? undefined : 'true'}
       aria-hidden={!isVisible}

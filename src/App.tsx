@@ -8,7 +8,7 @@ import { MaintenanceNoticeModal } from './components/MaintenanceNoticeModal';
 import { NavaAppsDrawer } from './components/NavaAppsDrawer';
 import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
-import { NavaTopBar } from './components/NavaTopBar';
+import { NavaTopBar, type TopBarFocusRequest } from './components/NavaTopBar';
 import { AppUpdateModal } from './components/AppUpdateModal';
 import { TvBootIntro } from './components/TvBootIntro';
 import { VoraScreensaver } from './components/VoraScreensaver';
@@ -26,6 +26,7 @@ import {
 } from './data/suggestions';
 import {
   focusElementById,
+  smoothScrollVerticalTo,
   useSpatialNavigation,
 } from './hooks/useSpatialNavigation';
 import { useSpotifyNowPlaying } from './hooks/useSpotifyNowPlaying';
@@ -65,7 +66,7 @@ import type {
   MusicServiceStatus,
 } from './types/launcher';
 
-const SETTINGS_STORAGE_KEY = 'cgamestv_launcher_settings_v2';
+const SETTINGS_STORAGE_KEY = 'vora_launcher_settings_v2';
 const DISMISSED_UPDATE_SESSION_KEY = 'vora_dismissed_update_version';
 
 function loadSavedSettings(): LauncherSettings {
@@ -115,10 +116,11 @@ export default function App() {
   const [appVersion, setAppVersion] = useState<AppVersionInfo>({
     versionName: '1.0.0',
     versionCode: 100,
-    packageName: 'com.cgamestv.launcher',
+    packageName: 'com.vora.tv',
   });
   const [isVersionLoaded, setIsVersionLoaded] = useState(false);
   const [topBarVisible, setTopBarVisible] = useState(true);
+  const [topBarFocusRequest, setTopBarFocusRequest] = useState<TopBarFocusRequest | null>(null);
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
   const lastCatalogFetchRef = useRef<number>(0);
   const lastCatalogDateRef = useRef<string>(getDailyDateKey());
@@ -617,13 +619,28 @@ export default function App() {
     });
   }, []);
 
-  const handlePlayBootIntro = useCallback(() => {
-    setOverlay('none');
-    setIsBootIntroActive(true);
-  }, []);
+  const handleReachTopBoundary = useCallback(
+    ({ currentElement, centerX }: { currentElement: HTMLElement | null; centerX: number }) => {
+      if (currentElement?.closest('[data-tv-row="topbar"]')) {
+        return;
+      }
+      const scrollContainer = document.querySelector<HTMLElement>(
+        '#gtv-home-shell [data-tv-scroll-container="true"]'
+      );
+      if (scrollContainer && scrollContainer.scrollTop > 0) {
+        smoothScrollVerticalTo(scrollContainer, 0);
+      }
+      setTopBarVisible(true);
+      setTopBarFocusRequest((prev) => ({
+        seq: (prev?.seq ?? 0) + 1,
+        targetX: centerX,
+      }));
+    },
+    []
+  );
 
   useSpatialNavigation({
-    enabled: overlay === 'none' && !isBootIntroActive && !isScreensaverActive,
+    enabled: overlay === 'none' && !isBootIntroActive && !isScreensaverActive && !showCreatorAdmin,
     onBack: () => {
       setTopBarVisible(true);
       if (activeTab !== 'inicio') {
@@ -635,6 +652,7 @@ export default function App() {
         focusElementById(`row-app-${FEATURED_GAME.packageName}`);
       }
     },
+    onReachTopBoundary: handleReachTopBoundary,
     scopeSelector: '#gtv-home-shell',
   });
 
@@ -921,6 +939,7 @@ export default function App() {
           isVisible={topBarVisible}
           isOverHero={activeTab === 'inicio' && !effectiveAppsOnly}
           appsOnlyMode={effectiveAppsOnly}
+          focusRequest={topBarFocusRequest}
           onSelectTab={handleSelectTab}
           onToggleTheme={handleToggleTheme}
           onOpenScreensaver={activateScreensaver}
@@ -1006,7 +1025,11 @@ export default function App() {
       <NavaSearchOverlay
         isOpen={overlay === 'search'}
         apps={apps}
+        liveCatalog={liveCatalog}
+        favoritePackages={settings.favoritePackages}
+        appsOnlyMode={effectiveAppsOnly}
         onLaunchApp={handleLaunchApp}
+        onLaunchSuggestion={handleLaunchSuggestionCb}
         onClose={() => closeOverlayToHome('top-search')}
       />
 
@@ -1020,16 +1043,13 @@ export default function App() {
         remoteVersionName={remoteManifest?.versionName}
         sleepTimerMinutes={sleepTimerMinutes}
         musicServiceStatus={musicServiceStatus}
-        catalogSource={liveCatalog.source}
         onUpdateSettings={updateSettings}
-        onRefreshCatalog={handleRefreshCatalogImmediate}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
         onCycleSleepTimer={handleCycleSleepTimer}
         onOpenScreensaver={() => {
           setOverlay('none');
           activateScreensaver();
         }}
-        onPlayBootIntro={handlePlayBootIntro}
         onOpenAccessibilitySettings={() => {
           void openSpotifyAccessibilitySettings().then((opened) => {
             if (!opened) {

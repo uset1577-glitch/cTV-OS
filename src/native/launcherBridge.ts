@@ -64,16 +64,16 @@ export function isNativeAndroid(): boolean {
 export async function getInstalledApps(): Promise<{ apps: InstalledApp[]; isNative: boolean }> {
   if (isNativeAndroid()) {
     const result = await LauncherNative.getInstalledApps();
-    const sorted = [...(result.apps || [])].sort((a, b) =>
-      a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-    );
+    const sorted = [...(result.apps || [])]
+      .filter((app) => !app.isSystemApp)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
     return { apps: sorted, isNative: true };
   }
 
   return {
-    apps: [...WEB_PREVIEW_APPS].sort((a, b) =>
-      a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-    ),
+    apps: [...WEB_PREVIEW_APPS]
+      .filter((app) => !app.isSystemApp)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
     isNative: false,
   };
 }
@@ -183,14 +183,14 @@ export async function getCurrentAppVersion(): Promise<AppVersionInfo> {
       return {
         versionName: '1.0.0',
         versionCode: 100,
-        packageName: 'com.cgamestv.launcher',
+        packageName: 'com.vora.tv',
       };
     }
   }
   return {
     versionName: '1.0.0',
     versionCode: 100,
-    packageName: 'com.cgamestv.launcher',
+    packageName: 'com.vora.tv',
   };
 }
 

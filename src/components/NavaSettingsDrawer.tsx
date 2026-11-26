@@ -7,21 +7,18 @@ import {
   Check,
   ChevronRight,
   CircleUserRound,
-  Database,
   Download,
   HdmiPort,
   Home,
   Image as ImageIcon,
   Monitor,
   Moon,
-  RefreshCw,
   RotateCcw,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
   Sun,
   Timer,
-  Trash2,
   Volume2,
   Wifi,
 } from 'lucide-react';
@@ -42,14 +39,10 @@ interface NavaSettingsDrawerProps {
   sleepTimerMinutes?: number | null;
   musicServiceStatus: MusicServiceStatus;
   initialSubPanel?: ActiveSubPanel;
-  catalogSource?: string;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
-  onSaveCatalogFeedUrl?: (url: string) => void;
-  onRefreshCatalog?: () => void;
   onOpenAndroidSettings: (section: TvSettingsSection) => void;
   onCycleSleepTimer?: () => void;
   onOpenScreensaver?: () => void;
-  onPlayBootIntro?: () => void;
   onOpenAccessibilitySettings: () => void;
   onOpenNotificationSettings: () => void;
   onOpenUpdateModal: () => void;
@@ -57,7 +50,7 @@ interface NavaSettingsDrawerProps {
   onClose: () => void;
 }
 
-export type SettingsSubPanel = 'none' | 'notifications' | 'profile' | 'feed';
+export type SettingsSubPanel = 'none' | 'notifications' | 'profile';
 type ActiveSubPanel = SettingsSubPanel;
 
 export function NavaSettingsDrawer({
@@ -71,14 +64,10 @@ export function NavaSettingsDrawer({
   sleepTimerMinutes = null,
   musicServiceStatus,
   initialSubPanel = 'none',
-  catalogSource = 'none',
   onUpdateSettings,
-  onSaveCatalogFeedUrl,
-  onRefreshCatalog,
   onOpenAndroidSettings,
   onCycleSleepTimer,
   onOpenScreensaver,
-  onPlayBootIntro,
   onOpenAccessibilitySettings,
   onOpenNotificationSettings,
   onOpenUpdateModal,
@@ -87,7 +76,6 @@ export function NavaSettingsDrawer({
 }: NavaSettingsDrawerProps) {
   const [now, setNow] = useState(() => new Date());
   const [subPanel, setSubPanel] = useState<ActiveSubPanel>('none');
-  const [feedUrlDraft, setFeedUrlDraft] = useState(settings.catalogFeedUrl);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -99,16 +87,13 @@ export function NavaSettingsDrawer({
   useEffect(() => {
     if (isOpen) {
       setSubPanel(initialSubPanel);
-      setFeedUrlDraft(settings.catalogFeedUrl);
       window.requestAnimationFrame(() => {
-        focusElementById(
-          initialSubPanel === 'feed' ? 'quick-feed-url-input' : 'quick-screensaver'
-        );
+        focusElementById('quick-screensaver');
       });
     } else {
       setSubPanel('none');
     }
-  }, [isOpen, initialSubPanel, settings.catalogFeedUrl]);
+  }, [isOpen, initialSubPanel]);
 
   useSpatialNavigation({
     enabled: isOpen,
@@ -213,15 +198,6 @@ export function NavaSettingsDrawer({
       onClick: () => {
         onClose();
         onOpenAndroidSettings('accessibility');
-      },
-    },
-    {
-      id: 'quick-boot-intro',
-      label: 'Intro TV (4 s)',
-      icon: Monitor,
-      onClick: () => {
-        onClose();
-        onPlayBootIntro?.();
       },
     },
   ];
@@ -415,130 +391,7 @@ export function NavaSettingsDrawer({
                 <ChevronRight className="w-4 h-4 shrink-0 text-zinc-300 group-focus:text-black" />
               </button>
 
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="quick-feed-trigger"
-                onClick={() =>
-                  setSubPanel((prev) => (prev === 'feed' ? 'none' : 'feed'))
-                }
-                className={`tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-left focus:bg-white focus:text-black focus:border-white focus:scale-[1.02] ${
-                  subPanel === 'feed'
-                    ? 'bg-white text-black border-white'
-                    : 'bg-white/[0.08] border-white/12 text-zinc-100 hover:bg-white/[0.14]'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Database className="w-4 h-4 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold truncate">
-                      Fuente de recomendaciones
-                    </div>
-                    <div
-                      className={`text-[11px] truncate mt-0.5 ${
-                        subPanel === 'feed'
-                          ? 'text-zinc-700'
-                          : 'text-zinc-400 group-focus:text-zinc-700'
-                      }`}
-                    >
-                      {settings.catalogFeedUrl
-                        ? 'URL JSON/API externa configurada'
-                        : catalogSource === 'native-bridge'
-                          ? 'Conectado a puente nativo'
-                          : catalogSource === 'server-api'
-                            ? 'Conectado a API del servidor'
-                            : 'Sin fuente externa configurada'}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 shrink-0" />
-              </button>
-            </div>
-
-            {subPanel === 'feed' && (
-              <div
-                data-tv-row="quick-subpanel"
-                className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0"
-              >
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-xs font-semibold text-zinc-200">
-                    URL JSON / API o puente nativo
-                  </span>
-                  <span className="text-[11px] text-zinc-400">
-                    {isNative ? 'Android TV' : 'Web'}
-                  </span>
-                </div>
-
-                <input
-                  type="url"
-                  value={feedUrlDraft}
-                  onChange={(e) => setFeedUrlDraft(e.target.value)}
-                  placeholder="https://servidor.com/catalogo.json"
-                  data-tv-focusable="true"
-                  data-tv-id="quick-feed-url-input"
-                  className="tv-focusable w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-xs font-mono-tabular text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="quick-feed-save"
-                    onClick={() => {
-                      const trimmed = feedUrlDraft.trim();
-                      if (onSaveCatalogFeedUrl) {
-                        onSaveCatalogFeedUrl(trimmed);
-                      } else {
-                        onUpdateSettings({ catalogFeedUrl: trimmed });
-                      }
-                    }}
-                    className="tv-focusable flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white text-black text-xs font-semibold focus:bg-zinc-200 focus:scale-[1.02]"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Guardar y cargar</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="quick-feed-refresh"
-                    onClick={() => onRefreshCatalog?.()}
-                    className="tv-focusable flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.08] border border-white/12 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Recargar</span>
-                  </button>
-                </div>
-
-                {settings.catalogFeedUrl && (
-                  <button
-                    type="button"
-                    data-tv-focusable="true"
-                    data-tv-id="quick-feed-clear"
-                    onClick={() => {
-                      setFeedUrlDraft('');
-                      if (onSaveCatalogFeedUrl) {
-                        onSaveCatalogFeedUrl('');
-                      } else {
-                        onUpdateSettings({ catalogFeedUrl: '' });
-                      }
-                    }}
-                    className="tv-focusable w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-xs font-medium text-zinc-300 focus:bg-white focus:text-black focus:border-white"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Desconectar URL externa</span>
-                  </button>
-                )}
-
-                <p className="text-[11px] text-zinc-400 leading-relaxed px-0.5">
-                  Acepta JSON con listas <span className="text-zinc-200">spotlight</span>,{' '}
-                  <span className="text-zinc-200">movies</span>,{' '}
-                  <span className="text-zinc-200">series</span> o{' '}
-                  <span className="text-zinc-200">rows</span>. Las tarjetas sin imagen válida se
-                  ocultan automáticamente.
-                </p>
               </div>
-            )}
 
             {/* Subpanel contextual limpio en escala de grises (solo visible al abrir Notificaciones o Perfil) */}
             {subPanel === 'notifications' && (

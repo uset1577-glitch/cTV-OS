@@ -4,23 +4,19 @@
     android:height="180dp"
     android:viewportWidth="320"
     android:viewportHeight="180">
-    <!-- Fondo oscuro minimalista para Android TV Leanback -->
+    <!-- Fondo oscuro minimalista VORA TV OS -->
     <path
         android:fillColor="#0B0F17"
         android:pathData="M0,0h320v180h-320z" />
-    <!-- Franja sutil superior -->
-    <path
-        android:fillColor="#121826"
-        android:pathData="M0,0h320v94h-320z" />
     <!-- Emblema central VORA TV OS (doble chevrón geométrico) -->
     <path
-        android:pathData="M114,54 L160,122 L206,54"
+        android:pathData="M114,56 L160,124 L206,56"
         android:strokeWidth="10"
         android:strokeColor="#FFFFFF"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
     <path
-        android:pathData="M134,54 L160,92 L186,54"
+        android:pathData="M134,56 L160,94 L186,56"
         android:strokeWidth="7.5"
         android:strokeColor="#73FFFFFF"
         android:strokeLineCap="round"

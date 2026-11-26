@@ -95,7 +95,7 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   maintenanceMode: false,
   maintenanceTitle: 'Mantenimiento · Próxima actualización',
   maintenanceMessage: 'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
-  updateRepo: (import.meta.env.VITE_UPDATE_REPO as string | undefined)?.trim() || '',
+  updateRepo: (import.meta.env.VITE_UPDATE_REPO as string | undefined)?.trim() || 'vora-tv-os',
   catalogFeedUrl: '',
   favoritePackages: DEFAULT_FAVORITES,
 };

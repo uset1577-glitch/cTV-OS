@@ -227,9 +227,9 @@ export function LivePlatformsView({
                   <div className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
                     {item.title}
                   </div>
-                  {(item.tag || item.subtitle) && (
+                  {(item.appName || item.tag || item.subtitle) && (
                     <div className="text-xs text-zinc-600 dark:text-zinc-400 truncate mt-0.5">
-                      {[item.tag, item.subtitle].filter(Boolean).join(' · ')}
+                      {[item.appName || item.tag, item.subtitle].filter(Boolean).join(' · ')}
                     </div>
                   )}
                 </div>

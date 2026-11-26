@@ -56,7 +56,7 @@ export const KNOWN_STREAMING_PLATFORMS = [
   },
 ];
 
-const LIVE_FEED_CACHE_KEY = 'vora_daily_live_catalog_v5';
+const LIVE_FEED_CACHE_KEY = 'vora_daily_live_catalog_v8';
 
 export function getDailyDateKey(date = new Date()): string {
   const y = date.getFullYear();
@@ -431,6 +431,23 @@ function mapPlatformToPackage(
 // Catálogo base de películas reales con carátulas oficiales y metadatos verificados
 export const CURATED_REAL_MOVIES: AppSuggestion[] = [
   {
+    id: 'cm-tt4772188',
+    appName: 'Max',
+    packageName: 'com.wbd.stream',
+    title: 'Flow',
+    subtitle: 'Un gato solitario encuentra refugio en un barco junto a otras especies tras una gran inundación.',
+    deepLinkUrl: 'https://play.max.com/',
+    posterUrl: 'https://images.metahub.space/poster/medium/tt4772188/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt4772188/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt4772188/img',
+    imdbRating: '7.8',
+    accentGradient: 'linear-gradient(135deg, #071E26 0%, #0E7490 100%)',
+    tag: 'Animación · Aventura',
+    genre: 'Animación · Aventura',
+    releaseDate: '2024',
+    mediaKind: 'movie',
+  },
+  {
     id: 'cm-tt15398776',
     appName: 'Prime Video',
     packageName: 'com.amazon.amazonvideo.livingroom',
@@ -533,15 +550,15 @@ export const CURATED_REAL_MOVIES: AppSuggestion[] = [
     mediaKind: 'movie',
   },
   {
-    id: 'cm-tt14230458',
+    id: 'cm-tt6263850',
     appName: 'Disney+',
     packageName: 'com.disney.disneyplus',
     title: 'Deadpool & Wolverine',
     subtitle: 'Wolverine recuperándose de sus heridas se cruza con el bocazas Deadpool en una aventura multiversal.',
     deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.metahub.space/poster/medium/tt14230458/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt14230458/img',
-    logoUrl: 'https://images.metahub.space/logo/medium/tt14230458/img',
+    posterUrl: 'https://images.metahub.space/poster/medium/tt6263850/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt6263850/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt6263850/img',
     imdbRating: '7.7',
     accentGradient: 'linear-gradient(135deg, #240A0D 0%, #991B1B 100%)',
     tag: 'Acción · Comedia',
@@ -550,14 +567,14 @@ export const CURATED_REAL_MOVIES: AppSuggestion[] = [
     mediaKind: 'movie',
   },
   {
-    id: 'cm-tt11315808',
+    id: 'cm-tt18412256',
     appName: 'Disney+',
     packageName: 'com.disney.disneyplus',
     title: 'Alien: Romulus',
     subtitle: 'Jóvenes colonizadores espaciales se enfrentan a la forma de vida más aterradora del universo.',
     deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.metahub.space/poster/medium/tt11315808/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt11315808/img',
+    posterUrl: 'https://images.metahub.space/poster/medium/tt18412256/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt18412256/img',
     imdbRating: '7.2',
     accentGradient: 'linear-gradient(135deg, #091316 0%, #155E75 100%)',
     tag: 'Terror · Ciencia ficción',
@@ -566,14 +583,14 @@ export const CURATED_REAL_MOVIES: AppSuggestion[] = [
     mediaKind: 'movie',
   },
   {
-    id: 'cm-tt15354916',
+    id: 'cm-tt9218128',
     appName: 'YouTube',
     packageName: 'com.google.android.youtube.tv',
     title: 'Gladiator II',
     subtitle: 'Años después de presenciar la muerte de Máximo, Lucio debe entrar al Coliseo para salvar Roma.',
     deepLinkUrl: 'https://www.youtube.com/tv#/explore',
-    posterUrl: 'https://images.metahub.space/poster/medium/tt15354916/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt15354916/img',
+    posterUrl: 'https://images.metahub.space/poster/medium/tt9218128/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt9218128/img',
     imdbRating: '6.8',
     accentGradient: 'linear-gradient(135deg, #2A1407 0%, #B45309 100%)',
     tag: 'Acción · Drama',
@@ -663,14 +680,15 @@ export const CURATED_REAL_MOVIES: AppSuggestion[] = [
     mediaKind: 'movie',
   },
   {
-    id: 'cm-tt12476678',
+    id: 'cm-tt14230458',
     appName: 'Disney+',
     packageName: 'com.disney.disneyplus',
     title: 'Pobres Criaturas',
     subtitle: 'La increíble historia de Bella Baxter, una joven resucitada por un excéntrico científico.',
     deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.metahub.space/poster/medium/tt12476678/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt12476678/img',
+    posterUrl: 'https://images.metahub.space/poster/medium/tt14230458/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt14230458/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt14230458/img',
     imdbRating: '7.9',
     accentGradient: 'linear-gradient(135deg, #18181B 0%, #4D7C0F 100%)',
     tag: 'Drama · Comedia',
@@ -812,15 +830,15 @@ export const CURATED_REAL_SERIES: AppSuggestion[] = [
     mediaKind: 'series',
   },
   {
-    id: 'cms-tt10638522',
+    id: 'cms-tt12637874',
     appName: 'Prime Video',
     packageName: 'com.amazon.amazonvideo.livingroom',
     title: 'Fallout',
     subtitle: 'Una pacífica habitante del refugio se adentra en el implacable páramo nuclear de Los Ángeles.',
     deepLinkUrl: 'https://app.primevideo.com/',
-    posterUrl: 'https://images.metahub.space/background/medium/tt10638522/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt10638522/img',
-    logoUrl: 'https://images.metahub.space/logo/medium/tt10638522/img',
+    posterUrl: 'https://images.metahub.space/background/medium/tt12637874/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt12637874/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt12637874/img',
     imdbRating: '8.4',
     accentGradient: 'linear-gradient(135deg, #0A1E2F 0%, #0284C7 100%)',
     tag: 'Ciencia ficción · Aventura',
@@ -880,15 +898,15 @@ export const CURATED_REAL_SERIES: AppSuggestion[] = [
     mediaKind: 'series',
   },
   {
-    id: 'cms-tt10574558',
+    id: 'cms-tt14452776',
     appName: 'Disney+',
     packageName: 'com.disney.disneyplus',
     title: 'The Bear',
     subtitle: 'Un joven chef del mundo de la alta cocina regresa a Chicago para dirigir la tienda de sándwiches de su familia.',
     deepLinkUrl: 'https://www.disneyplus.com/home',
-    posterUrl: 'https://images.metahub.space/background/medium/tt10574558/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt10574558/img',
-    logoUrl: 'https://images.metahub.space/logo/medium/tt10574558/img',
+    posterUrl: 'https://images.metahub.space/background/medium/tt14452776/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt14452776/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt14452776/img',
     imdbRating: '8.6',
     accentGradient: 'linear-gradient(135deg, #1C120C 0%, #C2410C 100%)',
     tag: 'Comedia · Drama',
@@ -980,14 +998,14 @@ export const CURATED_REAL_SERIES: AppSuggestion[] = [
     mediaKind: 'series',
   },
   {
-    id: 'cms-tt2788316',
+    id: 'cms-tt2442560',
     appName: 'Netflix',
     packageName: 'com.netflix.ninja',
     title: 'Peaky Blinders',
     subtitle: 'Una familia de gánsteres de Birmingham asciende en poder tras la Primera Guerra Mundial.',
     deepLinkUrl: 'https://www.netflix.com/browse',
-    posterUrl: 'https://images.metahub.space/background/medium/tt2788316/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt2788316/img',
+    posterUrl: 'https://images.metahub.space/background/medium/tt2442560/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt2442560/img',
     imdbRating: '8.8',
     accentGradient: 'linear-gradient(135deg, #14171F 0%, #334155 100%)',
     tag: 'Crimen · Drama',
@@ -1044,14 +1062,15 @@ export const CURATED_REAL_SERIES: AppSuggestion[] = [
     mediaKind: 'series',
   },
   {
-    id: 'cms-tt9288030',
+    id: 'cms-tt13443470',
     appName: 'Netflix',
     packageName: 'com.netflix.ninja',
     title: 'Miércoles (Wednesday)',
     subtitle: 'Miércoles Addams asiste a la Academia Nevermore donde intenta dominar su habilidad psíquica emergente.',
     deepLinkUrl: 'https://www.netflix.com/browse',
-    posterUrl: 'https://images.metahub.space/background/medium/tt9288030/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt9288030/img',
+    posterUrl: 'https://images.metahub.space/background/medium/tt13443470/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt13443470/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt13443470/img',
     imdbRating: '8.1',
     accentGradient: 'linear-gradient(135deg, #13111C 0%, #4C1D95 100%)',
     tag: 'Comedia · Fantasía',
@@ -1108,14 +1127,15 @@ export const CURATED_REAL_SERIES: AppSuggestion[] = [
     mediaKind: 'series',
   },
   {
-    id: 'cms-tt13622776',
+    id: 'cms-tt15435876',
     appName: 'Max',
     packageName: 'com.wbd.stream',
     title: 'El Pingüino',
     subtitle: 'Oz Cobb busca adueñarse del vacío de poder en los bajos fondos criminales de Gotham.',
     deepLinkUrl: 'https://play.max.com/',
-    posterUrl: 'https://images.metahub.space/background/medium/tt13622776/img',
-    backdropUrl: 'https://images.metahub.space/background/large/tt13622776/img',
+    posterUrl: 'https://images.metahub.space/background/medium/tt15435876/img',
+    backdropUrl: 'https://images.metahub.space/background/large/tt15435876/img',
+    logoUrl: 'https://images.metahub.space/logo/medium/tt15435876/img',
     imdbRating: '8.8',
     accentGradient: 'linear-gradient(135deg, #181014 0%, #4A044E 100%)',
     tag: 'Crimen · Drama',
@@ -1448,3 +1468,171 @@ export async function fetchGoogleTvLiveCatalog(
 
   return cleanCatalog;
 }
+
+export async function searchOnlineCatalog(
+  query: string,
+  installedApps: InstalledApp[] = [],
+  favoritePackages: string[] = [],
+  signal?: AbortSignal
+): Promise<AppSuggestion[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const encoded = encodeURIComponent(trimmed);
+  const activePlatforms = getActiveStreamingPlatforms(installedApps, favoritePackages);
+  const platPool =
+    activePlatforms.length > 0
+      ? activePlatforms
+      : KNOWN_STREAMING_PLATFORMS.map((p) => ({
+          id: p.packageName,
+          packageName: p.packageName,
+          appName: p.appName,
+          deepLinkUrl: p.deepLinkUrl,
+          accentGradient: p.accentGradient,
+          isInstalled: true,
+          isFavorite: false,
+        }));
+
+  const [moviesRes, seriesRes] = await Promise.allSettled([
+    fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${encoded}.json`, {
+      signal,
+    }).then((r) => (r.ok ? r.json() : null)),
+    fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${encoded}.json`, {
+      signal,
+    }).then((r) => (r.ok ? r.json() : null)),
+  ]);
+
+  const combined: AppSuggestion[] = [];
+  const parseMetas = (metas: CinemetaMeta[] | undefined, kind: 'movie' | 'series') => {
+    if (!Array.isArray(metas)) return;
+    metas.slice(0, 12).forEach((meta, idx) => {
+      const imdbId = meta.imdb_id || meta.id;
+      const title = meta.name?.trim();
+      if (!imdbId || !title) return;
+
+      const target = platPool[idx % platPool.length];
+      const posterUrl =
+        meta.poster && isValidImageUrl(meta.poster)
+          ? meta.poster
+          : `https://images.metahub.space/poster/medium/${imdbId}/img`;
+      const backdropUrl =
+        meta.background && isValidImageUrl(meta.background)
+          ? meta.background
+          : `https://images.metahub.space/background/large/${imdbId}/img`;
+      const year = (meta.releaseInfo || meta.year || '').slice(0, 4);
+      const genreText = translateGenres(meta.genres || meta.genre);
+
+      combined.push({
+        id: `${kind === 'movie' ? 'cm-' : 'cms-'}${imdbId}`,
+        appName: target.appName,
+        packageName: target.packageName,
+        title,
+        subtitle: meta.description?.trim() || `${genreText}${year ? ` · ${year}` : ''}`,
+        deepLinkUrl:
+          target.id === 'com.google.android.youtube.tv'
+            ? `https://www.youtube.com/results?search_query=${encodeURIComponent(title)}`
+            : target.deepLinkUrl,
+        posterUrl: kind === 'movie' ? posterUrl : backdropUrl || posterUrl,
+        backdropUrl,
+        logoUrl: meta.logo,
+        imdbRating: meta.imdbRating,
+        accentGradient: target.accentGradient,
+        tag: target.appName,
+        genre: genreText,
+        releaseDate: year,
+        mediaKind: kind,
+      });
+    });
+  };
+
+  if (moviesRes.status === 'fulfilled') {
+    parseMetas(moviesRes.value?.metas as CinemetaMeta[], 'movie');
+  }
+  if (seriesRes.status === 'fulfilled') {
+    parseMetas(seriesRes.value?.metas as CinemetaMeta[], 'series');
+  }
+
+  return deduplicateSuggestions(combined);
+}
+
+export function buildPlatformSearchActions(
+  query: string,
+  installedApps: InstalledApp[] = [],
+  appsOnlyMode = false
+): AppSuggestion[] {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const encoded = encodeURIComponent(trimmed);
+  const youtubePkg = resolvePackageAlias('com.google.android.youtube.tv', installedApps);
+  const actions: AppSuggestion[] = [
+    {
+      id: `search-action-youtube-${encoded}`,
+      appName: 'YouTube',
+      packageName: youtubePkg,
+      title: `Buscar "${trimmed}" en YouTube`,
+      subtitle: 'Videos, trailers, música y directos en YouTube TV',
+      deepLinkUrl: `https://www.youtube.com/results?search_query=${encoded}`,
+      posterUrl: '',
+      accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
+      tag: 'YouTube',
+    },
+  ];
+
+  if (appsOnlyMode) {
+    return actions;
+  }
+
+  const installedSet = new Set(installedApps.map((a) => a.packageName));
+  const extraPlatforms: Array<{
+    preferredPkg: string;
+    appName: string;
+    buildUrl: (q: string) => string;
+    accentGradient: string;
+  }> = [
+    {
+      preferredPkg: 'com.netflix.ninja',
+      appName: 'Netflix',
+      buildUrl: (q) => `https://www.netflix.com/search?q=${q}`,
+      accentGradient: 'linear-gradient(135deg, #2B0909 0%, #8E1218 100%)',
+    },
+    {
+      preferredPkg: 'com.amazon.amazonvideo.livingroom',
+      appName: 'Prime Video',
+      buildUrl: (q) => `https://app.primevideo.com/search?phrase=${q}`,
+      accentGradient: 'linear-gradient(135deg, #0A2538 0%, #0369A1 100%)',
+    },
+    {
+      preferredPkg: 'com.wbd.stream',
+      appName: 'Max',
+      buildUrl: (q) => `https://play.max.com/search?q=${q}`,
+      accentGradient: 'linear-gradient(135deg, #0D163A 0%, #1E3A8A 100%)',
+    },
+    {
+      preferredPkg: 'com.disney.disneyplus',
+      appName: 'Disney+',
+      buildUrl: (q) => `https://www.disneyplus.com/search?q=${q}`,
+      accentGradient: 'linear-gradient(135deg, #0D1A3D 0%, #1D4ED8 100%)',
+    },
+  ];
+
+  for (const plat of extraPlatforms) {
+    const resolved = resolvePackageAlias(plat.preferredPkg, installedApps);
+    const isAvailable = installedApps.length === 0 || installedSet.has(resolved);
+    if (!isAvailable) continue;
+    actions.push({
+      id: `search-action-${plat.preferredPkg}-${encoded}`,
+      appName: plat.appName,
+      packageName: resolved,
+      title: `Buscar "${trimmed}" en ${plat.appName}`,
+      subtitle: `Abrir búsqueda dentro de ${plat.appName}`,
+      deepLinkUrl: plat.buildUrl(encoded),
+      posterUrl: '',
+      accentGradient: plat.accentGradient,
+      tag: plat.appName,
+    });
+  }
+
+  return actions;
+}
+

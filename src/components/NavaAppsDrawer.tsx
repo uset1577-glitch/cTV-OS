@@ -47,8 +47,9 @@ export function NavaAppsDrawer({
 
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
+      if (app.isSystemApp) return false;
       if (filter === 'tv') {
-        return app.isLeanback && !app.isSystemApp && app.category !== 'games';
+        return app.isLeanback && app.category !== 'games';
       }
       if (filter === 'games') {
         return (
@@ -56,9 +57,6 @@ export function NavaAppsDrawer({
           app.packageName.includes('game') ||
           app.packageName.includes('party')
         );
-      }
-      if (filter === 'other') {
-        return app.isSystemApp || !app.isLeanback || app.category === 'other';
       }
       return true;
     });
@@ -68,7 +66,6 @@ export function NavaAppsDrawer({
     { id: 'all', label: 'Todas' },
     { id: 'tv', label: 'TV y Streaming' },
     { id: 'games', label: 'Juegos' },
-    { id: 'other', label: 'Sistema' },
   ];
 
   const handleTileAction = (app: InstalledApp) => {
