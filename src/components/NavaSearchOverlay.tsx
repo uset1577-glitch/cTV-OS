@@ -57,7 +57,7 @@ export function NavaSearchOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 bg-[#DCE3EE]/97 dark:bg-[#090B10]/96 flex flex-col px-12 pt-10 pb-8"
+          className="fixed inset-0 z-50 bg-[#E5E7EB]/97 dark:bg-[#09090B]/96 flex flex-col px-12 pt-10 pb-8"
         >
           <motion.div
             initial={{ y: -20, opacity: 0 }}
@@ -67,8 +67,8 @@ export function NavaSearchOverlay({
             className="max-w-5xl w-full mx-auto flex flex-col flex-1 min-h-0"
           >
             {/* Barra de búsqueda estilo TV Spotlight */}
-            <div data-tv-row="search-bar" className="flex items-center gap-4 pb-5 border-b border-slate-900/12 dark:border-white/12">
-              <Search className="w-6 h-6 text-slate-600 dark:text-zinc-400 shrink-0" />
+            <div data-tv-row="search-bar" className="flex items-center gap-4 pb-5 border-b border-zinc-900/12 dark:border-white/12">
+              <Search className="w-6 h-6 text-zinc-600 dark:text-zinc-400 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -78,7 +78,7 @@ export function NavaSearchOverlay({
                 data-tv-initial="true"
                 data-tv-id="search-input"
                 placeholder="Escribe para buscar aplicaciones o juegos en tu TV..."
-                className="flex-1 bg-transparent font-display text-2xl font-medium text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-zinc-500 focus:outline-none"
+                className="flex-1 bg-transparent font-display text-2xl font-medium text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none"
               />
               <button
                 type="button"
@@ -86,7 +86,7 @@ export function NavaSearchOverlay({
                 data-tv-id="search-close"
                 onClick={onClose}
                 aria-label="Cerrar buscador"
-                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -95,7 +95,7 @@ export function NavaSearchOverlay({
             {/* Resultados inmediatos */}
             <div className="mt-8 flex-1 overflow-y-auto no-scrollbar">
               {results.length === 0 ? (
-                <div className="py-16 text-center text-slate-600 dark:text-zinc-400 text-lg">
+                <div className="py-16 text-center text-zinc-600 dark:text-zinc-400 text-lg">
                   No se encontró ninguna aplicación con &ldquo;{query}&rdquo;
                 </div>
               ) : (
@@ -111,9 +111,9 @@ export function NavaSearchOverlay({
                       data-tv-focusable="true"
                       data-tv-id={`search-res-${app.packageName}`}
                       onClick={() => onLaunchApp(app)}
-                      className="tv-focusable flex items-center gap-4 p-4 rounded-2xl bg-[#EEF2F7] dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 text-left focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-[1.04] group"
+                      className="tv-focusable flex items-center gap-4 p-4 rounded-2xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.04] group"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-zinc-300/70 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
                         {app.icon ? (
                           <img
                             src={app.icon}
@@ -122,12 +122,12 @@ export function NavaSearchOverlay({
                             className="w-full h-full object-contain p-1"
                           />
                         ) : (
-                          <AppWindow className="w-6 h-6 text-slate-400" />
+                          <AppWindow className="w-6 h-6 text-zinc-400" />
                         )}
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-base truncate">{app.name}</div>
-                        <div className="text-xs font-mono-tabular text-slate-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600 truncate">
+                        <div className="text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600 truncate">
                           {app.packageName}
                         </div>
                       </div>

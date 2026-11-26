@@ -52,39 +52,39 @@ export function MaintenanceNoticeModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 8 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-            className="w-full max-w-xl rounded-3xl bg-[#E6ECF4] dark:bg-[#12151E] border border-slate-900/12 dark:border-white/15 p-8 shadow-2xl"
+            className="w-full max-w-xl rounded-3xl bg-[#E5E7EB] dark:bg-[#111114] border border-zinc-900/12 dark:border-white/15 p-8 shadow-2xl"
           >
             <div className="flex items-center justify-between gap-4 mb-6">
               <BrandLogo size="md" showWordmark />
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                 Aviso obligatorio del sistema
               </span>
             </div>
 
-            <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-amber-500/40 p-6 space-y-4 mb-6">
+            <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/15 dark:border-white/20 p-6 space-y-4 mb-6">
               <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 flex items-center justify-center shrink-0">
                   <ShieldAlert className="w-6 h-6" />
                 </div>
                 <div>
                   <h2
                     id="maintenance-modal-title"
-                    className="font-display text-2xl font-bold text-slate-900 dark:text-white leading-tight text-balance"
+                    className="font-display text-2xl font-bold text-zinc-900 dark:text-white leading-tight text-balance"
                   >
                     {status.title || 'Mantenimiento · Próxima actualización'}
                   </h2>
-                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mt-1.5">
+                  <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mt-1.5">
                     El modo solo apps será activado
                   </p>
                 </div>
               </div>
 
-              <p className="text-sm text-slate-700 dark:text-zinc-300 leading-relaxed">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 {status.message ||
                   'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.'}
               </p>
 
-              <div className="rounded-xl bg-slate-100 dark:bg-white/[0.04] px-4 py-3 text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.04] px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Durante este periodo permanecerán visibles únicamente tus aplicaciones instaladas,
                 búsqueda y ajustes. Cuando termine el mantenimiento, las recomendaciones volverán
                 automáticamente.
@@ -99,7 +99,7 @@ export function MaintenanceNoticeModal({
                 data-tv-initial="true"
                 data-tv-id="maintenance-ack-btn"
                 onClick={onAcknowledge}
-                className="tv-focusable inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-amber-500 text-zinc-950 font-bold text-sm focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-400 focus:scale-105 shadow-md"
+                className="tv-focusable inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 shadow-md"
               >
                 <AppWindow className="w-4 h-4 shrink-0" />
                 <span>Entendido · Activar modo solo apps</span>

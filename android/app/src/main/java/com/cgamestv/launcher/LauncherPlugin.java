@@ -210,67 +210,71 @@ public class LauncherPlugin extends Plugin {
 
     @PluginMethod
     public void launchUri(PluginCall call) {
-        String url = call.getString("url");
+        String url = call.getString("url", "");
         String packageName = call.getString("packageName");
-        if (url == null || url.trim().isEmpty()) {
-            call.reject("Falta url");
+        if (packageName == null || packageName.trim().isEmpty()) {
+            JSObject res = new JSObject();
+            res.put("launched", false);
+            call.resolve(res);
             return;
         }
 
+        String cleanPkg = packageName.trim();
         try {
             Context context = getContext();
             PackageManager pm = context.getPackageManager();
 
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (packageName != null && !packageName.trim().isEmpty()) {
-                intent.setPackage(packageName);
+            // Verificar que la app destino esté realmente instalada antes de intentar abrir
+            try {
+                pm.getPackageInfo(cleanPkg, 0);
+            } catch (PackageManager.NameNotFoundException notFound) {
+                JSObject res = new JSObject();
+                res.put("launched", false);
+                call.resolve(res);
+                return;
             }
 
-            if (intent.resolveActivity(pm) != null) {
-                context.startActivity(intent);
+            // Intentar deep link únicamente dentro de la app destino (nunca abrir navegador ni redirigir a YouTube)
+            String cleanUrl = url != null ? url.trim() : "";
+            boolean isYouTubeUrl = cleanUrl.toLowerCase(Locale.ROOT).contains("youtube.com")
+                || cleanUrl.toLowerCase(Locale.ROOT).contains("youtu.be");
+            boolean isYouTubePkg = cleanPkg.toLowerCase(Locale.ROOT).contains("youtube")
+                || cleanPkg.toLowerCase(Locale.ROOT).contains("smarttube");
+
+            if (!cleanUrl.isEmpty() && (!isYouTubeUrl || isYouTubePkg)) {
+                Intent deepIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(cleanUrl));
+                deepIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                deepIntent.setPackage(cleanPkg);
+                if (deepIntent.resolveActivity(pm) != null) {
+                    context.startActivity(deepIntent);
+                    JSObject res = new JSObject();
+                    res.put("launched", true);
+                    call.resolve(res);
+                    return;
+                }
+            }
+
+            // Lanzamiento directo a la app instalada
+            Intent appIntent = pm.getLeanbackLaunchIntentForPackage(cleanPkg);
+            if (appIntent == null) {
+                appIntent = pm.getLaunchIntentForPackage(cleanPkg);
+            }
+            if (appIntent != null) {
+                appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(appIntent);
                 JSObject res = new JSObject();
                 res.put("launched", true);
                 call.resolve(res);
                 return;
             }
 
-            // Fallback: abrir la app directamente si el deep link específico no coincide
-            if (packageName != null && !packageName.trim().isEmpty()) {
-                Intent appIntent = pm.getLeanbackLaunchIntentForPackage(packageName);
-                if (appIntent == null) {
-                    appIntent = pm.getLaunchIntentForPackage(packageName);
-                }
-                if (appIntent != null) {
-                    appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(appIntent);
-                    JSObject res = new JSObject();
-                    res.put("launched", true);
-                    call.resolve(res);
-                    return;
-                }
-
-                // Si no está instalada, intentar abrir en Google Play Store de Android TV
-                Intent playIntent = new Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("market://details?id=" + packageName)
-                );
-                playIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (playIntent.resolveActivity(pm) != null) {
-                    context.startActivity(playIntent);
-                    JSObject res = new JSObject();
-                    res.put("launched", true);
-                    res.put("openedStore", true);
-                    call.resolve(res);
-                    return;
-                }
-            }
-
             JSObject res = new JSObject();
             res.put("launched", false);
             call.resolve(res);
         } catch (Exception e) {
-            call.reject("No se pudo abrir sugerencia: " + e.getMessage(), e);
+            JSObject res = new JSObject();
+            res.put("launched", false);
+            call.resolve(res);
         }
     }
 
@@ -514,6 +518,62 @@ public class LauncherPlugin extends Plugin {
             fallback.put("maintenanceMode", false);
             fallback.put("appsOnlyMode", false);
             call.resolve(fallback);
+        });
+    }
+
+    @PluginMethod
+    public void getRecommendationsFeed(PluginCall call) {
+        String requestedUrl = call.getString("url", "");
+        Context rawContext = getContext();
+        String targetUrl = requestedUrl != null ? requestedUrl.trim() : "";
+
+        if (targetUrl.isEmpty() && rawContext != null) {
+            android.content.SharedPreferences prefs = rawContext
+                .getApplicationContext()
+                .getSharedPreferences("vora_launcher_prefs", Context.MODE_PRIVATE);
+            String savedJson = prefs.getString("catalog_feed_json", "");
+            if (savedJson != null && !savedJson.trim().isEmpty()) {
+                JSObject res = new JSObject();
+                res.put("ok", true);
+                res.put("rawJson", savedJson.trim());
+                res.put("source", "native-prefs");
+                call.resolve(res);
+                return;
+            }
+            String savedUrl = prefs.getString("catalog_feed_url", "");
+            if (savedUrl != null) {
+                targetUrl = savedUrl.trim();
+            }
+        }
+
+        if (targetUrl.isEmpty() || !(targetUrl.startsWith("http://") || targetUrl.startsWith("https://"))) {
+            JSObject empty = new JSObject();
+            empty.put("ok", false);
+            empty.put("rawJson", "");
+            empty.put("source", "none");
+            call.resolve(empty);
+            return;
+        }
+
+        final String finalUrl = targetUrl;
+        executor.execute(() -> {
+            try {
+                HttpTextResponse resp = fetchTextUrl(finalUrl, "application/json", 8000, 10000);
+                if (resp.statusCode >= 200 && resp.statusCode < 300 && resp.body != null && !resp.body.trim().isEmpty()) {
+                    JSObject res = new JSObject();
+                    res.put("ok", true);
+                    res.put("rawJson", resp.body.trim());
+                    res.put("source", "native-http");
+                    call.resolve(res);
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
+            JSObject empty = new JSObject();
+            empty.put("ok", false);
+            empty.put("rawJson", "");
+            empty.put("source", "none");
+            call.resolve(empty);
         });
     }
 

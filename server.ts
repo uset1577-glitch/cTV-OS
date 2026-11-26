@@ -364,6 +364,52 @@ async function startServer() {
     res.json({ ok: true });
   });
 
+  app.get('/api/catalog', async (_req: Request, res: Response) => {
+    const configuredUrl = process.env.CATALOG_FEED_URL?.trim() || '';
+    if (!configuredUrl || !(configuredUrl.startsWith('http://') || configuredUrl.startsWith('https://'))) {
+      res.json({
+        configured: false,
+        spotlight: [],
+        movies: [],
+        series: [],
+        rows: [],
+      });
+      return;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const upstream = await fetch(configuredUrl, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' },
+      });
+      clearTimeout(timer);
+
+      if (!upstream.ok) {
+        res.status(502).json({
+          configured: true,
+          spotlight: [],
+          movies: [],
+          series: [],
+          rows: [],
+        });
+        return;
+      }
+
+      const data = await upstream.json();
+      res.json(data);
+    } catch {
+      res.status(502).json({
+        configured: true,
+        spotlight: [],
+        movies: [],
+        series: [],
+        rows: [],
+      });
+    }
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({

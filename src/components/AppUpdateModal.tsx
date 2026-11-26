@@ -105,20 +105,19 @@ export function AppUpdateModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 8 }}
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-            className="w-full max-w-xl rounded-3xl bg-[#E6ECF4] dark:bg-[#12151E] border border-slate-900/12 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar"
+            className="w-full max-w-xl rounded-3xl bg-[#E5E7EB] dark:bg-[#111114] border border-zinc-900/12 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar"
           >
-            {/* Cabecera estilo Xuper TV / Google TV */}
             <div className="flex items-start justify-between gap-6 mb-6">
               <div className="flex items-center gap-3.5">
                 <BrandLogo size="lg" showWordmark={false} />
                 <div>
                   <h2
                     id="app-update-modal-title"
-                    className="font-display text-2xl font-bold text-slate-900 dark:text-white leading-tight"
+                    className="font-display text-2xl font-bold text-zinc-900 dark:text-white leading-tight"
                   >
                     Actualización de la app
                   </h2>
-                  <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                     Versión actual: v{currentVersion.versionName} (Build {currentVersion.versionCode})
                   </p>
                 </div>
@@ -131,16 +130,15 @@ export function AppUpdateModal({
                 data-tv-id="update-close-x"
                 onClick={onClose}
                 aria-label="Cerrar ventana"
-                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-700 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Estado 1: Buscando actualizaciones */}
             {status === 'checking' && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-zinc-900/8 dark:border-white/10 p-6 flex items-center gap-4 mb-6">
-                <RefreshCw className="w-7 h-7 text-amber-500 animate-spin shrink-0" />
+              <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/10 dark:border-white/10 p-6 flex items-center gap-4 mb-6">
+                <RefreshCw className="w-7 h-7 text-zinc-800 dark:text-zinc-200 animate-spin shrink-0" />
                 <div>
                   <div className="text-base font-semibold text-zinc-900 dark:text-white">
                     Comprobando versión...
@@ -152,10 +150,9 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Estado 2: Aplicación al día (el estado natural si no hay versión nueva) */}
             {(status === 'up_to_date' || (status === 'idle' && !remoteManifest)) && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-emerald-500/30 p-6 flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+              <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/12 dark:border-white/15 p-6 flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <div>
@@ -170,15 +167,14 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Estado 3: Nueva versión encontrada (opcional al entrar a la app) */}
             {status === 'update_available' && remoteManifest && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-amber-500/40 p-6 mb-6 space-y-4">
+              <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/15 dark:border-white/20 p-6 mb-6 space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                     <Sparkles className="w-4 h-4" />
-                    <span>¡Nueva actualización disponible!</span>
+                    <span>Nueva actualización disponible</span>
                   </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">
+                  <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                     No es obligatoria
                   </span>
                 </div>
@@ -194,8 +190,7 @@ export function AppUpdateModal({
                   )}
                 </div>
 
-                {/* Cartel informativo sobre mejora de calidad */}
-                <div className="rounded-xl bg-amber-500/12 border border-amber-500/35 px-4 py-3 text-sm font-medium text-amber-900 dark:text-amber-200 leading-snug">
+                <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/15 px-4 py-3 text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-snug">
                   Actualización opcional: puedes omitirla si prefieres, pero esto podría mejorar tu
                   calidad del launcher.
                 </div>
@@ -207,16 +202,15 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Estado 4: Descargando con barra de progreso */}
             {(status === 'downloading' || status === 'installing') && progress && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-zinc-900/10 dark:border-white/12 p-6 mb-6">
+              <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/10 dark:border-white/12 p-6 mb-6">
                 <div className="flex items-center justify-between text-sm mb-3">
                   <span className="font-semibold text-zinc-900 dark:text-white">
                     {status === 'installing'
                       ? 'Abriendo instalador del sistema...'
                       : 'Descargando actualización...'}
                   </span>
-                  <span className="font-mono-tabular text-amber-600 dark:text-amber-400 font-bold">
+                  <span className="font-mono-tabular text-zinc-900 dark:text-white font-bold">
                     {progress.percent}%
                     {progress.totalBytes > 0 &&
                       ` · ${formatBytes(progress.downloadedBytes)} / ${formatBytes(progress.totalBytes)}`}
@@ -225,7 +219,7 @@ export function AppUpdateModal({
 
                 <div className="w-full h-3 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 transition-[width] duration-150"
+                    className="h-full bg-zinc-900 dark:bg-white transition-[width] duration-150"
                     style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
                   />
                 </div>
@@ -237,10 +231,9 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Estado 5: Permiso de instalación desconocido en Android TV */}
             {status === 'permission_required' && (
-              <div className="rounded-2xl bg-white dark:bg-[#0A0D14] border border-amber-500/40 p-6 flex items-start gap-4 mb-6">
-                <ShieldAlert className="w-7 h-7 text-amber-500 shrink-0 mt-0.5" />
+              <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/15 dark:border-white/20 p-6 flex items-start gap-4 mb-6">
+                <ShieldAlert className="w-7 h-7 text-zinc-800 dark:text-zinc-200 shrink-0 mt-0.5" />
                 <div>
                   <div className="text-base font-bold text-zinc-900 dark:text-white">
                     Permiso necesario en Android TV
@@ -253,7 +246,6 @@ export function AppUpdateModal({
               </div>
             )}
 
-            {/* Servidor opcional para usuarios que deseen conectar su propio repositorio */}
             <div className="mb-6">
               <button
                 type="button"
@@ -271,7 +263,7 @@ export function AppUpdateModal({
               </button>
 
               {showAdvanced && (
-                <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-[#0A0D14] border border-zinc-900/8 dark:border-white/10 space-y-2">
+                <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/10 dark:border-white/10 space-y-2">
                   <label
                     htmlFor="update-repo-input"
                     className="block text-xs text-zinc-500 dark:text-zinc-400"
@@ -287,7 +279,7 @@ export function AppUpdateModal({
                       placeholder="usuario/vora-tv-os"
                       data-tv-focusable="true"
                       data-tv-id="update-repo-input"
-                      className="tv-focusable flex-1 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-xs font-mono-tabular text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="tv-focusable flex-1 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-xs font-mono-tabular text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                     />
                     <button
                       type="button"
@@ -303,7 +295,6 @@ export function AppUpdateModal({
               )}
             </div>
 
-            {/* Botones de acción estilo Xuper TV */}
             <div className="flex flex-wrap items-center justify-end gap-3">
               {status === 'permission_required' && (
                 <button
@@ -312,7 +303,7 @@ export function AppUpdateModal({
                   data-tv-initial="true"
                   data-tv-id="update-grant-permission"
                   onClick={onOpenUnknownSources}
-                  className="tv-focusable px-6 py-3 rounded-full bg-amber-500 text-zinc-950 font-bold text-sm focus:scale-105"
+                  className="tv-focusable px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105"
                 >
                   Abrir permisos de Android
                 </button>
@@ -325,7 +316,7 @@ export function AppUpdateModal({
                   data-tv-initial="true"
                   data-tv-id="update-install-btn"
                   onClick={onStartDownload}
-                  className="tv-focusable inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 text-zinc-950 font-bold text-sm focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                  className="tv-focusable inline-flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105"
                 >
                   <Download className="w-4 h-4" />
                   <span>Actualizar ahora</span>

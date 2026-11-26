@@ -35,6 +35,11 @@ export interface LauncherNativePlugin {
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
   getRemoteConfig(options: { repo: string }): Promise<LauncherRemoteStatus>;
+  getRecommendationsFeed(options?: { url?: string }): Promise<{
+    ok: boolean;
+    rawJson?: string;
+    source?: string;
+  }>;
   downloadAndInstallApk(options: { url: string; versionName: string }): Promise<{ started: boolean }>;
   getSpotifyNowPlaying(): Promise<SpotifyNowPlaying>;
   getMusicServiceStatus(): Promise<MusicServiceStatus>;
@@ -96,24 +101,54 @@ export async function launchSuggestionUri(
   url: string,
   packageName?: string
 ): Promise<{ ok: boolean; isNative: boolean; openedStore?: boolean; error?: string }> {
+  const cleanPkg = (packageName || '').trim();
+  if (!cleanPkg) {
+    return {
+      ok: false,
+      isNative: isNativeAndroid(),
+      error: 'No hay aplicación asociada para abrir este elemento.',
+    };
+  }
+
   if (isNativeAndroid()) {
     try {
-      const res = await LauncherNative.launchUri({ url, packageName });
+      const res = await LauncherNative.launchUri({ url: url || '', packageName: cleanPkg });
       return {
         ok: Boolean(res.launched),
         isNative: true,
         openedStore: Boolean(res.openedStore),
+        error: res.launched ? undefined : `No se pudo abrir ${cleanPkg}.`,
       };
     } catch (err) {
       return {
         ok: false,
         isNative: true,
-        error: err instanceof Error ? err.message : 'No se pudo abrir la sugerencia',
+        error: err instanceof Error ? err.message : 'No se pudo abrir la aplicación',
       };
     }
   }
 
   return { ok: true, isNative: false };
+}
+
+export async function getNativeRecommendationsFeed(url?: string): Promise<{
+  ok: boolean;
+  rawJson: string;
+  source: string;
+}> {
+  if (!isNativeAndroid()) {
+    return { ok: false, rawJson: '', source: 'none' };
+  }
+  try {
+    const res = await LauncherNative.getRecommendationsFeed({ url: (url || '').trim() });
+    return {
+      ok: Boolean(res?.ok && res?.rawJson),
+      rawJson: res?.rawJson || '',
+      source: res?.source || 'none',
+    };
+  } catch {
+    return { ok: false, rawJson: '', source: 'none' };
+  }
 }
 
 export async function openTvSettings(

@@ -10,20 +10,22 @@ import { NavaSearchOverlay } from './components/NavaSearchOverlay';
 import { NavaSettingsDrawer } from './components/NavaSettingsDrawer';
 import { NavaTopBar } from './components/NavaTopBar';
 import { AppUpdateModal } from './components/AppUpdateModal';
+import { TvBootIntro } from './components/TvBootIntro';
 import { VoraScreensaver } from './components/VoraScreensaver';
 import {
   BACKGROUND_PRESETS,
   DEFAULT_SETTINGS,
   FEATURED_GAME,
+  WEB_PREVIEW_APPS,
 } from './data/presets';
 import {
   deduplicateCatalog,
   fetchGoogleTvLiveCatalog,
+  getDailyDateKey,
   OFFLINE_FALLBACK_CATALOG,
 } from './data/suggestions';
 import {
   focusElementById,
-  smoothScrollVerticalTo,
   useSpatialNavigation,
 } from './hooks/useSpatialNavigation';
 import { useSpotifyNowPlaying } from './hooks/useSpotifyNowPlaying';
@@ -90,9 +92,21 @@ export default function App() {
   const [settings, setSettings] = useState<LauncherSettings>(loadSavedSettings);
   const [activeTab, setActiveTab] = useState<HomeTab>('inicio');
   const [overlay, setOverlay] = useState<LauncherOverlay>('none');
-  const [apps, setApps] = useState<InstalledApp[]>([]);
+  const [isBootIntroActive, setIsBootIntroActive] = useState(true);
+  const [apps, setApps] = useState<InstalledApp[]>(() => {
+    try {
+      const cached = localStorage.getItem('vora_installed_apps_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached) as InstalledApp[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Ignorar
+    }
+    return [...WEB_PREVIEW_APPS];
+  });
   const [isNative, setIsNative] = useState(false);
-  const [isLoadingApps, setIsLoadingApps] = useState(true);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [liveCatalog, setLiveCatalog] = useState<GoogleTvLiveCatalog>(OFFLINE_FALLBACK_CATALOG);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [launchingApp, setLaunchingApp] = useState<{ name: string; icon?: string } | null>(
@@ -107,6 +121,7 @@ export default function App() {
   const [topBarVisible, setTopBarVisible] = useState(true);
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
   const lastCatalogFetchRef = useRef<number>(0);
+  const lastCatalogDateRef = useRef<string>(getDailyDateKey());
   const lastRemoteStatusFetchRef = useRef<number>(0);
   const hasAutoPromptedUpdateRef = useRef(false);
   const appsRef = useRef<InstalledApp[]>(apps);
@@ -151,7 +166,7 @@ export default function App() {
 
   // Salvapantallas VORA TV OS (inactividad, activación manual e intercepción Google TV)
   const [isScreensaverActive, setIsScreensaverActive] = useState(false);
-  const screensaverTimerRef = useRef<number | null>(null);
+  const lastActivityAtRef = useRef<number>(Date.now());
   const screensaverActivatedAtRef = useRef<number>(0);
   const [musicServiceStatus, setMusicServiceStatus] = useState<MusicServiceStatus>({
     hasNotificationAccess: false,
@@ -213,42 +228,39 @@ export default function App() {
     }
   }, [overlay, refreshMusicServiceStatus]);
 
-  const resetScreensaverTimer = useCallback(() => {
-    if (screensaverTimerRef.current) {
-      window.clearTimeout(screensaverTimerRef.current);
-    }
-    if (isScreensaverActive) {
-      if (Date.now() - screensaverActivatedAtRef.current < 800) {
-        return;
+  useEffect(() => {
+    const handleActivity = () => {
+      const now = Date.now();
+      lastActivityAtRef.current = now;
+      if (isScreensaverActive && now - screensaverActivatedAtRef.current >= 800) {
+        setIsScreensaverActive(false);
       }
-      setIsScreensaverActive(false);
-    }
-    // 3 minutos de inactividad (180,000 ms)
-    screensaverTimerRef.current = window.setTimeout(() => {
-      if (overlay === 'none' && !showCreatorAdmin) {
+    };
+
+    window.addEventListener('keydown', handleActivity, { passive: true });
+    window.addEventListener('touchstart', handleActivity, { passive: true });
+    window.addEventListener('pointerdown', handleActivity, { passive: true });
+
+    // Comprobación ligera cada 15 s (cero clearTimeout/setTimeout en cada pulsación)
+    const idleCheckId = window.setInterval(() => {
+      if (
+        !isScreensaverActive &&
+        overlay === 'none' &&
+        !showCreatorAdmin &&
+        Date.now() - lastActivityAtRef.current >= 180_000
+      ) {
         screensaverActivatedAtRef.current = Date.now();
         setIsScreensaverActive(true);
       }
-    }, 180_000);
-  }, [isScreensaverActive, overlay, showCreatorAdmin]);
-
-  useEffect(() => {
-    resetScreensaverTimer();
-    const handleActivity = () => resetScreensaverTimer();
-
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-    window.addEventListener('pointerdown', handleActivity);
+    }, 15_000);
 
     return () => {
-      if (screensaverTimerRef.current) {
-        window.clearTimeout(screensaverTimerRef.current);
-      }
+      window.clearInterval(idleCheckId);
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('pointerdown', handleActivity);
     };
-  }, [resetScreensaverTimer]);
+  }, [isScreensaverActive, overlay, showCreatorAdmin]);
 
   // Mantener pantalla encendida en Android TV mientras VORA TV OS / Salvapantallas esté activo
   // para impedir que el salvapantallas de Google TV se superponga
@@ -269,7 +281,7 @@ export default function App() {
     const force = Boolean(mode);
     const now = Date.now();
 
-    if (!isImmediate && catalogInitializedRef.current && now - lastCatalogFetchRef.current < 1800) {
+    if (!isImmediate && !force && catalogInitializedRef.current && now - lastCatalogFetchRef.current < 5000) {
       return catalogInFlightRef.current ?? Promise.resolve();
     }
 
@@ -280,8 +292,11 @@ export default function App() {
     setIsLoadingCatalog(true);
     const task = (async () => {
       try {
+        const currentDateKey = getDailyDateKey();
+        lastCatalogDateRef.current = currentDateKey;
         const catalog = await fetchGoogleTvLiveCatalog({
           force,
+          dateKey: currentDateKey,
           installedApps: appsRef.current,
           favoritePackages: favoritePackagesRef.current,
         });
@@ -299,7 +314,7 @@ export default function App() {
   }, []);
 
   const loadLauncherData = useCallback(async (silent = false) => {
-    if (!silent) {
+    if (!silent && apps.length === 0) {
       setIsLoadingApps(true);
     }
     try {
@@ -312,6 +327,11 @@ export default function App() {
       setIsNative(appsResult.isNative);
       setAppVersion(versionInfo);
       setIsVersionLoaded(true);
+      try {
+        localStorage.setItem('vora_installed_apps_cache', JSON.stringify(appsResult.apps));
+      } catch {
+        // Ignorar
+      }
       setLiveCatalog((prev) =>
         deduplicateCatalog(prev, appsResult.apps, favoritePackagesRef.current)
       );
@@ -320,7 +340,7 @@ export default function App() {
         setIsLoadingApps(false);
       }
     }
-  }, []);
+  }, [apps.length]);
 
   const loadRemoteStatus = useCallback(
     async (repoSlug: string) => {
@@ -426,19 +446,25 @@ export default function App() {
     }, 3000);
   }, []);
 
-  const updateSettings = useCallback((patch: Partial<LauncherSettings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...patch };
-      try {
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignorar si almacenamiento está lleno
-      }
-      return next;
-    });
-  }, []);
-
-
+  const updateSettings = useCallback(
+    (
+      patch:
+        | Partial<LauncherSettings>
+        | ((prev: LauncherSettings) => Partial<LauncherSettings>)
+    ) => {
+      setSettings((prev) => {
+        const resolvedPatch = typeof patch === 'function' ? patch(prev) : patch;
+        const next = { ...prev, ...resolvedPatch };
+        try {
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // Ignorar si almacenamiento está lleno
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     void loadLauncherData(false);
@@ -466,22 +492,13 @@ export default function App() {
     };
   }, [loadLauncherData, loadLiveCatalog]);
 
-  const appsSignature = useMemo(
-    () => apps.map((a) => a.packageName).sort().join('|'),
-    [apps]
-  );
-  const favoritesSignature = useMemo(
-    () => settings.favoritePackages.join('|'),
-    [settings.favoritePackages]
-  );
-
   useEffect(() => {
-    if (!effectiveAppsOnly) {
-      void loadLiveCatalog(true);
+    if (!effectiveAppsOnly && !catalogInitializedRef.current) {
+      void loadLiveCatalog(false);
     }
-  }, [effectiveAppsOnly, appsSignature, favoritesSignature, loadLiveCatalog]);
+  }, [effectiveAppsOnly, loadLiveCatalog]);
 
-  // Refrescar recomendaciones, apps y estado remoto de mantenimiento al volver a la TV
+  // Refrescar apps en segundo plano y rotar recomendaciones si cambia el día calendario
   useEffect(() => {
     const refreshOnReturn = () => {
       if (document.visibilityState === 'hidden') return;
@@ -489,11 +506,19 @@ export default function App() {
       if (now - lastRemoteStatusFetchRef.current > 15_000) {
         void loadRemoteStatus(settings.updateRepo);
       }
-      if (now - lastCatalogFetchRef.current > 2_500) {
+
+      // 1. Siempre verificar en segundo plano si hay aplicaciones nuevas instaladas en Android TV
+      void loadLauncherData(true);
+
+      // 2. Si el día cambió (ej: medianoche o nuevo día), rotar automáticamente el catálogo
+      const today = getDailyDateKey();
+      if (today !== lastCatalogDateRef.current) {
+        lastCatalogDateRef.current = today;
         if (!effectiveAppsOnly) {
           void loadLiveCatalog(true);
         }
-        void loadLauncherData(true);
+      } else if (!catalogInitializedRef.current && !effectiveAppsOnly) {
+        void loadLiveCatalog(false);
       }
     };
 
@@ -503,11 +528,16 @@ export default function App() {
       }
     }, 5 * 60_000);
 
-    const periodicCatalogId = window.setInterval(() => {
-      if (document.visibilityState === 'visible' && !effectiveAppsOnly) {
-        void loadLiveCatalog(true);
+    // Comprobación periódica cada minuto para rotar automáticamente al cambiar de día a medianoche
+    const periodicDateCheckId = window.setInterval(() => {
+      const today = getDailyDateKey();
+      if (today !== lastCatalogDateRef.current) {
+        lastCatalogDateRef.current = today;
+        if (!effectiveAppsOnly) {
+          void loadLiveCatalog(true);
+        }
       }
-    }, 30 * 60_000);
+    }, 60_000);
 
     document.addEventListener('visibilitychange', refreshOnReturn);
     window.addEventListener('focus', refreshOnReturn);
@@ -515,7 +545,7 @@ export default function App() {
     window.addEventListener('voraTvResume', refreshOnReturn);
     return () => {
       window.clearInterval(periodicStatusId);
-      window.clearInterval(periodicCatalogId);
+      window.clearInterval(periodicDateCheckId);
       document.removeEventListener('visibilitychange', refreshOnReturn);
       window.removeEventListener('focus', refreshOnReturn);
       window.removeEventListener('pageshow', refreshOnReturn);
@@ -580,20 +610,30 @@ export default function App() {
     [overlay, remoteManifest, effectiveAppsOnly, loadLauncherData, loadLiveCatalog]
   );
 
+  const handleBootIntroComplete = useCallback(() => {
+    setIsBootIntroActive(false);
+    window.requestAnimationFrame(() => {
+      focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+    });
+  }, []);
+
+  const handlePlayBootIntro = useCallback(() => {
+    setOverlay('none');
+    setIsBootIntroActive(true);
+  }, []);
+
   useSpatialNavigation({
-    enabled: overlay === 'none',
+    enabled: overlay === 'none' && !isBootIntroActive && !isScreensaverActive,
     onBack: () => {
       setTopBarVisible(true);
-      const scrollEl = document.querySelector<HTMLElement>('[data-tv-scroll-container="true"]');
-      if (scrollEl) {
-        smoothScrollVerticalTo(scrollEl, 0);
-      }
       if (activeTab !== 'inicio') {
         setActiveTab('inicio');
-      }
-      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+        });
+      } else {
         focusElementById(`row-app-${FEATURED_GAME.packageName}`);
-      });
+      }
     },
     scopeSelector: '#gtv-home-shell',
   });
@@ -662,18 +702,23 @@ export default function App() {
 
   const handleToggleFavorite = useCallback(
     (app: InstalledApp) => {
-      const exists = settings.favoritePackages.includes(app.packageName);
-      const nextFavs = exists
-        ? settings.favoritePackages.filter((pkg) => pkg !== app.packageName)
-        : [app.packageName, ...settings.favoritePackages];
-      updateSettings({ favoritePackages: nextFavs });
+      let removed = false;
+      updateSettings((prev) => {
+        const exists = prev.favoritePackages.includes(app.packageName);
+        removed = exists;
+        return {
+          favoritePackages: exists
+            ? prev.favoritePackages.filter((pkg) => pkg !== app.packageName)
+            : [app.packageName, ...prev.favoritePackages],
+        };
+      });
       showToast(
-        exists
+        removed
           ? `${app.name} quitada de Tus aplicaciones`
           : `${app.name} fijada en Tus aplicaciones`
       );
     },
-    [settings.favoritePackages, updateSettings, showToast]
+    [updateSettings, showToast]
   );
 
   const handleOpenAndroidSettings = useCallback(
@@ -803,13 +848,15 @@ export default function App() {
   );
 
   const isLight = settings.themeMode === 'light';
-  const backgroundStyle = isLight
-    ? currentBackground.lightValue.startsWith('#')
-      ? { backgroundColor: currentBackground.lightValue }
-      : { backgroundImage: currentBackground.lightValue }
-    : currentBackground.type === 'solid'
-      ? { backgroundColor: currentBackground.value }
-      : { backgroundImage: currentBackground.value };
+  const backgroundStyle = useMemo(() => {
+    return isLight
+      ? currentBackground.lightValue.startsWith('#')
+        ? { backgroundColor: currentBackground.lightValue }
+        : { backgroundImage: currentBackground.lightValue }
+      : currentBackground.type === 'solid'
+        ? { backgroundColor: currentBackground.value }
+        : { backgroundImage: currentBackground.value };
+  }, [isLight, currentBackground]);
 
   const handleLaunchFeatured = useCallback(() => {
     void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name);
@@ -834,11 +881,15 @@ export default function App() {
     void loadLiveCatalog(false);
   }, [loadLiveCatalog]);
 
+  const handleRefreshCatalogImmediate = useCallback(() => {
+    void loadLiveCatalog('immediate');
+  }, [loadLiveCatalog]);
+
   const handleToggleTheme = useCallback(() => {
-    updateSettings({
-      themeMode: settings.themeMode === 'dark' ? 'light' : 'dark',
-    });
-  }, [settings.themeMode, updateSettings]);
+    updateSettings((prev) => ({
+      themeMode: prev.themeMode === 'dark' ? 'light' : 'dark',
+    }));
+  }, [updateSettings]);
 
   const handleOpenSearch = useCallback(() => setOverlay('search'), []);
   const handleOpenSettings = useCallback(() => setOverlay('settings'), []);
@@ -903,9 +954,11 @@ export default function App() {
             allApps={apps}
             favoritePackages={settings.favoritePackages}
             series={liveCatalog.series}
+            catalogFeedUrl={settings.catalogFeedUrl}
             isLoading={isLoadingCatalog}
             onScrollTopChange={setTopBarVisible}
-            onRefreshFeed={() => void loadLiveCatalog('immediate')}
+            onRefreshFeed={handleRefreshCatalogImmediate}
+            onOpenFeedSettings={handleOpenSettings}
             onLaunchSuggestion={handleLaunchSuggestionCb}
           />
         )}
@@ -915,10 +968,10 @@ export default function App() {
       <AnimatePresence>
         {launchingApp && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.04 }}
-            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-50 bg-[#DCE3EE] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
           >
             {launchingApp.icon && (
@@ -967,13 +1020,16 @@ export default function App() {
         remoteVersionName={remoteManifest?.versionName}
         sleepTimerMinutes={sleepTimerMinutes}
         musicServiceStatus={musicServiceStatus}
+        catalogSource={liveCatalog.source}
         onUpdateSettings={updateSettings}
+        onRefreshCatalog={handleRefreshCatalogImmediate}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
         onCycleSleepTimer={handleCycleSleepTimer}
         onOpenScreensaver={() => {
           setOverlay('none');
           activateScreensaver();
         }}
+        onPlayBootIntro={handlePlayBootIntro}
         onOpenAccessibilitySettings={() => {
           void openSpotifyAccessibilitySettings().then((opened) => {
             if (!opened) {
@@ -1019,10 +1075,10 @@ export default function App() {
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.16 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.12 }}
             role="status"
             aria-live="polite"
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-medium shadow-xl"
@@ -1052,6 +1108,12 @@ export default function App() {
           <span>Panel Creador (PC)</span>
         </button>
       )}
+
+      {/* Intro profesional de encendido de TV (4 segundos con logo VORA y logo oficial Google TV) */}
+      <TvBootIntro
+        isOpen={isBootIntroActive}
+        onComplete={handleBootIntroComplete}
+      />
     </div>
   );
 }

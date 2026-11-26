@@ -38,18 +38,27 @@ export interface AppSuggestion {
   backdropUrl?: string;
   logoUrl?: string;
   imdbRating?: string;
-  accentGradient: string;
+  accentGradient?: string;
   tag: string;
   genre?: string;
   releaseDate?: string;
   mediaKind?: 'movie' | 'series' | 'game';
 }
 
+export interface CatalogRow {
+  id: string;
+  title: string;
+  layout?: 'poster' | 'landscape';
+  items: AppSuggestion[];
+}
+
 export interface GoogleTvLiveCatalog {
   spotlight: AppSuggestion[];
   movies: AppSuggestion[];
   series: AppSuggestion[];
+  rows?: CatalogRow[];
   updatedAt: string;
+  source?: 'external-url' | 'native-bridge' | 'server-api' | 'none';
 }
 
 export interface LauncherSettings {
@@ -63,6 +72,7 @@ export interface LauncherSettings {
   maintenanceTitle: string;
   maintenanceMessage: string;
   updateRepo: string;
+  catalogFeedUrl: string;
   favoritePackages: string[];
 }
 
@@ -125,4 +135,3 @@ export interface MusicServiceStatus {
   hasAccessibilityAccess: boolean;
   isGoogleTv: boolean;
 }
-

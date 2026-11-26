@@ -96,6 +96,7 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   maintenanceTitle: 'Mantenimiento · Próxima actualización',
   maintenanceMessage: 'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
   updateRepo: (import.meta.env.VITE_UPDATE_REPO as string | undefined)?.trim() || '',
+  catalogFeedUrl: '',
   favoritePackages: DEFAULT_FAVORITES,
 };
 
@@ -194,4 +195,45 @@ export const WEB_PREVIEW_APPS: InstalledApp[] = [
     isSystemApp: true,
     category: 'other',
   },
+  {
+    packageName: 'tv.twitch.android.app',
+    name: 'Twitch',
+    icon: makeCircleAppIcon('#9146FF', 'TW', '#FFFFFF'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'tv',
+  },
+  {
+    packageName: 'com.apple.atve.androidtv.appletv',
+    name: 'Apple TV',
+    icon: makeCircleAppIcon('#171717', 'tv', '#F5F5F5'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'tv',
+  },
+  {
+    packageName: 'com.crunchyroll.crunchyroid',
+    name: 'Crunchyroll',
+    icon: makeCircleAppIcon('#F47521', 'CR', '#FFFFFF'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'tv',
+  },
+  {
+    packageName: 'org.videolan.vlc',
+    name: 'VLC',
+    icon: makeCircleAppIcon('#E65100', 'VLC', '#FFFFFF'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'other',
+  },
+  {
+    packageName: 'tv.pluto.android',
+    name: 'Pluto TV',
+    icon: makeCircleAppIcon('#FFD700', 'PLUTO', '#000000'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'tv',
+  },
 ];
+

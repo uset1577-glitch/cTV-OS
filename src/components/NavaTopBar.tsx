@@ -71,7 +71,7 @@ export const NavaTopBar = memo(function NavaTopBar({
           : '-translate-y-full pointer-events-none'
       }`}
     >
-      {/* Zona izquierda Google TV: Logo VORA TV OS + Pestañas */}
+      {/* Zona izquierda: Logo VORA TV OS + Pestañas */}
       <div className="flex items-center gap-8">
         <BrandLogo size="md" showWordmark forceLightText={heroTone} />
 
@@ -90,11 +90,11 @@ export const NavaTopBar = memo(function NavaTopBar({
                   isActive
                     ? heroTone
                       ? 'bg-white text-zinc-950 shadow-sm'
-                      : 'bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 shadow-sm'
+                      : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm'
                     : heroTone
                       ? 'text-zinc-200 hover:text-white focus:bg-white/25 focus:text-white'
-                      : 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white focus:bg-[#18202C]/15 dark:focus:bg-white/20'
-                } focus:ring-2 focus:ring-amber-400 focus:scale-105`}
+                      : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white focus:bg-zinc-900/15 dark:focus:bg-white/20'
+                } ${heroTone ? 'focus:ring-2 focus:ring-white/80' : 'focus:ring-2 focus:ring-zinc-900/70 dark:focus:ring-white/80'} focus:scale-105`}
               >
                 {tab.label}
               </button>
@@ -113,10 +113,10 @@ export const NavaTopBar = memo(function NavaTopBar({
           onClick={onOpenSearch}
           aria-label="Buscar aplicaciones y contenido"
           title="Buscar"
-          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:ring-2 focus:ring-amber-400 focus:scale-110 ${
+          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
-              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
-              : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950 focus:ring-2 focus:ring-white/80'
+              : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900/70 dark:focus:ring-white/80'
           }`}
         >
           <Search className="w-4 h-4" />
@@ -130,10 +130,10 @@ export const NavaTopBar = memo(function NavaTopBar({
           onClick={onToggleTheme}
           aria-label={themeMode === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'}
           title={themeMode === 'dark' ? 'Modo día' : 'Modo noche'}
-          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:ring-2 focus:ring-amber-400 focus:scale-110 ${
+          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
-              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
-              : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950 focus:ring-2 focus:ring-white/80'
+              : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900/70 dark:focus:ring-white/80'
           }`}
         >
           {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -147,10 +147,10 @@ export const NavaTopBar = memo(function NavaTopBar({
           onClick={onOpenScreensaver}
           aria-label="Activar salvapantallas"
           title="Salvapantallas"
-          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:ring-2 focus:ring-amber-400 focus:scale-110 ${
+          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
-              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
-              : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950 focus:ring-2 focus:ring-white/80'
+              : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900/70 dark:focus:ring-white/80'
           }`}
         >
           <Monitor className="w-4 h-4" />
@@ -165,7 +165,7 @@ export const NavaTopBar = memo(function NavaTopBar({
             onClick={onOpenUpdate}
             aria-label="Nueva versión disponible para instalar"
             title="Nueva versión disponible"
-            className="tv-focusable h-10 px-4 rounded-full flex items-center gap-2 text-xs font-bold whitespace-nowrap shrink-0 bg-amber-500 text-zinc-950 focus:bg-white focus:text-zinc-950 focus:ring-2 focus:ring-amber-400 focus:scale-105 shadow-md"
+            className="tv-focusable h-10 px-4 rounded-full flex items-center gap-2 text-xs font-bold whitespace-nowrap shrink-0 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 shadow-md"
           >
             <Download className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
             <span>Actualizar</span>
@@ -180,10 +180,10 @@ export const NavaTopBar = memo(function NavaTopBar({
           onClick={onOpenSettings}
           aria-label="Ajustes del launcher"
           title="Ajustes"
-          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:ring-2 focus:ring-amber-400 focus:scale-110 ${
+          className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
-              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
-              : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950'
+              ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950 focus:ring-2 focus:ring-white/80'
+              : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900/70 dark:focus:ring-white/80'
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -191,7 +191,7 @@ export const NavaTopBar = memo(function NavaTopBar({
 
         <span
           className={`ml-2 font-display text-lg font-semibold tabular-nums whitespace-nowrap shrink-0 ${
-            heroTone ? 'text-white/90' : 'text-slate-800 dark:text-zinc-200'
+            heroTone ? 'text-white/90' : 'text-zinc-800 dark:text-zinc-200'
           }`}
         >
           {formattedTime}

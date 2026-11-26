@@ -46,38 +46,86 @@ interface GoogleTvHomeProps {
   onRefreshCatalog?: () => void;
 }
 
+const HeroBackdropImage = memo(function HeroBackdropImage({
+  backdropUrl,
+  accentGradient,
+}: {
+  backdropUrl?: string;
+  accentGradient?: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = Boolean(backdropUrl && failedUrl !== backdropUrl);
+
+  return (
+    <div
+      className="w-full h-full"
+      style={{ background: accentGradient || 'linear-gradient(135deg, #141923 0%, #273244 100%)' }}
+    >
+      {showImage && (
+        <img
+          src={backdropUrl}
+          alt=""
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(backdropUrl || null)}
+          className="w-full h-full object-cover object-center"
+        />
+      )}
+    </div>
+  );
+});
+
+const HeroLogoOrTitle = memo(function HeroLogoOrTitle({
+  logoUrl,
+  title,
+}: {
+  logoUrl?: string;
+  title: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showLogo = Boolean(logoUrl && failedUrl !== logoUrl);
+
+  if (showLogo) {
+    return (
+      <img
+        src={logoUrl}
+        alt={title}
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={() => setFailedUrl(logoUrl || null)}
+        className="max-h-14 lg:max-h-20 w-auto object-contain object-left mb-1"
+      />
+    );
+  }
+
+  return (
+    <h1 className="font-display text-3xl lg:text-5xl font-bold tracking-tight text-white text-balance line-clamp-2 [text-shadow:0_2px_6px_rgba(0,0,0,0.75)]">
+      {title}
+    </h1>
+  );
+});
+
 const CircularAppShortcut = memo(function CircularAppShortcut({
   app,
   isInitial = false,
   onLaunch,
-  onToggleFavorite,
 }: {
   app: InstalledApp;
   isInitial?: boolean;
   onLaunch: (app: InstalledApp) => void;
-  onToggleFavorite: (app: InstalledApp) => void;
 }) {
-  const ref = useRef<HTMLButtonElement | null>(null);
   const [imgErr, setImgErr] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const handler = () => onToggleFavorite(app);
-    el.addEventListener('tv-longpress', handler);
-    return () => el.removeEventListener('tv-longpress', handler);
-  }, [app, onToggleFavorite]);
 
   return (
     <button
-      ref={ref}
       type="button"
       data-tv-focusable="true"
       data-tv-supports-longpress="true"
       data-tv-initial={isInitial ? 'true' : undefined}
       data-tv-id={`row-app-${app.packageName}`}
+      data-tv-pkg={app.packageName}
       onClick={() => onLaunch(app)}
-      className="tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none"
+      className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none"
     >
       <div
         data-tv-focus-box="true"
@@ -87,6 +135,8 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
           <img
             src={app.icon}
             alt={app.name}
+            width={88}
+            height={88}
             decoding="async"
             referrerPolicy="no-referrer"
             onError={() => setImgErr(true)}
@@ -107,30 +157,19 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
 const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
   app,
   onLaunch,
-  onToggleFavorite,
 }: {
   app: InstalledApp;
   onLaunch: (app: InstalledApp) => void;
-  onToggleFavorite: (app: InstalledApp) => void;
 }) {
-  const ref = useRef<HTMLButtonElement | null>(null);
   const [imgErr, setImgErr] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const handler = () => onToggleFavorite(app);
-    el.addEventListener('tv-longpress', handler);
-    return () => el.removeEventListener('tv-longpress', handler);
-  }, [app, onToggleFavorite]);
 
   return (
     <button
-      ref={ref}
       type="button"
       data-tv-focusable="true"
       data-tv-supports-longpress="true"
       data-tv-id={`apps-only-${app.packageName}`}
+      data-tv-pkg={app.packageName}
       onClick={() => onLaunch(app)}
       className="tv-focusable group rounded-2xl bg-[#EEF2F7]/85 dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-3.5 flex flex-col items-center gap-2.5 text-center focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-amber-500 focus:scale-[1.05] shadow-sm"
     >
@@ -142,6 +181,8 @@ const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
           <img
             src={app.icon}
             alt={app.name}
+            width={64}
+            height={64}
             loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
@@ -159,22 +200,131 @@ const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
   );
 });
 
+const MoviePosterCard = memo(function MoviePosterCard({
+  movie,
+  eager,
+  onLaunchSuggestion,
+}: {
+  movie: AppSuggestion;
+  eager: boolean;
+  onLaunchSuggestion: (suggestion: AppSuggestion) => void;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+
+  return (
+    <button
+      type="button"
+      data-tv-focusable="true"
+      data-tv-id={`movie-${movie.id}`}
+      onClick={() => onLaunchSuggestion(movie)}
+      className="group w-[152px] shrink-0 text-left focus:outline-none"
+    >
+      <div
+        data-tv-focus-box="true"
+        style={{ background: movie.accentGradient }}
+        className="tv-focusable relative w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06]"
+      >
+        {movie.posterUrl && !imgErr ? (
+          <img
+            src={movie.posterUrl}
+            alt={movie.title}
+            width={152}
+            height={228}
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImgErr(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-end p-3.5">
+            <span className="font-display text-sm font-bold text-white line-clamp-3">
+              {movie.title}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="mt-2.5 px-0.5">
+        <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+          {movie.title}
+        </div>
+        <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
+          {movie.genre || movie.tag}
+          {movie.releaseDate ? ` · ${movie.releaseDate}` : ''}
+        </div>
+      </div>
+    </button>
+  );
+});
+
+const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
+  show,
+  eager,
+  onLaunchSuggestion,
+}: {
+  show: AppSuggestion;
+  eager: boolean;
+  onLaunchSuggestion: (suggestion: AppSuggestion) => void;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+  const landscapeImage = show.backdropUrl || show.posterUrl;
+
+  return (
+    <button
+      type="button"
+      data-tv-focusable="true"
+      data-tv-id={`series-${show.id}`}
+      onClick={() => onLaunchSuggestion(show)}
+      className="group w-[248px] shrink-0 text-left focus:outline-none"
+    >
+      <div
+        data-tv-focus-box="true"
+        style={{ background: show.accentGradient }}
+        className="tv-focusable relative w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05]"
+      >
+        {landscapeImage && !imgErr ? (
+          <img
+            src={landscapeImage}
+            alt={show.title}
+            width={248}
+            height={140}
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImgErr(true)}
+            className="w-full h-full object-cover object-center"
+          />
+        ) : (
+          <div className="w-full h-full flex items-end p-3.5">
+            <span className="font-display text-sm font-bold text-white line-clamp-2">
+              {show.title}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="mt-2.5 px-0.5">
+        <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+          {show.title}
+        </div>
+        <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
+          {show.tag} · {show.subtitle}
+        </div>
+      </div>
+    </button>
+  );
+});
+
 const MoviesSection = memo(function MoviesSection({
   movies,
-  allApps,
   formattedUpdatedTime,
-  failedImages,
-  onMarkFailed,
   onLaunchSuggestion,
 }: {
   movies: AppSuggestion[];
-  allApps: InstalledApp[];
   formattedUpdatedTime: string;
-  failedImages: Record<string, boolean>;
-  onMarkFailed: (url: string) => void;
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
 }) {
-  if (movies.length === 0) return null;
+  const visibleMovies = useMemo(() => movies.slice(0, 14), [movies]);
+  if (visibleMovies.length === 0) return null;
 
   return (
     <section className="tv-row-offscreen" aria-label="Estrenos y películas populares">
@@ -191,54 +341,14 @@ const MoviesSection = memo(function MoviesSection({
         data-tv-row="movies"
         className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
       >
-        {movies.slice(0, 14).map((movie) => {
-          const resolvedPkg = resolvePackageAlias(movie.packageName, allApps);
-          return (
-            <button
-              key={movie.id}
-              type="button"
-              data-tv-focusable="true"
-              data-tv-id={`movie-${movie.id}`}
-              onClick={() => onLaunchSuggestion({ ...movie, packageName: resolvedPkg })}
-              className="tv-focusable group w-[152px] shrink-0 text-left focus:outline-none"
-            >
-              <div
-                data-tv-focus-box="true"
-                className="tv-focusable w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06] shadow-sm"
-              >
-                {movie.posterUrl && !failedImages[movie.posterUrl] ? (
-                  <img
-                    src={movie.posterUrl}
-                    alt={movie.title}
-                    loading="eager"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={() => onMarkFailed(movie.posterUrl)}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full flex items-end p-3.5"
-                    style={{ background: movie.accentGradient }}
-                  >
-                    <span className="font-display text-sm font-bold text-white line-clamp-3">
-                      {movie.title}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="mt-2.5 px-0.5">
-                <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
-                  {movie.title}
-                </div>
-                <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-                  {movie.genre || movie.tag}
-                  {movie.releaseDate ? ` · ${movie.releaseDate}` : ''}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+        {visibleMovies.map((movie, index) => (
+          <MoviePosterCard
+            key={movie.id}
+            movie={movie}
+            eager={index < 7}
+            onLaunchSuggestion={onLaunchSuggestion}
+          />
+        ))}
       </div>
     </section>
   );
@@ -246,21 +356,15 @@ const MoviesSection = memo(function MoviesSection({
 
 const SeriesSection = memo(function SeriesSection({
   filteredSeries,
-  allApps,
   streamingFilters,
   platformFilter,
-  failedImages,
   onSelectFilter,
-  onMarkFailed,
   onLaunchSuggestion,
 }: {
   filteredSeries: AppSuggestion[];
-  allApps: InstalledApp[];
   streamingFilters: StreamingFilterOption[];
   platformFilter: string;
-  failedImages: Record<string, boolean>;
   onSelectFilter: (id: string) => void;
-  onMarkFailed: (url: string) => void;
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
 }) {
   if (filteredSeries.length === 0 && platformFilter === 'all') return null;
@@ -313,54 +417,14 @@ const SeriesSection = memo(function SeriesSection({
             Sin emisiones para esta plataforma · Ver todas
           </button>
         ) : (
-          filteredSeries.map((show) => {
-            const resolvedPkg = resolvePackageAlias(show.packageName, allApps);
-            const landscapeImage = show.backdropUrl || show.posterUrl;
-            return (
-              <button
-                key={show.id}
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id={`series-${show.id}`}
-                onClick={() => onLaunchSuggestion({ ...show, packageName: resolvedPkg })}
-                className="tv-focusable group w-[248px] shrink-0 text-left focus:outline-none"
-              >
-                <div
-                  data-tv-focus-box="true"
-                  className="tv-focusable w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05] shadow-sm"
-                >
-                  {landscapeImage && !failedImages[landscapeImage] ? (
-                    <img
-                      src={landscapeImage}
-                      alt={show.title}
-                      loading="eager"
-                      decoding="async"
-                      referrerPolicy="no-referrer"
-                      onError={() => onMarkFailed(landscapeImage)}
-                      className="w-full h-full object-cover object-center"
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-end p-3.5"
-                      style={{ background: show.accentGradient }}
-                    >
-                      <span className="font-display text-sm font-bold text-white line-clamp-2">
-                        {show.title}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2.5 px-0.5">
-                  <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
-                    {show.title}
-                  </div>
-                  <div className="text-[11px] text-slate-600 dark:text-zinc-400 truncate mt-0.5">
-                    {show.tag} · {show.subtitle}
-                  </div>
-                </div>
-              </button>
-            );
-          })
+          filteredSeries.map((show, index) => (
+            <SeriesLandscapeCard
+              key={show.id}
+              show={show}
+              eager={index < 6}
+              onLaunchSuggestion={onLaunchSuggestion}
+            />
+          ))
         )}
       </div>
     </section>
@@ -384,19 +448,19 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   onToggleFavorite,
   onOpenAllApps,
   onOpenMaintenanceInfo,
-  onRefreshCatalog,
 }: GoogleTvHomeProps) {
   const [heroIdx, setHeroIdx] = useState(0);
   const [platformFilter, setPlatformFilter] = useState<string>('all');
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const backdropLayerRef = useRef<HTMLDivElement | null>(null);
   const heroBannerRef = useRef<HTMLElement | null>(null);
   const fadeVeilRef = useRef<HTMLDivElement | null>(null);
   const appsSectionRef = useRef<HTMLElement | null>(null);
+  const appsRowRef = useRef<HTMLDivElement | null>(null);
+  const appsGridRef = useRef<HTMLDivElement | null>(null);
   const atTopRef = useRef(true);
   const appsOverHeroRef = useRef(true);
-  const scrollRafRef = useRef<number>(0);
+  const maxTopRef = useRef<number>(0);
   const heroAnimRafRef = useRef<number>(0);
   const heroAnimLastTimeRef = useRef<number>(0);
   const heroCollapseCurrentRef = useRef<number>(0);
@@ -404,12 +468,12 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const rowMinProgressRef = useRef<number>(0);
   const hasActiveHeroRef = useRef<boolean>(false);
 
-  const markImageFailed = useCallback((url: string) => {
-    setFailedImages((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
-  }, []);
-
-  // Lista circular de apps estilo Google TV (CgamesTVPARTY primero + favoritos)
+  // Fila de apps estilo Google TV: CgamesTVPARTY primero, favoritos fijados, y todas las apps instaladas
   const circularApps = useMemo(() => {
+    const seen = new Set<string>();
+    const result: InstalledApp[] = [];
+
+    // 1. Featured Game (CgamesTVPARTY) primero siempre si está disponible
     const featuredFromList = allApps.find((a) => a.packageName === FEATURED_GAME.packageName);
     const featuredItem: InstalledApp = featuredFromList || {
       packageName: FEATURED_GAME.packageName,
@@ -419,9 +483,26 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       isSystemApp: false,
       category: 'games',
     };
+    result.push(featuredItem);
+    seen.add(featuredItem.packageName);
 
-    const rest = favoriteApps.filter((a) => a.packageName !== FEATURED_GAME.packageName);
-    return [featuredItem, ...rest];
+    // 2. Apps marcadas como favoritas en el orden seleccionado
+    for (const app of favoriteApps) {
+      if (!seen.has(app.packageName)) {
+        seen.add(app.packageName);
+        result.push(app);
+      }
+    }
+
+    // 3. Todas las demás aplicaciones disponibles e instaladas leídas del sistema
+    for (const app of allApps) {
+      if (!seen.has(app.packageName)) {
+        seen.add(app.packageName);
+        result.push(app);
+      }
+    }
+
+    return result;
   }, [allApps, favoriteApps]);
 
   // Todas las apps ordenadas para la cuadrícula limpia de Modo Solo Apps
@@ -436,6 +517,41 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     }
     return combined;
   }, [circularApps, allApps]);
+
+  const appsByPackage = useMemo(() => {
+    const map = new Map<string, InstalledApp>();
+    for (const app of allAppsForGrid) {
+      map.set(app.packageName, app);
+    }
+    return map;
+  }, [allAppsForGrid]);
+
+  const appsByPackageRef = useRef(appsByPackage);
+  appsByPackageRef.current = appsByPackage;
+  const onToggleFavoriteRef = useRef(onToggleFavorite);
+  onToggleFavoriteRef.current = onToggleFavorite;
+
+  // Delegación única de tv-longpress para evitar N listeners por tarjeta
+  useEffect(() => {
+    const handleDelegatedLongPress = (e: Event) => {
+      const target = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tv-pkg]');
+      const pkg = target?.dataset.tvPkg;
+      if (!pkg) return;
+      const app = appsByPackageRef.current.get(pkg);
+      if (app) {
+        onToggleFavoriteRef.current(app);
+      }
+    };
+
+    const rowEl = appsRowRef.current;
+    const gridEl = appsGridRef.current;
+    rowEl?.addEventListener('tv-longpress', handleDelegatedLongPress);
+    gridEl?.addEventListener('tv-longpress', handleDelegatedLongPress);
+    return () => {
+      rowEl?.removeEventListener('tv-longpress', handleDelegatedLongPress);
+      gridEl?.removeEventListener('tv-longpress', handleDelegatedLongPress);
+    };
+  }, [appsOnlyMode]);
 
   // Plataformas activas dinámicas según apps instaladas y fijadas en el launcher
   const streamingFilters = useMemo<StreamingFilterOption[]>(() => {
@@ -469,19 +585,19 @@ export const GoogleTvHome = memo(function GoogleTvHome({
 
   const filteredSeries = useMemo(() => {
     if (appsOnlyMode) return [];
+    if (platformFilter === 'all') {
+      return dedupedCatalog.series.slice(0, 14);
+    }
     return filterSeriesByPlatform(dedupedCatalog.series, platformFilter, allApps).slice(
       0,
       14
     );
   }, [appsOnlyMode, dedupedCatalog.series, platformFilter, allApps]);
 
-  const handleSelectPlatformFilter = useCallback(
-    (nextFilter: string) => {
-      setPlatformFilter(nextFilter);
-      onRefreshCatalog?.();
-    },
-    [onRefreshCatalog]
-  );
+  // Cambio instantáneo en memoria sin disparar peticiones de red ni pausas al cambiar filtro
+  const handleSelectPlatformFilter = useCallback((nextFilter: string) => {
+    setPlatformFilter(nextFilter);
+  }, []);
 
   useEffect(() => {
     if (appsOnlyMode || spotlightList.length <= 1) return;
@@ -493,6 +609,22 @@ export const GoogleTvHome = memo(function GoogleTvHome({
 
   hasActiveHeroRef.current = Boolean(activeHero);
 
+  // Cachear maxTop fuera del evento onScroll para evitar forced reflows frame a frame
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const measureMaxTop = () => {
+      maxTopRef.current = Math.max(0, el.scrollHeight - el.clientHeight);
+    };
+
+    measureMaxTop();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measureMaxTop);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [appsOnlyMode, showSuggestions, dedupedCatalog.movies.length, filteredSeries.length]);
+
   useEffect(() => {
     if (appsOnlyMode) {
       rowMinProgressRef.current = 0;
@@ -503,16 +635,13 @@ export const GoogleTvHome = memo(function GoogleTvHome({
 
   useEffect(() => {
     return () => {
-      if (scrollRafRef.current) {
-        window.cancelAnimationFrame(scrollRafRef.current);
-      }
       if (heroAnimRafRef.current) {
         window.cancelAnimationFrame(heroAnimRafRef.current);
       }
     };
   }, []);
 
-  const handleHeroLaunch = () => {
+  const handleHeroLaunch = useCallback(() => {
     if (!activeHero) return;
     if (activeHero.packageName === FEATURED_GAME.packageName) {
       onLaunchFeatured();
@@ -520,7 +649,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     }
     const resolvedPkg = resolvePackageAlias(activeHero.packageName, allApps);
     onLaunchSuggestion({ ...activeHero, packageName: resolvedPkg });
-  };
+  }, [activeHero, allApps, onLaunchFeatured, onLaunchSuggestion]);
 
   const handleCircleLaunch = useCallback(
     (clicked: InstalledApp) => {
@@ -533,13 +662,13 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     [onLaunchFeatured, onLaunchApp]
   );
 
+  // Solo propiedades compositor (opacity, transform) sin toggling de visibility ni layout reads
   const applyHeroVisualProgress = useCallback((p: number) => {
     const clamped = Math.min(1, Math.max(0, p));
 
     if (backdropLayerRef.current) {
       backdropLayerRef.current.style.opacity = (1 - clamped).toFixed(3);
       backdropLayerRef.current.style.transform = `translate3d(0, ${(-clamped * 56).toFixed(1)}px, 0) scale(${(1 - clamped * 0.05).toFixed(4)})`;
-      backdropLayerRef.current.style.visibility = clamped >= 0.995 ? 'hidden' : 'visible';
     }
 
     if (heroBannerRef.current) {
@@ -586,14 +715,14 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         const curr = heroCollapseCurrentRef.current;
         const diff = target - curr;
 
-        if (Math.abs(diff) < 0.004) {
+        if (Math.abs(diff) < 0.008) {
           heroCollapseCurrentRef.current = target;
           applyHeroVisualProgress(target);
           heroAnimRafRef.current = 0;
           return;
         }
 
-        const factor = 1 - Math.exp(-dt / 95);
+        const factor = 1 - Math.exp(-dt / 42);
         heroCollapseCurrentRef.current = curr + diff * factor;
         applyHeroVisualProgress(heroCollapseCurrentRef.current);
         heroAnimRafRef.current = window.requestAnimationFrame(step);
@@ -604,42 +733,40 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     [applyHeroVisualProgress]
   );
 
-  // Actualiza en sincronía directa 1:1 con el desplazamiento vertical (sin desfase de rAF ni saltos antes del scroll)
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const top = el.scrollTop;
-    const atTop = top <= 18;
-    if (atTop !== atTopRef.current) {
-      atTopRef.current = atTop;
-      onScrollTopChange(atTop);
-    }
-
-    if (!appsOnlyMode) {
-      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-      if (maxTop >= 120) {
-        if (heroAnimRafRef.current) {
-          window.cancelAnimationFrame(heroAnimRafRef.current);
-          heroAnimRafRef.current = 0;
-        }
-        const span = Math.min(300, Math.max(160, maxTop * 0.8));
-        const scrollProgress = Math.min(1, Math.max(0, (top - 24) / span));
-        heroCollapseCurrentRef.current = scrollProgress;
-        heroCollapseTargetRef.current = scrollProgress;
-        applyHeroVisualProgress(scrollProgress);
-      } else {
-        const scrollProgress = Math.min(1, Math.max(0, (top - 24) / 340));
-        scheduleHeroCollapseUpdate(Math.max(scrollProgress, rowMinProgressRef.current));
+  // Sincronía directa 1:1 usando maxTop cacheado (cero forced reflow en scroll)
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const top = e.currentTarget.scrollTop;
+      const atTop = top <= 18;
+      if (atTop !== atTopRef.current) {
+        atTopRef.current = atTop;
+        onScrollTopChange(atTop);
       }
-    }
-  };
+
+      if (!appsOnlyMode) {
+        const maxTop = maxTopRef.current;
+        if (maxTop >= 120) {
+          if (heroAnimRafRef.current) {
+            window.cancelAnimationFrame(heroAnimRafRef.current);
+            heroAnimRafRef.current = 0;
+          }
+          const span = Math.min(300, Math.max(160, maxTop * 0.8));
+          const scrollProgress = Math.min(1, Math.max(0, (top - 24) / span));
+          heroCollapseCurrentRef.current = scrollProgress;
+          heroCollapseTargetRef.current = scrollProgress;
+          applyHeroVisualProgress(scrollProgress);
+        } else {
+          const scrollProgress = Math.min(1, Math.max(0, (top - 24) / 340));
+          scheduleHeroCollapseUpdate(Math.max(scrollProgress, rowMinProgressRef.current));
+        }
+      }
+    },
+    [appsOnlyMode, applyHeroVisualProgress, onScrollTopChange, scheduleHeroCollapseUpdate]
+  );
 
   const handleFocusCapture = useCallback(
     (e: React.FocusEvent<HTMLDivElement>) => {
-      if (appsOnlyMode) return;
-      const el = scrollRef.current;
-      const maxTop = el ? Math.max(0, el.scrollHeight - el.clientHeight) : 0;
-      // Si el contenedor hace scroll vertical, el hero avanza estrictamente sincronizado con el scrollTop
-      if (maxTop >= 120) return;
+      if (appsOnlyMode || maxTopRef.current >= 120) return;
 
       const rowEl = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tv-row]');
       const rowKey = rowEl?.dataset.tvRow;
@@ -653,7 +780,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         rowMinProgressRef.current = 1;
       }
 
-      const top = el?.scrollTop ?? 0;
+      const top = scrollRef.current?.scrollTop ?? 0;
       const scrollProgress = Math.min(1, Math.max(0, (top - 24) / 340));
       scheduleHeroCollapseUpdate(Math.max(scrollProgress, rowMinProgressRef.current));
     },
@@ -716,10 +843,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         )}
 
         {/* Fila rápida de favoritas */}
-        <section
-          aria-label="Tus aplicaciones fijadas"
-          data-apps-over-hero="false"
-        >
+        <section aria-label="Tus aplicaciones fijadas" data-apps-over-hero="false">
           <div className="flex items-center justify-between mb-1">
             <div>
               <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
@@ -732,6 +856,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           </div>
 
           <div
+            ref={appsRowRef}
             data-tv-row="apps"
             data-tv-scroll-top="true"
             className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3 px-3 -mx-3"
@@ -742,7 +867,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                 app={app}
                 isInitial={index === 0}
                 onLaunch={handleCircleLaunch}
-                onToggleFavorite={onToggleFavorite}
               />
             ))}
 
@@ -751,7 +875,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               data-tv-focusable="true"
               data-tv-id="row-all-apps"
               onClick={onOpenAllApps}
-              className="tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
+              className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
             >
               <div
                 data-tv-focus-box="true"
@@ -775,6 +899,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           </div>
 
           <div
+            ref={appsGridRef}
             data-tv-row="apps-only-grid"
             data-tv-row-type="grid"
             className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4"
@@ -784,7 +909,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                 key={app.packageName}
                 app={app}
                 onLaunch={handleCircleLaunch}
-                onToggleFavorite={onToggleFavorite}
               />
             ))}
           </div>
@@ -801,7 +925,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       onFocusCapture={handleFocusCapture}
       className="relative flex-1 overflow-y-auto no-scrollbar pb-14"
     >
-      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (opacity, transform, clip-path) */}
+      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (solo opacity y transform) */}
       {activeHero && (
         <div
           aria-hidden="true"
@@ -811,22 +935,10 @@ export const GoogleTvHome = memo(function GoogleTvHome({
             ref={backdropLayerRef}
             className="absolute inset-0 will-change-[opacity,transform] origin-top"
           >
-            {activeHero.backdropUrl && !failedImages[activeHero.backdropUrl] ? (
-              <img
-                key={activeHero.id}
-                src={activeHero.backdropUrl}
-                alt=""
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={() => markImageFailed(activeHero.backdropUrl!)}
-                className="w-full h-full object-cover object-center"
-              />
-            ) : (
-              <div
-                className="w-full h-full"
-                style={{ background: activeHero.accentGradient }}
-              />
-            )}
+            <HeroBackdropImage
+              backdropUrl={activeHero.backdropUrl}
+              accentGradient={activeHero.accentGradient}
+            />
 
             {/* Difuminado ligero superior para la barra flotante */}
             <div
@@ -906,20 +1018,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               </div>
 
               <div>
-                {activeHero.logoUrl && !failedImages[activeHero.logoUrl] ? (
-                  <img
-                    src={activeHero.logoUrl}
-                    alt={activeHero.title}
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={() => markImageFailed(activeHero.logoUrl!)}
-                    className="max-h-14 lg:max-h-20 w-auto object-contain object-left mb-1"
-                  />
-                ) : (
-                  <h1 className="font-display text-3xl lg:text-5xl font-bold tracking-tight text-white text-balance line-clamp-2 [text-shadow:0_2px_6px_rgba(0,0,0,0.75)]">
-                    {activeHero.title}
-                  </h1>
-                )}
+                <HeroLogoOrTitle logoUrl={activeHero.logoUrl} title={activeHero.title} />
                 <p className="mt-1.5 text-sm lg:text-base text-zinc-100/95 line-clamp-2 max-w-xl leading-relaxed [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
                   {activeHero.subtitle}
                 </p>
@@ -1005,6 +1104,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           </div>
 
           <div
+            ref={appsRowRef}
             data-tv-row="apps"
             data-tv-scroll-top="true"
             className="flex items-start gap-4 overflow-x-auto no-scrollbar py-2.5 px-3 -mx-3"
@@ -1015,7 +1115,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                 app={app}
                 isInitial={index === 0}
                 onLaunch={handleCircleLaunch}
-                onToggleFavorite={onToggleFavorite}
               />
             ))}
 
@@ -1024,7 +1123,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               data-tv-focusable="true"
               data-tv-id="row-all-apps"
               onClick={onOpenAllApps}
-              className="tv-focusable group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
+              className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
             >
               <div
                 data-tv-focus-box="true"
@@ -1040,15 +1139,12 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         </section>
       </div>
 
-      {/* Filas inferiores con content-visibility y memoización para máximo FPS */}
+      {/* Filas inferiores con memoización por tarjeta e imágenes ligeras */}
       <div className="relative z-10 px-12 pt-4 space-y-8">
         {showSuggestions && (
           <MoviesSection
             movies={dedupedCatalog.movies}
-            allApps={allApps}
             formattedUpdatedTime={formattedUpdatedTime}
-            failedImages={failedImages}
-            onMarkFailed={markImageFailed}
             onLaunchSuggestion={onLaunchSuggestion}
           />
         )}
@@ -1056,12 +1152,9 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         {showSuggestions && (
           <SeriesSection
             filteredSeries={filteredSeries}
-            allApps={allApps}
             streamingFilters={streamingFilters}
             platformFilter={platformFilter}
-            failedImages={failedImages}
             onSelectFilter={handleSelectPlatformFilter}
-            onMarkFailed={markImageFailed}
             onLaunchSuggestion={onLaunchSuggestion}
           />
         )}

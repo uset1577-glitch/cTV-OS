@@ -45,6 +45,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveWarning, setSaveWarning] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
   // Formulario de edición
@@ -89,6 +90,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
   const handleToggleMaintenance = async () => {
     const nextVal = !remoteStatus.maintenanceMode;
     setIsSaving(true);
+    setSaveWarning(false);
     const ok = await setGlobalLauncherStatus({
       maintenanceMode: nextVal,
       appsOnlyMode: nextVal,
@@ -99,14 +101,18 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     if (ok) {
       setSavedSuccess(true);
       window.setTimeout(() => setSavedSuccess(false), 2400);
+    } else {
+      setSaveWarning(true);
+      window.setTimeout(() => setSaveWarning(false), 3200);
     }
   };
 
   const handleSaveNotice = async () => {
     setIsSaving(true);
+    setSaveWarning(false);
     const ok = await setGlobalLauncherStatus({
-      title: titleInput.trim(),
-      message: messageInput.trim(),
+      title: titleInput.trim() || remoteStatus.title,
+      message: messageInput.trim() || remoteStatus.message,
       maintenanceMode: true,
       appsOnlyMode: true,
     });
@@ -114,6 +120,9 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     if (ok) {
       setSavedSuccess(true);
       window.setTimeout(() => setSavedSuccess(false), 2400);
+    } else {
+      setSaveWarning(true);
+      window.setTimeout(() => setSaveWarning(false), 3200);
     }
   };
 
@@ -222,11 +231,19 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-xs">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
-                isFirebaseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'
+                isFirebaseConnected === true
+                  ? 'bg-emerald-400 animate-pulse'
+                  : isFirebaseConnected === false
+                    ? 'bg-amber-400'
+                    : 'bg-zinc-500 animate-pulse'
               }`}
             />
             <span className="text-zinc-300 font-medium">
-              {isFirebaseConnected ? 'Firebase en vivo' : 'Conectando Firestore...'}
+              {isFirebaseConnected === true
+                ? 'Firebase en vivo'
+                : isFirebaseConnected === false
+                  ? 'Modo local (sin nube)'
+                  : 'Conectando Firestore...'}
             </span>
           </div>
 
@@ -394,6 +411,12 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 shrink-0 animate-fade-in">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>¡Emitido en vivo!</span>
+                  </span>
+                )}
+                {saveWarning && !savedSuccess && (
+                  <span className="text-xs font-semibold text-amber-400 flex items-center gap-1.5 shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Aplicado en local</span>
                   </span>
                 )}
               </div>

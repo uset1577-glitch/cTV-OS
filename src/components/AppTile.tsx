@@ -65,9 +65,9 @@ export function AppTile({
         {isFavorite && (
           <span
             aria-label="Fijada en Inicio"
-            className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-zinc-950/90 text-amber-400 flex items-center justify-center border border-white/20"
+            className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-zinc-950/90 text-white flex items-center justify-center border border-white/25"
           >
-            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            <Star className="w-3.5 h-3.5 fill-white" />
           </span>
         )}
       </div>

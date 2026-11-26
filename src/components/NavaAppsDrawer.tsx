@@ -91,14 +91,14 @@ export function NavaAppsDrawer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 18 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-40 bg-[#DCE3EE] dark:bg-[#0E1015] flex flex-col px-12 pt-8 pb-8"
+          className="fixed inset-0 z-40 bg-[#E5E7EB] dark:bg-[#09090B] flex flex-col px-12 pt-8 pb-8"
         >
           <div data-tv-row="drawer-top" className="flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0">
             <div>
-              <h1 className="font-display text-3xl font-bold text-slate-900 dark:text-white">
+              <h1 className="font-display text-3xl font-bold text-zinc-900 dark:text-white">
                 Tus aplicaciones
               </h1>
-              <p className="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                 {apps.length} aplicaciones ·{' '}
                 {isNative
                   ? 'Detectadas en este Android TV'
@@ -114,11 +114,11 @@ export function NavaAppsDrawer({
                 onClick={() => setPinMode((prev) => !prev)}
                 className={`tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 ${
                   pinMode
-                    ? 'bg-amber-500 text-zinc-950'
-                    : 'bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200'
-                } focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105`}
+                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                    : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200'
+                } focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
               >
-                <Star className={`w-4 h-4 ${pinMode ? 'fill-zinc-950' : ''}`} />
+                <Star className={`w-4 h-4 ${pinMode ? 'fill-current' : ''}`} />
                 <span>{pinMode ? 'Terminar de fijar' : 'Fijar en Inicio'}</span>
               </button>
 
@@ -127,7 +127,7 @@ export function NavaAppsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="drawer-refresh"
                 onClick={onRefresh}
-                className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105 whitespace-nowrap shrink-0"
+                className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 whitespace-nowrap shrink-0"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span>Recargar</span>
@@ -139,7 +139,7 @@ export function NavaAppsDrawer({
                 data-tv-id="drawer-close"
                 onClick={onClose}
                 aria-label="Volver al inicio"
-                className="tv-focusable p-2.5 rounded-full bg-slate-900/10 dark:bg-white/10 text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-amber-500 focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -158,9 +158,9 @@ export function NavaAppsDrawer({
                   onClick={() => setFilter(opt.id)}
                   className={`tv-focusable px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 ${
                     active
-                      ? 'bg-[#18202C] text-white dark:bg-white dark:text-zinc-950'
-                      : 'bg-slate-900/10 dark:bg-white/8 text-slate-700 dark:text-zinc-300'
-                  } focus:ring-2 focus:ring-amber-500 focus:scale-105`}
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                      : 'bg-zinc-900/10 dark:bg-white/8 text-zinc-700 dark:text-zinc-300'
+                  } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
                 >
                   {opt.label}
                 </button>
@@ -168,7 +168,7 @@ export function NavaAppsDrawer({
             })}
 
             {pinMode && (
-              <span className="ml-3 text-sm font-medium text-amber-700 dark:text-amber-400">
+              <span className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Pulsa OK en cualquier icono para fijarlo o quitarlo de Inicio
               </span>
             )}
@@ -182,14 +182,14 @@ export function NavaAppsDrawer({
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-5">
                 {Array.from({ length: 14 }).map((_, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-3 py-3">
-                    <div className="w-24 h-24 rounded-[22px] bg-slate-900/10 dark:bg-white/8 animate-pulse" />
-                    <div className="w-20 h-3 rounded bg-slate-900/10 dark:bg-white/8 animate-pulse" />
+                    <div className="w-24 h-24 rounded-[22px] bg-zinc-900/10 dark:bg-white/8 animate-pulse" />
+                    <div className="w-20 h-3 rounded bg-zinc-900/10 dark:bg-white/8 animate-pulse" />
                   </div>
                 ))}
               </div>
             ) : filteredApps.length === 0 ? (
               <div data-tv-row="drawer-empty" className="py-16 text-center">
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-lg font-semibold text-zinc-900 dark:text-white">
                   No hay aplicaciones en esta categoría
                 </p>
                 <button
@@ -198,7 +198,7 @@ export function NavaAppsDrawer({
                   data-tv-initial="true"
                   data-tv-id="drawer-reset-filter"
                   onClick={() => setFilter('all')}
-                  className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-[#18202C] text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:scale-105"
+                  className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
                 >
                   Ver todas
                 </button>
