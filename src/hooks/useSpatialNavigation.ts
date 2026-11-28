@@ -700,8 +700,8 @@ function animateContainerAxis(
     existing.rafId = 0;
   }
 
-  // Transiciones rápidas y fluidas (~110-135 ms) sin esperas
-  const duration = axis === 'top' ? (wasAnimating ? 115 : 135) : wasAnimating ? 110 : 125;
+  // Transiciones rápidas y directas (~90-110 ms) para respuesta inmediata con mando
+  const duration = axis === 'top' ? (wasAnimating ? 90 : 110) : wasAnimating ? 90 : 108;
   const now = performance.now();
 
   const anim: AxisScrollAnim = existing || {

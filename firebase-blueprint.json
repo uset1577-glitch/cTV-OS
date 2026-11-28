@@ -15,21 +15,23 @@
         },
         "title": {
           "type": "string",
+          "minLength": 1,
           "maxLength": 128,
           "description": "Maintenance notice title"
         },
         "message": {
           "type": "string",
+          "minLength": 1,
           "maxLength": 512,
           "description": "Maintenance notice message"
         },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Last updated timestamp"
+          "description": "Last updated server timestamp"
         }
       },
-      "required": ["maintenanceMode", "appsOnlyMode", "title", "message"]
+      "required": ["maintenanceMode", "appsOnlyMode", "title", "message", "updatedAt"]
     }
   },
   "firestore": {
@@ -37,7 +39,7 @@
       "schema": {
         "$ref": "LauncherStatus"
       },
-      "description": "Global launcher status documents"
+      "description": "Global launcher status documents (only global is writable by verified admin)"
     }
   }
 }

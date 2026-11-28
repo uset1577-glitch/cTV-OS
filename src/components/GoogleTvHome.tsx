@@ -213,12 +213,12 @@ const MoviePosterCard = memo(function MoviePosterCard({
       data-tv-focusable="true"
       data-tv-id={`movie-${movie.id}`}
       onClick={() => onLaunchSuggestion(movie)}
-      className="group w-[152px] shrink-0 text-left focus:outline-none"
+      className="tv-card-contain group w-[152px] shrink-0 text-left focus:outline-none"
     >
       <div
         data-tv-focus-box="true"
         style={{ background: movie.accentGradient }}
-        className="tv-focusable relative w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06]"
+        className="tv-focusable transform-gpu relative w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06]"
       >
         {movie.posterUrl && !imgErr ? (
           <img
@@ -273,12 +273,12 @@ const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
       data-tv-focusable="true"
       data-tv-id={`series-${show.id}`}
       onClick={() => onLaunchSuggestion(show)}
-      className="group w-[248px] shrink-0 text-left focus:outline-none"
+      className="tv-card-contain group w-[248px] shrink-0 text-left focus:outline-none"
     >
       <div
         data-tv-focus-box="true"
         style={{ background: show.accentGradient }}
-        className="tv-focusable relative w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05]"
+        className="tv-focusable transform-gpu relative w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05]"
       >
         {landscapeImage && !imgErr ? (
           <img
@@ -464,6 +464,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const heroCollapseTargetRef = useRef<number>(0);
   const rowMinProgressRef = useRef<number>(0);
   const hasActiveHeroRef = useRef<boolean>(false);
+  const lastAppliedProgressRef = useRef<number>(-1);
 
   // Fila de apps estilo Google TV: favoritos fijados y todas las apps instaladas
   const circularApps = useMemo(() => {
@@ -625,6 +626,36 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     };
   }, []);
 
+  // Pre-decodificar las primeras carátulas de Estrenos y Series en segundo plano
+  // para que al bajar desde "Tus aplicaciones" aparezcan al instante sin pausas
+  useEffect(() => {
+    if (appsOnlyMode || !showSuggestions) return;
+    const urls = [
+      ...dedupedCatalog.movies.slice(0, 8).map((m) => m.posterUrl),
+      ...filteredSeries.slice(0, 6).map((s) => s.backdropUrl || s.posterUrl),
+    ].filter((u): u is string => Boolean(u));
+    if (urls.length === 0) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      for (const src of urls) {
+        const img = new Image();
+        img.referrerPolicy = 'no-referrer';
+        img.decoding = 'async';
+        img.src = src;
+        if (typeof img.decode === 'function') {
+          void img.decode().catch(() => {});
+        }
+      }
+    }, 260);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [appsOnlyMode, showSuggestions, dedupedCatalog.movies, filteredSeries]);
+
   const heroResolvedPkg = activeHero ? resolvePackageAlias(activeHero.packageName, allApps) : '';
   const heroMatchedApp = heroResolvedPkg
     ? allApps.find((a) => a.packageName === heroResolvedPkg)
@@ -644,19 +675,23 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     [onLaunchApp]
   );
 
-  // Solo propiedades compositor (opacity, transform) sin toggling de visibility ni layout reads
+  // Solo propiedades compositor (opacity, translate3d) sin scale() pesado ni layout reads
   const applyHeroVisualProgress = useCallback((p: number) => {
     const clamped = Math.min(1, Math.max(0, p));
+    if (Math.abs(clamped - lastAppliedProgressRef.current) < 0.002) {
+      return;
+    }
+    lastAppliedProgressRef.current = clamped;
 
     if (backdropLayerRef.current) {
       backdropLayerRef.current.style.opacity = (1 - clamped).toFixed(3);
-      backdropLayerRef.current.style.transform = `translate3d(0, ${(-clamped * 56).toFixed(1)}px, 0) scale(${(1 - clamped * 0.05).toFixed(4)})`;
+      backdropLayerRef.current.style.transform = `translate3d(0, ${(-clamped * 40).toFixed(1)}px, 0)`;
     }
 
     if (heroBannerRef.current) {
       const fg = Math.min(1, clamped * 1.25);
       heroBannerRef.current.style.opacity = (1 - fg).toFixed(3);
-      heroBannerRef.current.style.transform = `translate3d(0, ${(-fg * 38).toFixed(1)}px, 0) scale(${(1 - fg * 0.04).toFixed(4)})`;
+      heroBannerRef.current.style.transform = `translate3d(0, ${(-fg * 28).toFixed(1)}px, 0)`;
     }
 
     if (fadeVeilRef.current) {
@@ -719,7 +754,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const top = e.currentTarget.scrollTop;
-      const atTop = top <= 18;
+      const atTop = top <= 32;
       if (atTop !== atTopRef.current) {
         atTopRef.current = atTop;
         onScrollTopChange(atTop);
@@ -910,45 +945,27 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       data-tv-native={isNative ? 'true' : 'false'}
       className="relative flex-1 overflow-y-auto no-scrollbar pb-14"
     >
-      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (solo opacity y transform) */}
+      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (una sola capa scrim + translate3d) */}
       {activeHero && (
         <div
           aria-hidden="true"
-          className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015] contain-layout"
+          className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015] [contain:strict]"
         >
           <div
             ref={backdropLayerRef}
-            className="absolute inset-0 will-change-[opacity,transform] origin-top"
+            className="absolute inset-0 transform-gpu will-change-[opacity,transform]"
           >
             <HeroBackdropImage
               backdropUrl={activeHero.backdropUrl}
               accentGradient={activeHero.accentGradient}
             />
 
-            {/* Difuminado ligero superior para la barra flotante */}
+            {/* Un único scrim compuesto para evitar múltiples capas alfa de pantalla completa */}
             <div
-              className="absolute inset-x-0 top-0 h-24"
+              className="absolute inset-0"
               style={{
-                background:
-                  'linear-gradient(to bottom, rgba(8, 11, 18, 0.58) 0%, rgba(8, 11, 18, 0.2) 55%, transparent 100%)',
-              }}
-            />
-
-            {/* Difuminado izquierdo sutil detrás del título */}
-            <div
-              className="absolute inset-y-0 left-0 w-[50%]"
-              style={{
-                background:
-                  'linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.28) 55%, transparent 100%)',
-              }}
-            />
-
-            {/* Difuminado inferior mínimo al estar arriba */}
-            <div
-              className="absolute inset-x-0 bottom-0 h-28"
-              style={{
-                background:
-                  'linear-gradient(to top, rgba(8, 11, 18, 0.68) 0%, rgba(8, 11, 18, 0.22) 52%, transparent 100%)',
+                backgroundImage:
+                  'linear-gradient(to bottom, rgba(8, 11, 18, 0.56) 0%, rgba(8, 11, 18, 0.16) 14%, transparent 28%), linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.26) 32%, transparent 56%), linear-gradient(to top, rgba(8, 11, 18, 0.68) 0%, rgba(8, 11, 18, 0.2) 18%, transparent 34%)',
               }}
             />
           </div>
@@ -956,7 +973,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           {/* Velo progresivo al hacer scroll */}
           <div
             ref={fadeVeilRef}
-            className="absolute inset-0 will-change-[opacity]"
+            className="absolute inset-0 transform-gpu will-change-[opacity]"
             style={{ backgroundColor: heroFadeColor, opacity: 0 }}
           />
         </div>
@@ -967,7 +984,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         className={`relative z-10 px-12 ${
           activeHero
             ? showSuggestions && dedupedCatalog.movies.length > 0
-              ? 'min-h-[86vh] flex flex-col justify-end gap-5 pt-20 pb-5'
+              ? 'min-h-[75vh] flex flex-col justify-end gap-4 pt-16 pb-3'
               : 'min-h-screen flex flex-col justify-end gap-5 pt-20 pb-6'
             : 'pt-24 space-y-8'
         }`}

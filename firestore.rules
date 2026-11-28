@@ -1,12 +1,59 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Default deny safety net
     match /{document=**} {
       allow read, write: if false;
     }
 
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'cristhianmateopenabravo@gmail.com';
+    }
+
+    function isValidLauncherStatus(data) {
+      return data.keys().hasAll(['maintenanceMode', 'appsOnlyMode', 'title', 'message', 'updatedAt'])
+        && data.keys().hasOnly(['maintenanceMode', 'appsOnlyMode', 'title', 'message', 'updatedAt'])
+        && data.maintenanceMode is bool
+        && data.appsOnlyMode is bool
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 128
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 512
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    // Public system status document (non-PII) readable by Android TVs via direct get;
+    // list & writes strictly restricted to the verified admin account.
     match /launcherStatus/{statusId} {
-      allow read, write: if true;
+      allow get: if isValidId(statusId);
+      allow list: if isVerifiedAdmin();
+      allow create: if isVerifiedAdmin()
+        && isValidId(statusId)
+        && statusId == 'global'
+        && isValidLauncherStatus(incoming());
+      allow update: if isVerifiedAdmin()
+        && isValidId(statusId)
+        && statusId == 'global'
+        && isValidLauncherStatus(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['maintenanceMode', 'appsOnlyMode', 'title', 'message', 'updatedAt']);
+      allow delete: if false;
     }
   }
 }

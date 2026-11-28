@@ -102,7 +102,7 @@ export const NavaTopBar = memo(function NavaTopBar({
       data-tv-row="topbar"
       data-tv-hidden={isVisible ? undefined : 'true'}
       aria-hidden={!isVisible}
-      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between gap-8 px-12 pt-5 pb-3.5 transition-transform duration-200 ease-out ${
+      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between gap-8 px-12 pt-5 pb-3.5 will-change-transform transition-transform duration-150 ease-out ${
         isVisible
           ? 'translate-y-0 pointer-events-auto'
           : '-translate-y-full pointer-events-none'

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { User } from 'firebase/auth';
 import {
   AlertTriangle,
   Check,
   CheckCircle2,
   Copy,
-  KeyRound,
+  LogIn,
   LogOut,
   Monitor,
   Power,
@@ -12,47 +13,59 @@ import {
   Save,
   Send,
   Shield,
+  ShieldAlert,
   Tv,
 } from 'lucide-react';
 import {
+  ADMIN_EMAIL,
+  isAuthorizedAdminUser,
   setGlobalLauncherStatus,
+  signInCreatorWithGoogle,
+  signOutCreator,
+  subscribeToCreatorAuth,
   subscribeToLauncherStatus,
   testFirestoreConnection,
 } from '../services/firebase';
 import type { LauncherRemoteStatus } from '../types/launcher';
-
-const CREATOR_KEY = '2026';
-const AUTH_SESSION_KEY = 'vora_creator_authenticated';
 
 interface CreatorAdminPanelProps {
   onExit: () => void;
 }
 
 export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
-  });
-  const [inputKey, setInputKey] = useState('');
-  const [authError, setAuthError] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authErrorMsg, setAuthErrorMsg] = useState<string | null>(null);
 
-  // Estado remoto de Firebase
   const [remoteStatus, setRemoteStatus] = useState<LauncherRemoteStatus>({
     maintenanceMode: false,
     appsOnlyMode: false,
     title: 'Mantenimiento · Próxima actualización',
-    message: 'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
+    message:
+      'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.',
   });
-  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean | null>(null);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveWarning, setSaveWarning] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Formulario de edición
   const [titleInput, setTitleInput] = useState('');
   const [messageInput, setMessageInput] = useState('');
 
-  // Conectar y escuchar Firestore en tiempo real
+  const isAuthorized = isAuthorizedAdminUser(currentUser);
+
+  useEffect(() => {
+    const unsubAuth = subscribeToCreatorAuth((user) => {
+      setCurrentUser(user);
+      setAuthReady(true);
+    });
+    return () => unsubAuth();
+  }, []);
+
   useEffect(() => {
     void testFirestoreConnection().then((connected) => {
       setIsFirebaseConnected(connected);
@@ -69,33 +82,37 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     };
   }, []);
 
-  const handleLogin = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (inputKey.trim() === CREATOR_KEY) {
-      sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      setIsAuthenticated(true);
-      setAuthError(false);
-      setInputKey('');
-    } else {
-      setAuthError(true);
-      window.setTimeout(() => setAuthError(false), 2200);
+  const handleGoogleSignIn = async () => {
+    setAuthBusy(true);
+    setAuthErrorMsg(null);
+    try {
+      await signInCreatorWithGoogle();
+    } catch (err) {
+      setAuthErrorMsg(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo iniciar sesión con Google.'
+      );
+    } finally {
+      setAuthBusy(false);
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    setAuthErrorMsg(null);
+    await signOutCreator();
   };
 
   const handleToggleMaintenance = async () => {
+    if (!isAuthorized) return;
     const nextVal = !remoteStatus.maintenanceMode;
     setIsSaving(true);
     setSaveWarning(false);
     const ok = await setGlobalLauncherStatus({
       maintenanceMode: nextVal,
       appsOnlyMode: nextVal,
-      title: titleInput.trim() || remoteStatus.title,
-      message: messageInput.trim() || remoteStatus.message,
+      title: (titleInput.trim() || remoteStatus.title).slice(0, 128),
+      message: (messageInput.trim() || remoteStatus.message).slice(0, 512),
     });
     setIsSaving(false);
     if (ok) {
@@ -108,11 +125,12 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
   };
 
   const handleSaveNotice = async () => {
+    if (!isAuthorized) return;
     setIsSaving(true);
     setSaveWarning(false);
     const ok = await setGlobalLauncherStatus({
-      title: titleInput.trim() || remoteStatus.title,
-      message: messageInput.trim() || remoteStatus.message,
+      title: (titleInput.trim() || remoteStatus.title).slice(0, 128),
+      message: (messageInput.trim() || remoteStatus.message).slice(0, 512),
       maintenanceMode: true,
       appsOnlyMode: true,
     });
@@ -135,7 +153,9 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     });
   };
 
-  if (!isAuthenticated) {
+  if (!authReady || !isAuthorized) {
+    const isWrongAccount = Boolean(authReady && currentUser && !isAuthorized);
+
     return (
       <div className="fixed inset-0 z-50 bg-[#090C12] text-zinc-100 flex flex-col items-center justify-center p-6 selection:bg-amber-500 selection:text-black">
         <div className="w-full max-w-md bg-[#111622] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
@@ -143,47 +163,69 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
 
           <div className="flex flex-col items-center text-center gap-3 mb-7">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/25 shadow-lg">
-              <Shield className="w-7 h-7" />
+              {isWrongAccount ? (
+                <ShieldAlert className="w-7 h-7 text-rose-400" />
+              ) : (
+                <Shield className="w-7 h-7" />
+              )}
             </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-white">
               Panel del Creador (PC)
             </h1>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-xs">
-              Acceso exclusivo desde PC o móvil para activar el modo mantenimiento en todos los televisores.
+              {isWrongAccount
+                ? `La cuenta ${currentUser?.email || 'actual'} no tiene permisos de administrador.`
+                : 'Inicia sesión con tu cuenta de Google autorizada para gestionar el mantenimiento global en Firestore.'}
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label htmlFor="creator-key-input" className="block text-xs font-semibold text-zinc-300 mb-1.5 text-left">
-                Clave de Creador
-              </label>
-              <div className="relative">
-                <input
-                  id="creator-key-input"
-                  type="password"
-                  autoFocus
-                  value={inputKey}
-                  onChange={(e) => setInputKey(e.target.value)}
-                  placeholder="Introduce tu clave (2026)"
-                  className="w-full px-4 py-3 rounded-xl bg-[#090C12] border border-white/15 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-center tracking-widest text-lg"
-                />
+          <div className="space-y-4">
+            {isWrongAccount && (
+              <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 px-4 py-3 text-xs text-rose-200 text-center">
+                Acceso exclusivo para el propietario ({ADMIN_EMAIL}).
               </div>
-              {authError && (
-                <p className="text-xs font-semibold text-rose-400 mt-2 text-center animate-shake">
-                  Clave incorrecta. Inténtalo de nuevo.
-                </p>
-              )}
-            </div>
+            )}
+
+            {authErrorMsg && (
+              <p className="text-xs font-semibold text-rose-400 text-center">
+                {authErrorMsg}
+              </p>
+            )}
 
             <button
-              type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-zinc-950 font-bold text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+              type="button"
+              disabled={!authReady || authBusy}
+              onClick={() => {
+                if (isWrongAccount) {
+                  void handleLogout().then(() => handleGoogleSignIn());
+                } else {
+                  void handleGoogleSignIn();
+                }
+              }}
+              className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60 text-zinc-950 font-bold text-sm transition-[background-color,transform] duration-150 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <KeyRound className="w-4 h-4 stroke-[2.5]" />
-              <span>Entrar al Panel de Control</span>
+              <LogIn className="w-4 h-4 stroke-[2.5]" />
+              <span>
+                {!authReady
+                  ? 'Verificando sesión...'
+                  : authBusy
+                    ? 'Conectando con Google...'
+                    : isWrongAccount
+                      ? 'Cambiar de cuenta de Google'
+                      : 'Iniciar sesión con Google'}
+              </span>
             </button>
-          </form>
+
+            {isWrongAccount && (
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 text-xs font-semibold transition-colors"
+              >
+                Cerrar sesión actual
+              </button>
+            )}
+          </div>
 
           <div className="mt-6 pt-5 border-t border-white/8 flex items-center justify-between text-xs text-zinc-400">
             <button
@@ -194,7 +236,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               ← Ver Launcher de TV
             </button>
             <span className="text-[11px] text-zinc-400">
-              Firebase Firestore en vivo
+              Protegido con Firebase Auth
             </span>
           </div>
         </div>
@@ -202,7 +244,9 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
     );
   }
 
-  const isMaintActive = Boolean(remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode);
+  const isMaintActive = Boolean(
+    remoteStatus.maintenanceMode || remoteStatus.appsOnlyMode
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0A0D14] text-zinc-100 overflow-y-auto selection:bg-amber-500 selection:text-black flex flex-col font-sans">
@@ -218,11 +262,11 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                 VORA TV OS · Panel de Control del Creador
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                ADMIN PC
+                ADMIN VERIFICADO
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Control de mantenimiento global · Sincronizado en tiempo real
+              Sesión verificada: {currentUser?.email} · Sincronizado en tiempo real
             </p>
           </div>
         </div>
@@ -242,7 +286,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               {isFirebaseConnected === true
                 ? 'Firebase en vivo'
                 : isFirebaseConnected === false
-                  ? 'Modo local (sin nube)'
+                  ? 'Sin conexión al servidor'
                   : 'Conectando Firestore...'}
             </span>
           </div>
@@ -253,7 +297,11 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
             title="Copiar enlace directo de este panel para tu navegador de PC"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-xs font-semibold text-zinc-300 transition-colors"
           >
-            {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copiedUrl ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
             <span>{copiedUrl ? '¡Copiado!' : 'Copiar URL PC'}</span>
           </button>
 
@@ -268,7 +316,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
 
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => void handleLogout()}
             title="Cerrar sesión de creador"
             className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-colors"
           >
@@ -290,7 +338,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                 Control exclusivo de Mantenimiento Global
               </div>
               <p className="text-xs text-blue-200/80 mt-0.5">
-                Activa o desactiva el modo mantenimiento y personaliza el mensaje que aparecerá en los televisores.
+                Protegido con reglas estrictas de Firestore: solo tu cuenta verificada puede emitir cambios a los televisores.
               </p>
             </div>
           </div>
@@ -300,19 +348,25 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
         </div>
 
         {/* Sección principal: Interruptor Maestro de Mantenimiento */}
-        <section className={`rounded-3xl border-2 p-6 md:p-8 transition-all duration-300 shadow-2xl relative overflow-hidden ${
-          isMaintActive
-            ? 'bg-amber-950/20 border-amber-500/60 shadow-amber-950/40'
-            : 'bg-[#111622] border-white/10 shadow-black/60'
-        }`}>
+        <section
+          className={`rounded-3xl border-2 p-6 md:p-8 transition-[background-color,border-color] duration-200 shadow-2xl relative overflow-hidden ${
+            isMaintActive
+              ? 'bg-amber-950/20 border-amber-500/60 shadow-amber-950/40'
+              : 'bg-[#111622] border-white/10 shadow-black/60'
+          }`}
+        >
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10">
-                <Radio className={`w-3.5 h-3.5 ${isMaintActive ? 'text-amber-400' : 'text-zinc-500'}`} />
+                <Radio
+                  className={`w-3.5 h-3.5 ${isMaintActive ? 'text-amber-400' : 'text-zinc-500'}`}
+                />
                 <span>Estado Global de Mantenimiento</span>
               </div>
               <h2 className="text-2xl md:text-3xl font-display font-bold text-white">
-                {isMaintActive ? '🔴 MANTENIMIENTO ACTIVO PARA TODOS' : '🟢 LAUNCHER NORMAL (Sin Mantenimiento)'}
+                {isMaintActive
+                  ? '🔴 MANTENIMIENTO ACTIVO PARA TODOS'
+                  : '🟢 LAUNCHER NORMAL (Sin Mantenimiento)'}
               </h2>
               <p className="text-xs md:text-sm text-zinc-300 leading-relaxed">
                 {isMaintActive
@@ -325,8 +379,8 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               <button
                 type="button"
                 disabled={isSaving}
-                onClick={handleToggleMaintenance}
-                className={`w-full lg:w-72 py-5 px-6 rounded-2xl font-bold text-base transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 ${
+                onClick={() => void handleToggleMaintenance()}
+                className={`w-full lg:w-72 py-5 px-6 rounded-2xl font-bold text-base transition-[background-color,transform] duration-150 active:scale-95 shadow-xl flex items-center justify-center gap-3 ${
                   isMaintActive
                     ? 'bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white shadow-rose-600/30'
                     : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 shadow-amber-500/30'
@@ -370,12 +424,16 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="notice-title" className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Título del Cartel
+                <label
+                  htmlFor="notice-title"
+                  className="block text-xs font-semibold text-zinc-300 mb-1.5"
+                >
+                  Título del Cartel (máx. 128)
                 </label>
                 <input
                   id="notice-title"
                   type="text"
+                  maxLength={128}
                   value={titleInput}
                   onChange={(e) => setTitleInput(e.target.value)}
                   placeholder="ej: Mantenimiento · Próxima actualización"
@@ -384,12 +442,16 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
               </div>
 
               <div>
-                <label htmlFor="notice-msg" className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Mensaje del Cartel
+                <label
+                  htmlFor="notice-msg"
+                  className="block text-xs font-semibold text-zinc-300 mb-1.5"
+                >
+                  Mensaje del Cartel (máx. 512)
                 </label>
                 <textarea
                   id="notice-msg"
                   rows={3}
+                  maxLength={512}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   placeholder="ej: El modo solo apps será activado..."
@@ -401,22 +463,26 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                 <button
                   type="button"
                   disabled={isSaving}
-                  onClick={handleSaveNotice}
-                  className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-white/10"
+                  onClick={() => void handleSaveNotice()}
+                  className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] text-white font-bold text-xs transition-[background-color,transform] duration-150 flex items-center justify-center gap-2 border border-white/10"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isSaving ? 'Guardando...' : 'Guardar y Emitir Mensaje a las TVs'}</span>
+                  <span>
+                    {isSaving
+                      ? 'Guardando...'
+                      : 'Guardar y Emitir Mensaje a las TVs'}
+                  </span>
                 </button>
                 {savedSuccess && (
-                  <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 shrink-0 animate-fade-in">
+                  <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 shrink-0">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>¡Emitido en vivo!</span>
                   </span>
                 )}
                 {saveWarning && !savedSuccess && (
-                  <span className="text-xs font-semibold text-amber-400 flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs font-semibold text-rose-400 flex items-center gap-1.5 shrink-0">
                     <AlertTriangle className="w-4 h-4" />
-                    <span>Aplicado en local</span>
+                    <span>Error al guardar en Firestore</span>
                   </span>
                 )}
               </div>
@@ -432,7 +498,9 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   type="button"
                   onClick={() => {
                     setTitleInput('Mantenimiento · Próxima actualización');
-                    setMessageInput('El modo solo apps será activado mientras preparamos la próxima actualización.');
+                    setMessageInput(
+                      'El modo solo apps será activado mientras preparamos la próxima actualización.'
+                    );
                   }}
                   className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 transition-colors"
                 >
@@ -442,7 +510,9 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   type="button"
                   onClick={() => {
                     setTitleInput('Servidores en Mantenimiento');
-                    setMessageInput('Estamos mejorando los servidores de streaming y catálogo en vivo.');
+                    setMessageInput(
+                      'Estamos mejorando los servidores de streaming y catálogo en vivo.'
+                    );
                   }}
                   className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 transition-colors"
                 >
@@ -463,11 +533,13 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
                   Así se verá el cartel en las pantallas
                 </p>
               </div>
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                isMaintActive
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'bg-zinc-800 text-zinc-400'
-              }`}>
+              <span
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                  isMaintActive
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'bg-zinc-800 text-zinc-400'
+                }`}
+              >
                 {isMaintActive ? 'Mantenimiento Activo' : 'Normal'}
               </span>
             </div>
@@ -516,7 +588,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
             </div>
 
             <div className="text-xs text-zinc-400 leading-relaxed bg-white/[0.03] p-3.5 rounded-xl border border-white/5">
-              💡 Cuando actives el mantenimiento aquí, todas las TVs recibirán el aviso obligatorio y volverán a la normalidad al desactivarlo.
+              Solo tu cuenta verificada de Google puede modificar este estado en la nube.
             </div>
           </section>
         </div>

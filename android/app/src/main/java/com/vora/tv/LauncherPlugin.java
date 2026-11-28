@@ -909,6 +909,10 @@ public class LauncherPlugin extends Plugin {
             || lower.equals("com.wbd.stream")
             || lower.equals("com.hbo.hbonow")
             || lower.equals("com.hbomax")
+            || lower.equals("com.cbs.ott")
+            || lower.equals("com.cbs.app")
+            || lower.equals("com.paramount.plus")
+            || lower.equals("com.cbs.ca")
             || lower.equals("com.spotify.tv.android")
             || lower.equals("com.apple.atve.androidtv.appletv");
     }
