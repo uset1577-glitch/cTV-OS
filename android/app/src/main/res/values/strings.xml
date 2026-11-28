@@ -4,5 +4,4 @@
     <string name="title_activity_main">VORA TV OS</string>
     <string name="package_name">com.vora.tv</string>
     <string name="custom_url_scheme">com.vora.tv</string>
-    <string name="vora_accessibility_description">Permite a VORA TV OS reemplazar el salvapantallas de Google TV y detectar automáticamente la canción de Spotify en reproducción.</string>
 </resources>

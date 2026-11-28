@@ -15,7 +15,6 @@ import { VoraScreensaver } from './components/VoraScreensaver';
 import {
   BACKGROUND_PRESETS,
   DEFAULT_SETTINGS,
-  FEATURED_GAME,
   WEB_PREVIEW_APPS,
 } from './data/presets';
 import {
@@ -47,7 +46,6 @@ import {
   type TvSettingsSection,
 } from './native/launcherBridge';
 import {
-  setGlobalLauncherStatus,
   subscribeToLauncherStatus,
   testFirestoreConnection,
 } from './services/firebase';
@@ -69,6 +67,8 @@ import type {
 const SETTINGS_STORAGE_KEY = 'vora_launcher_settings_v2';
 const DISMISSED_UPDATE_SESSION_KEY = 'vora_dismissed_update_version';
 
+const REMOVED_LEGACY_PACKAGES = new Set(['com.mandoparty.tv', 'com.vora.arcade']);
+
 function loadSavedSettings(): LauncherSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -81,12 +81,23 @@ function loadSavedSettings(): LauncherSettings {
       appsOnlyMode: false,
       updateRepo: parsed.updateRepo?.trim() ? parsed.updateRepo : DEFAULT_SETTINGS.updateRepo,
       favoritePackages: Array.isArray(parsed.favoritePackages)
-        ? parsed.favoritePackages
+        ? parsed.favoritePackages.filter((pkg) => !REMOVED_LEGACY_PACKAGES.has(pkg))
         : DEFAULT_SETTINGS.favoritePackages,
     };
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+function focusFirstHomeAppOrSettings() {
+  const firstApp = document.querySelector<HTMLElement>(
+    '#gtv-home-shell [data-tv-row="apps"] [data-tv-focusable="true"]'
+  );
+  if (firstApp) {
+    firstApp.focus({ preventScroll: false });
+    return;
+  }
+  focusElementById('top-settings');
 }
 
 export default function App() {
@@ -99,7 +110,9 @@ export default function App() {
       const cached = localStorage.getItem('vora_installed_apps_cache');
       if (cached) {
         const parsed = JSON.parse(cached) as InstalledApp[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter((app) => !REMOVED_LEGACY_PACKAGES.has(app.packageName));
+        }
       }
     } catch {
       // Ignorar
@@ -130,6 +143,7 @@ export default function App() {
   const favoritePackagesRef = useRef<string[]>(settings.favoritePackages);
   const catalogInFlightRef = useRef<Promise<void> | null>(null);
   const catalogInitializedRef = useRef(false);
+  const launchingTimerRef = useRef<number | null>(null);
   appsRef.current = apps;
   favoritePackagesRef.current = settings.favoritePackages;
 
@@ -229,6 +243,24 @@ export default function App() {
       void refreshMusicServiceStatus();
     }
   }, [overlay, refreshMusicServiceStatus]);
+
+  useEffect(() => {
+    const handleVisibilityOrBlur = () => {
+      if (document.hidden) {
+        if (launchingTimerRef.current) {
+          window.clearTimeout(launchingTimerRef.current);
+          launchingTimerRef.current = null;
+        }
+        setLaunchingApp(null);
+      }
+    };
+    window.addEventListener('blur', handleVisibilityOrBlur);
+    document.addEventListener('visibilitychange', handleVisibilityOrBlur);
+    return () => {
+      window.removeEventListener('blur', handleVisibilityOrBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityOrBlur);
+    };
+  }, []);
 
   useEffect(() => {
     const handleActivity = () => {
@@ -588,7 +620,7 @@ export default function App() {
   }, [isVersionLoaded, settings.updateRepo, appVersion.versionCode, appVersion.versionName]);
 
   const closeOverlayToHome = useCallback(
-    (focusTargetId = `row-app-${FEATURED_GAME.packageName}`) => {
+    (focusTargetId?: string) => {
       if (cleanupUpdateRef.current) {
         cleanupUpdateRef.current();
         cleanupUpdateRef.current = null;
@@ -606,7 +638,11 @@ export default function App() {
         void loadLiveCatalog(false);
       }
       window.requestAnimationFrame(() => {
-        focusElementById(focusTargetId);
+        if (focusTargetId) {
+          focusElementById(focusTargetId);
+        } else {
+          focusFirstHomeAppOrSettings();
+        }
       });
     },
     [overlay, remoteManifest, effectiveAppsOnly, loadLauncherData, loadLiveCatalog]
@@ -615,7 +651,7 @@ export default function App() {
   const handleBootIntroComplete = useCallback(() => {
     setIsBootIntroActive(false);
     window.requestAnimationFrame(() => {
-      focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+      focusFirstHomeAppOrSettings();
     });
   }, []);
 
@@ -646,10 +682,10 @@ export default function App() {
       if (activeTab !== 'inicio') {
         setActiveTab('inicio');
         window.requestAnimationFrame(() => {
-          focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+          focusFirstHomeAppOrSettings();
         });
       } else {
-        focusElementById(`row-app-${FEATURED_GAME.packageName}`);
+        focusFirstHomeAppOrSettings();
       }
     },
     onReachTopBoundary: handleReachTopBoundary,
@@ -676,13 +712,21 @@ export default function App() {
 
   const handleLaunchPackage = useCallback(
     async (packageName: string, displayName: string, icon?: string) => {
+      if (launchingTimerRef.current) {
+        window.clearTimeout(launchingTimerRef.current);
+        launchingTimerRef.current = null;
+      }
       setLaunchingApp({ name: displayName, icon });
-      window.setTimeout(() => setLaunchingApp(null), 520);
+      launchingTimerRef.current = window.setTimeout(() => setLaunchingApp(null), 3500);
 
       const result = await launchAndroidApp(packageName);
       if (!result.isNative) {
         showToast(`Iniciando ${displayName} (${packageName}) en Android TV`);
       } else if (!result.ok) {
+        if (launchingTimerRef.current) {
+          window.clearTimeout(launchingTimerRef.current);
+          launchingTimerRef.current = null;
+        }
         setLaunchingApp(null);
         showToast(
           result.error || `${displayName} (${packageName}) no está instalada en este TV.`
@@ -702,8 +746,12 @@ export default function App() {
   const handleLaunchSuggestion = useCallback(
     async (suggestion: AppSuggestion) => {
       const matchedApp = apps.find((a) => a.packageName === suggestion.packageName);
+      if (launchingTimerRef.current) {
+        window.clearTimeout(launchingTimerRef.current);
+        launchingTimerRef.current = null;
+      }
       setLaunchingApp({ name: `${suggestion.tag} · ${suggestion.title}`, icon: matchedApp?.icon });
-      window.setTimeout(() => setLaunchingApp(null), 520);
+      launchingTimerRef.current = window.setTimeout(() => setLaunchingApp(null), 3500);
 
       const res = await launchSuggestionUri(suggestion.deepLinkUrl, suggestion.packageName);
       if (!res.isNative) {
@@ -711,6 +759,10 @@ export default function App() {
       } else if (res.openedStore) {
         showToast(`Abriendo Play Store para instalar ${suggestion.appName}`);
       } else if (!res.ok) {
+        if (launchingTimerRef.current) {
+          window.clearTimeout(launchingTimerRef.current);
+          launchingTimerRef.current = null;
+        }
         setLaunchingApp(null);
         showToast(res.error || `No se pudo abrir ${suggestion.appName}`);
       }
@@ -876,10 +928,6 @@ export default function App() {
         : { backgroundImage: currentBackground.value };
   }, [isLight, currentBackground]);
 
-  const handleLaunchFeatured = useCallback(() => {
-    void handleLaunchPackage(FEATURED_GAME.packageName, FEATURED_GAME.name);
-  }, [handleLaunchPackage]);
-
   const handleLaunchSuggestionCb = useCallback(
     (sug: AppSuggestion) => {
       void handleLaunchSuggestion(sug);
@@ -960,7 +1008,6 @@ export default function App() {
             maintenanceNotice={isMaintenanceForced ? activeMaintenanceStatus : null}
             heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
             onScrollTopChange={setTopBarVisible}
-            onLaunchFeatured={handleLaunchFeatured}
             onLaunchApp={handleLaunchApp}
             onLaunchSuggestion={handleLaunchSuggestionCb}
             onToggleFavorite={handleToggleFavorite}
@@ -983,27 +1030,59 @@ export default function App() {
         )}
       </div>
 
-      {/* Animación limpia al abrir una aplicación */}
+      {/* Animación cinematográfica al abrir una aplicación */}
       <AnimatePresence>
         {launchingApp && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 bg-[#DCE3EE] dark:bg-[#0E1015] flex flex-col items-center justify-center gap-4 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="fixed inset-0 z-50 bg-[#080B12]/85 backdrop-blur-2xl flex flex-col items-center justify-center gap-6 pointer-events-none"
           >
-            {launchingApp.icon && (
-              <img
-                src={launchingApp.icon}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="w-24 h-24 rounded-full object-cover shadow-2xl"
-              />
-            )}
-            <span className="font-display text-2xl font-semibold text-zinc-900 dark:text-white">
-              {launchingApp.name}
-            </span>
+            {/* Glowing background aura */}
+            <div className="absolute w-96 h-96 rounded-full bg-amber-500/10 blur-[120px] pointer-events-none animate-pulse" />
+
+            <motion.div
+              initial={{ scale: 0.8, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex flex-col items-center gap-5 z-10"
+            >
+              {launchingApp.icon ? (
+                <div className="relative">
+                  <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-amber-500/40 to-indigo-500/40 blur-xl opacity-75 animate-pulse" />
+                  <img
+                    src={launchingApp.icon}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="relative w-28 h-28 rounded-2xl object-cover shadow-2xl border border-white/20"
+                  />
+                </div>
+              ) : (
+                <div className="w-28 h-28 rounded-2xl bg-zinc-800 border border-white/20 flex items-center justify-center shadow-2xl">
+                  <span className="text-3xl font-bold text-white">
+                    {launchingApp.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+
+              <div className="text-center space-y-1.5">
+                <h2 className="font-display text-2xl lg:text-3xl font-bold text-white tracking-wide [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
+                  {launchingApp.name}
+                </h2>
+                <p className="text-xs font-medium text-amber-400 tracking-wider uppercase">
+                  Iniciando aplicación...
+                </p>
+              </div>
+
+              {/* Elegant loading dots */}
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" />
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1088,7 +1167,7 @@ export default function App() {
       <MaintenanceNoticeModal
         isOpen={overlay === 'maintenance'}
         status={activeMaintenanceStatus}
-        onAcknowledge={() => closeOverlayToHome(`row-app-${FEATURED_GAME.packageName}`)}
+        onAcknowledge={() => closeOverlayToHome()}
       />
 
       {/* Toast minimalista */}

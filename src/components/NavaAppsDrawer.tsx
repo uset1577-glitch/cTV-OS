@@ -54,8 +54,7 @@ export function NavaAppsDrawer({
       if (filter === 'games') {
         return (
           app.category === 'games' ||
-          app.packageName.includes('game') ||
-          app.packageName.includes('party')
+          app.packageName.includes('game')
         );
       }
       return true;

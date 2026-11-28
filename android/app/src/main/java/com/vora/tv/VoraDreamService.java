@@ -1,4 +1,4 @@
-package com.cgamestv.launcher;
+package com.vora.tv;
 
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;

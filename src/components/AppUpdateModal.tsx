@@ -107,7 +107,7 @@ export function AppUpdateModal({
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
             className="w-full max-w-xl rounded-3xl bg-[#E5E7EB] dark:bg-[#111114] border border-zinc-900/12 dark:border-white/15 p-8 shadow-2xl max-h-[92vh] overflow-y-auto no-scrollbar"
           >
-            <div className="flex items-start justify-between gap-6 mb-6">
+            <div data-tv-row="update-header" className="flex items-start justify-between gap-6 mb-6">
               <div className="flex items-center gap-3.5">
                 <BrandLogo size="lg" showWordmark={false} />
                 <div>
@@ -118,7 +118,7 @@ export function AppUpdateModal({
                     Actualización de la app
                   </h2>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                    Versión actual: v{currentVersion.versionName} (Build {currentVersion.versionCode})
+                    Versión actual: v{currentVersion.versionName} (Build {currentVersion.versionCode}) {isNative ? '· Android TV' : '· Web'}
                   </p>
                 </div>
               </div>
@@ -247,20 +247,22 @@ export function AppUpdateModal({
             )}
 
             <div className="mb-6">
-              <button
-                type="button"
-                data-tv-focusable="true"
-                data-tv-id="update-toggle-advanced"
-                onClick={() => setShowAdvanced((prev) => !prev)}
-                className="tv-focusable inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none"
-              >
-                <span>Servidor de descargas</span>
-                {showAdvanced ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
+              <div data-tv-row="update-advanced-toggle">
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="update-toggle-advanced"
+                  onClick={() => setShowAdvanced((prev) => !prev)}
+                  className="tv-focusable inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:text-zinc-900 dark:focus:text-white"
+                >
+                  <span>Servidor de descargas</span>
+                  {showAdvanced ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
 
               {showAdvanced && (
                 <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/10 dark:border-white/10 space-y-2">
@@ -270,7 +272,7 @@ export function AppUpdateModal({
                   >
                     Repositorio o servidor de compilación (opcional):
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div data-tv-row="update-advanced-form" className="flex items-center gap-2">
                     <input
                       id="update-repo-input"
                       type="text"
@@ -295,7 +297,7 @@ export function AppUpdateModal({
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-3">
+            <div data-tv-row="update-actions" className="flex flex-wrap items-center justify-end gap-3">
               {status === 'permission_required' && (
                 <button
                   type="button"

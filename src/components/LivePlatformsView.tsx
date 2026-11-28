@@ -76,6 +76,7 @@ export function LivePlatformsView({
   return (
     <div
       data-tv-scroll-container="true"
+      data-tv-has-topbar="true"
       onScroll={(e) => onScrollTopChange(e.currentTarget.scrollTop <= 18)}
       className="flex-1 overflow-y-auto no-scrollbar px-12 pt-[82px] pb-14"
     >

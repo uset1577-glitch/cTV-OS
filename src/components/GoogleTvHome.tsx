@@ -5,7 +5,6 @@ import {
   Play,
   ShieldAlert,
 } from 'lucide-react';
-import { FEATURED_GAME } from '../data/presets';
 import {
   deduplicateCatalog,
   filterSeriesByPlatform,
@@ -35,7 +34,6 @@ interface GoogleTvHomeProps {
   maintenanceNotice?: LauncherRemoteStatus | null;
   heroFadeColor: string;
   onScrollTopChange: (atTop: boolean) => void;
-  onLaunchFeatured: () => void;
   onLaunchApp: (app: InstalledApp) => void;
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
   onToggleFavorite: (app: InstalledApp) => void;
@@ -442,7 +440,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   maintenanceNotice = null,
   heroFadeColor,
   onScrollTopChange,
-  onLaunchFeatured,
   onLaunchApp,
   onLaunchSuggestion,
   onToggleFavorite,
@@ -468,25 +465,12 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const rowMinProgressRef = useRef<number>(0);
   const hasActiveHeroRef = useRef<boolean>(false);
 
-  // Fila de apps estilo Google TV: CgamesTVPARTY primero, favoritos fijados, y todas las apps instaladas
+  // Fila de apps estilo Google TV: favoritos fijados y todas las apps instaladas
   const circularApps = useMemo(() => {
     const seen = new Set<string>();
     const result: InstalledApp[] = [];
 
-    // 1. Featured Game (CgamesTVPARTY) primero siempre si está disponible
-    const featuredFromList = allApps.find((a) => a.packageName === FEATURED_GAME.packageName);
-    const featuredItem: InstalledApp = featuredFromList || {
-      packageName: FEATURED_GAME.packageName,
-      name: FEATURED_GAME.name,
-      icon: '',
-      isLeanback: true,
-      isSystemApp: false,
-      category: 'games',
-    };
-    result.push(featuredItem);
-    seen.add(featuredItem.packageName);
-
-    // 2. Apps marcadas como favoritas en el orden seleccionado
+    // 1. Apps marcadas como favoritas en el orden seleccionado
     for (const app of favoriteApps) {
       if (!seen.has(app.packageName)) {
         seen.add(app.packageName);
@@ -494,7 +478,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       }
     }
 
-    // 3. Todas las demás aplicaciones disponibles e instaladas leídas del sistema
+    // 2. Todas las demás aplicaciones disponibles e instaladas leídas del sistema
     for (const app of allApps) {
       if (!seen.has(app.packageName)) {
         seen.add(app.packageName);
@@ -649,39 +633,15 @@ export const GoogleTvHome = memo(function GoogleTvHome({
 
   const handleHeroLaunch = useCallback(() => {
     if (!activeHero) return;
-    if (activeHero.packageName === FEATURED_GAME.packageName) {
-      onLaunchFeatured();
-      return;
-    }
     onLaunchSuggestion({ ...activeHero, packageName: heroResolvedPkg });
-  }, [activeHero, heroResolvedPkg, onLaunchFeatured, onLaunchSuggestion]);
+  }, [activeHero, heroResolvedPkg, onLaunchSuggestion]);
 
-  const handleHeroOpenApp = useCallback(() => {
-    if (!activeHero) return;
-    if (activeHero.packageName === FEATURED_GAME.packageName) {
-      onLaunchFeatured();
-      return;
-    }
-    if (heroMatchedApp) {
-      onLaunchApp(heroMatchedApp);
-      return;
-    }
-    onLaunchSuggestion({
-      ...activeHero,
-      deepLinkUrl: '',
-      packageName: heroResolvedPkg || activeHero.packageName,
-    });
-  }, [activeHero, heroMatchedApp, heroResolvedPkg, onLaunchApp, onLaunchFeatured, onLaunchSuggestion]);
 
   const handleCircleLaunch = useCallback(
     (clicked: InstalledApp) => {
-      if (clicked.packageName === FEATURED_GAME.packageName) {
-        onLaunchFeatured();
-      } else {
-        onLaunchApp(clicked);
-      }
+      onLaunchApp(clicked);
     },
-    [onLaunchFeatured, onLaunchApp]
+    [onLaunchApp]
   );
 
   // Solo propiedades compositor (opacity, transform) sin toggling de visibility ni layout reads
@@ -826,6 +786,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       <div
         ref={scrollRef}
         data-tv-scroll-container="true"
+        data-tv-has-topbar="true"
         onScroll={handleScroll}
         className="relative flex-1 overflow-y-auto no-scrollbar pb-14 pt-24 px-12 space-y-7"
       >
@@ -943,8 +904,10 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     <div
       ref={scrollRef}
       data-tv-scroll-container="true"
+      data-tv-has-topbar="true"
       onScroll={handleScroll}
       onFocusCapture={handleFocusCapture}
+      data-tv-native={isNative ? 'true' : 'false'}
       className="relative flex-1 overflow-y-auto no-scrollbar pb-14"
     >
       {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (solo opacity y transform) */}
@@ -1073,11 +1036,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                   className="tv-focusable inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-zinc-950 text-sm font-bold focus:bg-amber-400 focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>
-                    {activeHero.packageName === FEATURED_GAME.packageName
-                      ? 'Jugar ahora'
-                      : `Ver en ${heroAppName}`}
-                  </span>
+                  <span>Ver en {heroAppName}</span>
                 </button>
 
               </div>

@@ -15,7 +15,6 @@ import {
   Moon,
   RotateCcw,
   Settings,
-  ShieldCheck,
   SlidersHorizontal,
   Sun,
   Timer,
@@ -88,7 +87,13 @@ export function NavaSettingsDrawer({
     if (isOpen) {
       setSubPanel(initialSubPanel);
       window.requestAnimationFrame(() => {
-        focusElementById('quick-screensaver');
+        if (initialSubPanel === 'profile') {
+          focusElementById('quick-profile-theme');
+        } else if (initialSubPanel === 'notifications') {
+          focusElementById('quick-notif-update');
+        } else {
+          focusElementById('quick-screensaver');
+        }
       });
     } else {
       setSubPanel('none');
@@ -213,7 +218,15 @@ export function NavaSettingsDrawer({
       onOpenUpdateModal();
       return;
     }
-    setSubPanel((prev) => (prev === 'profile' ? 'none' : 'profile'));
+    setSubPanel((prev) => {
+      const next = prev === 'profile' ? 'none' : 'profile';
+      if (next === 'profile') {
+        window.requestAnimationFrame(() => {
+          focusElementById('quick-profile-theme');
+        });
+      }
+      return next;
+    });
   };
 
   const featuredTitle = isMaintenanceForced
@@ -264,6 +277,7 @@ export function NavaSettingsDrawer({
             {/* 1. Cabecera estilo Google TV: Fecha y hora a la izquierda + Ajustes, Notificaciones y Perfil arriba a la derecha */}
             <div
               data-tv-row="quick-header"
+              data-tv-scroll-top="true"
               className="flex items-start justify-between gap-3 shrink-0 pb-1"
             >
               <div className="min-w-0">
@@ -396,7 +410,7 @@ export function NavaSettingsDrawer({
             {/* Subpanel contextual limpio en escala de grises (solo visible al abrir Notificaciones o Perfil) */}
             {subPanel === 'notifications' && (
               <div
-                data-tv-row="quick-subpanel"
+                data-tv-row="quick-notif-panel"
                 className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2 shrink-0"
               >
                 <div className="text-xs font-semibold text-zinc-300 px-0.5">
@@ -425,51 +439,11 @@ export function NavaSettingsDrawer({
                     v{appVersion.versionName}
                   </span>
                 </button>
-
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="quick-notif-media"
-                  onClick={onOpenNotificationSettings}
-                  className="tv-focusable group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
-                >
-                  <span className="truncate">Acceso multimedia Spotify</span>
-                  <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
-                    {isNative
-                      ? musicServiceStatus.hasNotificationAccess
-                        ? 'Activo'
-                        : 'Configurar'
-                      : 'TV'}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="quick-notif-service"
-                  onClick={onOpenAccessibilitySettings}
-                  className="tv-focusable group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Servicio VORA en Google TV</span>
-                  </div>
-                  <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
-                    {isNative
-                      ? musicServiceStatus.hasAccessibilityAccess
-                        ? 'Activo'
-                        : 'Activar'
-                      : 'TV'}
-                  </span>
-                </button>
               </div>
             )}
 
             {subPanel === 'profile' && (
-              <div
-                data-tv-row="quick-subpanel"
-                className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0"
-              >
+              <div className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0">
                 <div className="flex items-center justify-between px-0.5">
                   <span className="text-xs font-semibold text-zinc-300">
                     Perfil y apariencia
@@ -479,7 +453,7 @@ export function NavaSettingsDrawer({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div data-tv-row="quick-profile-toggles" className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     data-tv-focusable="true"
@@ -520,7 +494,11 @@ export function NavaSettingsDrawer({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5">
+                <div
+                  data-tv-row="quick-profile-bgs"
+                  data-tv-row-type="grid"
+                  className="grid grid-cols-3 gap-1.5"
+                >
                   {BACKGROUND_PRESETS.map((preset) => {
                     const selected = settings.backgroundId === preset.id;
                     return (
@@ -559,7 +537,7 @@ export function NavaSettingsDrawer({
                   })}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div data-tv-row="quick-profile-tv" className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     data-tv-focusable="true"
@@ -589,7 +567,7 @@ export function NavaSettingsDrawer({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div data-tv-row="quick-profile-mode" className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     data-tv-focusable="true"
@@ -621,19 +599,21 @@ export function NavaSettingsDrawer({
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="quick-profile-update"
-                  onClick={() => {
-                    onClose();
-                    onOpenUpdateModal();
-                  }}
-                  className="tv-focusable w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
-                >
-                  <span>Buscar actualizaciones OTA</span>
-                  <Monitor className="w-3.5 h-3.5 shrink-0" />
-                </button>
+                <div data-tv-row="quick-profile-ota">
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="quick-profile-update"
+                    onClick={() => {
+                      onClose();
+                      onOpenUpdateModal();
+                    }}
+                    className="tv-focusable w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
+                  >
+                    <span>Buscar actualizaciones OTA</span>
+                    <Monitor className="w-3.5 h-3.5 shrink-0" />
+                  </button>
+                </div>
               </div>
             )}
 

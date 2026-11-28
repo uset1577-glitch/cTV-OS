@@ -101,14 +101,14 @@ function findNextInGrid(
   current: HTMLElement,
   direction: 'up' | 'down' | 'left' | 'right',
   rowCandidates: HTMLElement[],
-  rectCache?: Map<HTMLElement, DOMRect>
+  rectCache?: Map<HTMLElement, DOMRect>,
+  preferredX?: number | null
 ): HTMLElement | null {
   const currRect = getRect(current, rectCache);
   const currCx = currRect.left + currRect.width / 2;
   const currCy = currRect.top + currRect.height / 2;
 
   if (direction === 'left' || direction === 'right') {
-    const rowBandThreshold = Math.max(48, currRect.height * 0.65);
     let best: HTMLElement | null = null;
     let bestDist = Number.POSITIVE_INFINITY;
     for (let i = 0; i < rowCandidates.length; i++) {
@@ -116,10 +116,16 @@ function findNextInGrid(
       if (el === current) continue;
       const r = getRect(el, rectCache);
       if (r.width <= 0 || r.height <= 0) continue;
+
+      const overlapY = Math.min(currRect.bottom, r.bottom) - Math.max(currRect.top, r.top);
+      const minH = Math.min(currRect.height, r.height);
       const cy = r.top + r.height / 2;
+      const sameHorizontalBand =
+        overlapY > minH * 0.3 || Math.abs(cy - currCy) < Math.max(12, minH * 0.5);
+      if (!sameHorizontalBand) continue;
+
       const cx = r.left + r.width / 2;
-      if (Math.abs(cy - currCy) >= rowBandThreshold) continue;
-      if (direction === 'right' ? cx <= currCx + 8 : cx >= currCx - 8) continue;
+      if (direction === 'right' ? cx <= currCx + 6 : cx >= currCx - 6) continue;
       const dist = Math.abs(cx - currCx);
       if (dist < bestDist) {
         bestDist = dist;
@@ -129,25 +135,63 @@ function findNextInGrid(
     return best;
   }
 
-  let best: HTMLElement | null = null;
-  let bestScore = Number.POSITIVE_INFINITY;
+  // Navegación vertical en cuadrícula: primero encontrar la banda/fila adyacente más cercana
+  // para nunca saltarse una fila intermedia, y luego elegir la columna más cercana a preferredX/currCx.
+  const minVerticalDelta = Math.max(10, currRect.height * 0.35);
+  const directional: Array<{ el: HTMLElement; rect: DOMRect; cx: number; cy: number; absDy: number }> = [];
+  let nearestAbsDy = Number.POSITIVE_INFINITY;
+  let nearestRect: DOMRect | null = null;
+  let nearestCy = currCy;
+
   for (let i = 0; i < rowCandidates.length; i++) {
     const el = rowCandidates[i];
     if (el === current) continue;
     const r = getRect(el, rectCache);
     if (r.width <= 0 || r.height <= 0) continue;
-    const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
     const dy = cy - currCy;
-    if (direction === 'down' && dy <= 24) continue;
-    if (direction === 'up' && dy >= -24) continue;
+    if (direction === 'down' && dy <= minVerticalDelta) continue;
+    if (direction === 'up' && dy >= -minVerticalDelta) continue;
 
-    const score = Math.abs(dy) + Math.abs(cx - currCx) * 1.4;
-    if (score < bestScore) {
-      bestScore = score;
-      best = el;
+    const absDy = Math.abs(dy);
+    const cx = r.left + r.width / 2;
+    directional.push({ el, rect: r, cx, cy, absDy });
+    if (absDy < nearestAbsDy) {
+      nearestAbsDy = absDy;
+      nearestRect = r;
+      nearestCy = cy;
     }
   }
+
+  if (directional.length === 0 || !nearestRect) return null;
+
+  const targetX = preferredX ?? currCx;
+  let best: HTMLElement | null = null;
+  let bestHorizDist = Number.POSITIVE_INFINITY;
+  let bestVertTie = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < directional.length; i++) {
+    const item = directional[i];
+    const overlapWithBand =
+      Math.min(nearestRect.bottom, item.rect.bottom) - Math.max(nearestRect.top, item.rect.top);
+    const minBandH = Math.min(nearestRect.height, item.rect.height);
+    const inAdjacentBand =
+      overlapWithBand > minBandH * 0.3 ||
+      Math.abs(item.cy - nearestCy) <= Math.max(12, minBandH * 0.5);
+
+    if (!inAdjacentBand) continue;
+
+    const horizDist = Math.abs(item.cx - targetX);
+    if (
+      horizDist < bestHorizDist - 1 ||
+      (Math.abs(horizDist - bestHorizDist) <= 1 && item.absDy < bestVertTie)
+    ) {
+      bestHorizDist = horizDist;
+      bestVertTie = item.absDy;
+      best = item.el;
+    }
+  }
+
   return best;
 }
 
@@ -250,9 +294,17 @@ function recordRowFocus(
   let colIndex: number | undefined;
 
   if (rowEl.dataset.tvRowType === 'grid') {
-    const bandThreshold = Math.max(36, rect.height * 0.6);
+    const currCy = rect.top + rect.height / 2;
     const band = items
-      .filter((item) => Math.abs(getRect(item, rectCache).top - rect.top) < bandThreshold)
+      .filter((item) => {
+        const itemRect = getRect(item, rectCache);
+        if (itemRect.width <= 0 || itemRect.height <= 0) return false;
+        const overlapY =
+          Math.min(rect.bottom, itemRect.bottom) - Math.max(rect.top, itemRect.top);
+        const minH = Math.min(rect.height, itemRect.height);
+        const itemCy = itemRect.top + itemRect.height / 2;
+        return overlapY > minH * 0.3 || Math.abs(itemCy - currCy) < Math.max(12, minH * 0.5);
+      })
       .sort((a, b) => getRect(a, rectCache).left - getRect(b, rectCache).left);
     const col = band.indexOf(el);
     if (col !== -1) {
@@ -291,7 +343,7 @@ function restoreRowFocus(
       }
     }
     const edgeItems = items
-      .filter((el) => Math.abs(getRect(el, rectCache).top - edgeY) < 40)
+      .filter((el) => Math.abs(getRect(el, rectCache).top - edgeY) < 18)
       .sort((a, b) => getRect(a, rectCache).left - getRect(b, rectCache).left);
     const pool = edgeItems.length > 0 ? edgeItems : items;
 
@@ -344,8 +396,9 @@ function findNextElement(
   direction: 'up' | 'down' | 'left' | 'right',
   scopeSelector: string | undefined,
   rowMemory: Map<string, RowFocusMemory>,
-  rectCache: Map<HTMLElement, DOMRect>
-): { next: HTMLElement | null; nextRowItems?: HTMLElement[]; hasAnyCandidates?: boolean } {
+  rectCache: Map<HTMLElement, DOMRect>,
+  gridPreferredX: number | null
+): { next: HTMLElement | null; nextRowItems?: HTMLElement[]; hasAnyCandidates?: boolean; stayedInSameGrid?: boolean } {
   const currentRow = current?.isConnected ? current.closest<HTMLElement>('[data-tv-row]') : null;
 
   if (current && currentRow && !isHiddenByAncestors(currentRow) && isLayoutVisible(currentRow)) {
@@ -414,13 +467,19 @@ function findNextElement(
         next: inGrid || tryHorizontalPaneExit(),
         nextRowItems: inGrid ? currentItems : undefined,
         hasAnyCandidates: true,
+        stayedInSameGrid: Boolean(inGrid),
       };
     }
 
     if (isGrid) {
-      const insideGrid = findNextInGrid(current, direction, currentItems, rectCache);
+      const insideGrid = findNextInGrid(current, direction, currentItems, rectCache, gridPreferredX);
       if (insideGrid) {
-        return { next: insideGrid, nextRowItems: currentItems, hasAnyCandidates: true };
+        return {
+          next: insideGrid,
+          nextRowItems: currentItems,
+          hasAnyCandidates: true,
+          stayedInSameGrid: true,
+        };
       }
     }
 
@@ -769,14 +828,17 @@ function computeScrollPlan(
       }
     } else {
       const parentRect = getRect(vParent, rectCache);
-      const topSafeMargin = parentRect.top < 40 ? 88 : 20;
+      const hasFixedTopbar =
+        vParent.dataset.tvHasTopbar === 'true' ||
+        (parentRect.top <= 8 && parentRect.width >= window.innerWidth * 0.75);
+      const topSafeMargin = hasFixedTopbar ? 88 : 16;
       const bottomSafeMargin = 24;
       const needsScrollDown = projectedBottom > parentRect.bottom - bottomSafeMargin;
       const needsScrollUp = projectedTop < parentRect.top + topSafeMargin;
 
       if (needsScrollDown || needsScrollUp) {
-        const minInset = parentRect.top < 40 ? 96 : 24;
-        const maxInset = parentRect.top < 40 ? 190 : 140;
+        const minInset = hasFixedTopbar ? 96 : 16;
+        const maxInset = hasFixedTopbar ? 190 : 96;
         const desiredTop =
           parentRect.top +
           Math.max(minInset, Math.min(maxInset, (parentRect.height - boxRect.height) * 0.34));
@@ -880,8 +942,17 @@ export function useSpatialNavigation({
   const lastFocusedRowKeyRef = useRef<string | null>(null);
   const lastPointerDownAtRef = useRef<number>(0);
   const lastRememberedElRef = useRef<HTMLElement | null>(null);
+  const lastRememberedIdRef = useRef<string | null>(null);
   const lastCenterXRef = useRef<number | null>(null);
+  const gridPreferredXRef = useRef<number | null>(null);
   const programmaticFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const memory = rowMemoryRef.current;
+    return () => {
+      memory.clear();
+    };
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -892,6 +963,7 @@ export function useSpatialNavigation({
       rectCache?: Map<HTMLElement, DOMRect>
     ) => {
       lastRememberedElRef.current = el;
+      lastRememberedIdRef.current = el.dataset.tvId || null;
       const rect = getRect(el, rectCache);
       if (rect.width > 0) {
         lastCenterXRef.current = rect.left + rect.width / 2;
@@ -928,6 +1000,19 @@ export function useSpatialNavigation({
         isVisibleFocusable(active, rectCache)
       ) {
         return;
+      }
+
+      if (lastRememberedIdRef.current) {
+        const root: ParentNode = scopeSelector
+          ? document.querySelector(scopeSelector) || document
+          : document;
+        const byId = root.querySelector<HTMLElement>(
+          `[data-tv-id="${lastRememberedIdRef.current}"]`
+        );
+        if (byId && isLayoutVisible(byId) && isVisibleFocusable(byId, rectCache)) {
+          navigateToTarget(byId, undefined, rectCache);
+          return;
+        }
       }
 
       const visibleRows = getVisibleRows(scopeSelector);
@@ -1080,22 +1165,40 @@ export function useSpatialNavigation({
       if (direction) {
         e.preventDefault();
         const rectCache = new Map<HTMLElement, DOMRect>();
-        const { next, nextRowItems, hasAnyCandidates } = findNextElement(
+        const activeRow = active?.closest<HTMLElement>('[data-tv-row]');
+        const activeIsGrid = activeRow?.dataset.tvRowType === 'grid';
+
+        if (activeIsGrid && (direction === 'up' || direction === 'down')) {
+          if (gridPreferredXRef.current === null && active) {
+            const activeRect = getRect(active, rectCache);
+            gridPreferredXRef.current = activeRect.left + activeRect.width / 2;
+          }
+        } else {
+          gridPreferredXRef.current = null;
+        }
+
+        const { next, nextRowItems, hasAnyCandidates, stayedInSameGrid } = findNextElement(
           active,
           direction,
           scopeSelector,
           rowMemoryRef.current,
-          rectCache
+          rectCache,
+          gridPreferredXRef.current
         );
         if (next) {
+          if (!stayedInSameGrid) {
+            gridPreferredXRef.current = null;
+          }
           navigateToTarget(next, nextRowItems, rectCache);
         } else if (direction === 'up' && onReachTopBoundaryRef.current) {
+          gridPreferredXRef.current = null;
           const activeRect = active ? getRect(active, rectCache) : null;
           const centerX = activeRect
             ? activeRect.left + activeRect.width / 2
             : window.innerWidth * 0.25;
           onReachTopBoundaryRef.current({ currentElement: active, centerX });
         } else if (hasAnyCandidates && (!active || !active.isConnected || active === document.body)) {
+          gridPreferredXRef.current = null;
           restoreAfterDomChange();
         }
         return;
@@ -1168,10 +1271,8 @@ export function useSpatialNavigation({
       document.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      rowMemoryRef.current.clear();
-      lastFocusedRowKeyRef.current = null;
       lastRememberedElRef.current = null;
-      lastCenterXRef.current = null;
+      gridPreferredXRef.current = null;
     };
   }, [enabled, scopeSelector]);
 }

@@ -1,11 +1,5 @@
 import type { BackgroundPreset, InstalledApp, LauncherSettings } from '../types/launcher';
 
-export const FEATURED_GAME = {
-  name: 'CgamesTVPARTY',
-  packageName: 'com.mandoparty.tv',
-  tagline: 'Juego multijugador local con mandos para tu Android TV',
-};
-
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
   {
     id: 'gtv-cinema',
@@ -76,7 +70,6 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
 ];
 
 export const DEFAULT_FAVORITES = [
-  'com.mandoparty.tv',
   'com.google.android.youtube.tv',
   'com.netflix.ninja',
   'com.wbd.stream',
@@ -123,14 +116,6 @@ function makeCircleAppIcon(bg: string, label: string, accent = '#FFFFFF', sub?: 
 }
 
 export const WEB_PREVIEW_APPS: InstalledApp[] = [
-  {
-    packageName: 'com.mandoparty.tv',
-    name: 'CgamesTVPARTY',
-    icon: makeCircleAppIcon('#EA580C', 'CTV', '#FFF7ED', 'PARTY'),
-    isLeanback: true,
-    isSystemApp: false,
-    category: 'games',
-  },
   {
     packageName: 'com.google.android.youtube.tv',
     name: 'YouTube',
@@ -207,6 +192,14 @@ export const WEB_PREVIEW_APPS: InstalledApp[] = [
     packageName: 'com.apple.atve.androidtv.appletv',
     name: 'Apple TV',
     icon: makeCircleAppIcon('#171717', 'tv', '#F5F5F5'),
+    isLeanback: true,
+    isSystemApp: false,
+    category: 'tv',
+  },
+  {
+    packageName: 'com.cbs.ott',
+    name: 'Paramount+',
+    icon: makeCircleAppIcon('#0064FF', 'P+', '#FFFFFF'),
     isLeanback: true,
     isSystemApp: false,
     category: 'tv',

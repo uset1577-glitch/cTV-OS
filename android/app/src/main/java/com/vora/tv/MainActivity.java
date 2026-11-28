@@ -1,4 +1,4 @@
-package com.cgamestv.launcher;
+package com.vora.tv;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,34 +22,45 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LauncherPlugin.class);
         super.onCreate(savedInstanceState);
 
-        applyKeepScreenOn();
-        handleScreensaverIntent(getIntent());
+        try {
+            applyKeepScreenOn();
+            handleScreensaverIntent(getIntent());
 
-        // En un Launcher real, el botón Atrás navega dentro de la interfaz TV y nunca cierra el Home
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (getBridge() != null && getBridge().getWebView() != null) {
-                    getBridge().getWebView().evaluateJavascript(
-                        "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'BrowserBack', code: 'BrowserBack', keyCode: 4, bubbles: true, cancelable: true }));",
-                        null
-                    );
+            // En un Launcher real, el botón Atrás navega dentro de la interfaz TV y nunca cierra el Home
+            getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    try {
+                        if (getBridge() != null && getBridge().getWebView() != null) {
+                            getBridge().getWebView().evaluateJavascript(
+                                "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'BrowserBack', code: 'BrowserBack', keyCode: 4, bubbles: true, cancelable: true }));",
+                                null
+                            );
+                        }
+                    } catch (Exception ignored) {
+                    }
                 }
-            }
-        });
+            });
 
-        // Detectar encendido de pantalla de la TV para refrescar recomendaciones automáticamente
-        screenOnReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                    applyKeepScreenOn();
-                    dispatchResumeEvent("screen_on");
+            // Detectar encendido de pantalla de la TV para refrescar recomendaciones automáticamente
+            screenOnReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                        applyKeepScreenOn();
+                        dispatchResumeEvent("screen_on");
+                    }
                 }
+            };
+            IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+            // Intent.ACTION_SCREEN_ON es broadcast del sistema de Android; en Android 14+ usar RECEIVER_EXPORTED
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ContextCompat.registerReceiver(this, screenOnReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(screenOnReceiver, filter);
             }
-        };
-        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
-        ContextCompat.registerReceiver(this, screenOnReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override

@@ -12,7 +12,6 @@ import {
 } from '../data/suggestions';
 import {
   focusClosestInRow,
-  focusElementById,
   useSpatialNavigation,
 } from '../hooks/useSpatialNavigation';
 import type {
@@ -587,7 +586,7 @@ export function NavaSearchOverlay({
                     </section>
                   )}
 
-                  {/* 3. Búsqueda directa en plataformas (YouTube, Netflix, Prime Video, Max, Disney+) */}
+                  {/* 3. Búsqueda directa en plataformas (YouTube, Netflix, Prime Video, Max, Disney+, Paramount+) */}
                   {showActionsSection && (
                     <section>
                       <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2.5">

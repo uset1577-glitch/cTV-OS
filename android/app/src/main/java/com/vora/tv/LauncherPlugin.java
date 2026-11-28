@@ -1,4 +1,4 @@
-package com.cgamestv.launcher;
+package com.vora.tv;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
@@ -699,7 +699,7 @@ public class LauncherPlugin extends Plugin {
                 if (!otaDir.exists() && !otaDir.mkdirs()) {
                     throw new IllegalStateException("No se pudo crear la carpeta temporal de descarga.");
                 }
-                File apkFile = new File(otaDir, "cgamestv-update.apk");
+                File apkFile = new File(otaDir, "vora-tv-update.apk");
                 if (apkFile.exists()) {
                     //noinspection ResultOfMethodCallIgnored
                     apkFile.delete();
@@ -714,7 +714,7 @@ public class LauncherPlugin extends Plugin {
                     connection.setInstanceFollowRedirects(false);
                     connection.setConnectTimeout(15000);
                     connection.setReadTimeout(30000);
-                    connection.setRequestProperty("User-Agent", "CgamesTVLauncher-OTA");
+                    connection.setRequestProperty("User-Agent", "VoraTVLauncher-OTA");
                     connection.connect();
 
                     int code = connection.getResponseCode();
@@ -824,8 +824,7 @@ public class LauncherPlugin extends Plugin {
             || lower.equals("com.hbo.hbonow")
             || lower.equals("com.hbomax")
             || lower.equals("com.spotify.tv.android")
-            || lower.equals("com.apple.atve.androidtv.appletv")
-            || lower.equals("com.mandoparty.tv");
+            || lower.equals("com.apple.atve.androidtv.appletv");
     }
 
     private static boolean isHiddenSystemApp(ApplicationInfo appInfo, String pkg) {
@@ -848,7 +847,7 @@ public class LauncherPlugin extends Plugin {
             boolean isGame = (appInfo.flags & ApplicationInfo.FLAG_IS_GAME) != 0
                 || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                     && appInfo.category == ApplicationInfo.CATEGORY_GAME);
-            if (isGame || "com.mandoparty.tv".equals(pkg)) {
+            if (isGame) {
                 category = "games";
             } else if (isLeanback) {
                 category = "tv";
@@ -1052,40 +1051,11 @@ public class LauncherPlugin extends Plugin {
     }
 
     private boolean hasNotificationListenerPermission(Context context) {
-        try {
-            Set<String> enabled = NotificationManagerCompat.getEnabledListenerPackages(context);
-            return enabled != null && enabled.contains(context.getPackageName());
-        } catch (Exception ignored) {
-            return false;
-        }
+        return false;
     }
 
     private static boolean isAccessibilityServiceEnabled(Context context) {
-        if (VoraAccessibilityService.serviceConnected) {
-            return true;
-        }
-        try {
-            AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-            if (am != null) {
-                List<AccessibilityServiceInfo> enabled =
-                    am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
-                if (enabled != null) {
-                    String selfPkg = context.getPackageName();
-                    for (AccessibilityServiceInfo info : enabled) {
-                        if (info.getId() != null && info.getId().contains(selfPkg)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            String flat = Settings.Secure.getString(
-                context.getContentResolver(),
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-            );
-            return flat != null && flat.contains(context.getPackageName());
-        } catch (Exception ignored) {
-            return false;
-        }
+        return false;
     }
 
     private boolean isGoogleTvDevice(Context context) {
@@ -1179,34 +1149,7 @@ public class LauncherPlugin extends Plugin {
     }
 
     private void bindMediaSessionListener() {
-        Context rawContext = getContext();
-        if (rawContext == null) return;
-        Context context = rawContext.getApplicationContext();
-        if (!hasNotificationListenerPermission(context)) return;
-
-        try {
-            if (mediaSessionManager == null) {
-                mediaSessionManager = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-            }
-            if (mediaSessionManager == null) return;
-
-            ComponentName listenerComp = new ComponentName(context, VoraMediaListenerService.class);
-            if (activeSessionsListener == null) {
-                activeSessionsListener = controllers -> {
-                    attachSpotifyControllerCallback(controllers);
-                    emitCurrentSpotifyState(context);
-                };
-                mediaSessionManager.addOnActiveSessionsChangedListener(
-                    activeSessionsListener,
-                    listenerComp,
-                    new Handler(Looper.getMainLooper())
-                );
-            }
-
-            List<MediaController> current = mediaSessionManager.getActiveSessions(listenerComp);
-            attachSpotifyControllerCallback(current);
-        } catch (Exception ignored) {
-        }
+        // Services with high-risk permissions removed to ensure 100% compliance with Google Play Protect
     }
 
     private void unbindMediaSessionListener() {
@@ -1305,9 +1248,7 @@ public class LauncherPlugin extends Plugin {
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
-                ComponentName listenerComp = hasPermission
-                    ? new ComponentName(context, VoraMediaListenerService.class)
-                    : null;
+                ComponentName listenerComp = null;
                 List<MediaController> controllers = msm.getActiveSessions(listenerComp);
                 if (controllers != null) {
                     JSObject fallbackSession = null;
@@ -1385,40 +1326,7 @@ public class LauncherPlugin extends Plugin {
         } catch (Exception ignored) {
         }
 
-        // 2. Fallback: notificación / MediaSession.Token capturada por VoraMediaListenerService
-        if (VoraMediaListenerService.latestNotificationActive
-            && !VoraMediaListenerService.latestNotificationTrack.isEmpty()
-            && (VoraMediaListenerService.latestNotificationIsPlaying || musicAudioActive)) {
-            JSObject notifRes = new JSObject();
-            notifRes.put("isPlaying", true);
-            notifRes.put("track", VoraMediaListenerService.latestNotificationTrack);
-            notifRes.put("artist", VoraMediaListenerService.latestNotificationArtist);
-            notifRes.put("album", VoraMediaListenerService.latestNotificationAlbum);
-            notifRes.put("albumArt", "");
-            notifRes.put("source", "android-session");
-            notifRes.put("hasListenerPermission", hasPermission);
-            notifRes.put("hasAccessibilityPermission", hasAccessibility);
-            return notifRes;
-        }
-
-        // 3. Fallback Google TV: lectura vía Servicio de Accesibilidad VORA (no requiere Notification Access)
-        if (!VoraAccessibilityService.latestSpotifyTrack.isEmpty()) {
-            long ageMs = System.currentTimeMillis() - VoraAccessibilityService.latestSpotifyCapturedAt;
-            if (musicAudioActive || ageMs < 8_000L) {
-                JSObject accRes = new JSObject();
-                accRes.put("isPlaying", true);
-                accRes.put("track", VoraAccessibilityService.latestSpotifyTrack);
-                accRes.put("artist", VoraAccessibilityService.latestSpotifyArtist);
-                accRes.put("album", "");
-                accRes.put("albumArt", "");
-                accRes.put("source", "android-accessibility");
-                accRes.put("hasListenerPermission", hasPermission);
-                accRes.put("hasAccessibilityPermission", hasAccessibility);
-                return accRes;
-            }
-        }
-
-        // 4. Fallback: broadcasts directos de Spotify
+        // Fallback: broadcasts directos de Spotify
         JSObject broadcastRes = new JSObject();
         broadcastRes.put("isPlaying", (broadcastPlaying || musicAudioActive) && !broadcastTrack.isEmpty());
         broadcastRes.put("track", broadcastTrack);
@@ -1489,13 +1397,6 @@ public class LauncherPlugin extends Plugin {
                 if (obj.optBoolean("isPlaying", false)) {
                     return obj.optString("track", "");
                 }
-            }
-            if (VoraMediaListenerService.latestNotificationActive
-                && (VoraMediaListenerService.latestNotificationIsPlaying || musicActive)) {
-                return VoraMediaListenerService.latestNotificationTrack;
-            }
-            if (musicActive && !VoraAccessibilityService.latestSpotifyTrack.isEmpty()) {
-                return VoraAccessibilityService.latestSpotifyTrack;
             }
         } catch (Exception ignored) {
         }
