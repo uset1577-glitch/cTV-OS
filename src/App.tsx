@@ -66,6 +66,9 @@ import type {
 
 const SETTINGS_STORAGE_KEY = 'vora_launcher_settings_v2';
 const DISMISSED_UPDATE_SESSION_KEY = 'vora_dismissed_update_version';
+const APP_LAUNCH_SAFETY_TIMEOUT_NATIVE_MS = 12_000;
+const APP_LAUNCH_SAFETY_TIMEOUT_WEB_MS = 5_500;
+const APP_LAUNCH_LOADING_HINT_MS = 3_500;
 
 const REMOVED_LEGACY_PACKAGES = new Set(['com.mandoparty.tv', 'com.vora.arcade']);
 
@@ -126,6 +129,7 @@ export default function App() {
   const [launchingApp, setLaunchingApp] = useState<{ name: string; icon?: string } | null>(
     null
   );
+  const [launchingExtended, setLaunchingExtended] = useState(false);
   const [appVersion, setAppVersion] = useState<AppVersionInfo>({
     versionName: '1.0.0',
     versionCode: 100,
@@ -144,6 +148,7 @@ export default function App() {
   const catalogInFlightRef = useRef<Promise<void> | null>(null);
   const catalogInitializedRef = useRef(false);
   const launchingTimerRef = useRef<number | null>(null);
+  const launchingStageTimerRef = useRef<number | null>(null);
   appsRef.current = apps;
   favoritePackagesRef.current = settings.favoritePackages;
 
@@ -244,23 +249,59 @@ export default function App() {
     }
   }, [overlay, refreshMusicServiceStatus]);
 
+  const clearLaunchingIntro = useCallback(() => {
+    if (launchingTimerRef.current) {
+      window.clearTimeout(launchingTimerRef.current);
+      launchingTimerRef.current = null;
+    }
+    if (launchingStageTimerRef.current) {
+      window.clearTimeout(launchingStageTimerRef.current);
+      launchingStageTimerRef.current = null;
+    }
+    setLaunchingExtended(false);
+    setLaunchingApp(null);
+  }, []);
+
   useEffect(() => {
-    const handleVisibilityOrBlur = () => {
-      if (document.hidden) {
-        if (launchingTimerRef.current) {
-          window.clearTimeout(launchingTimerRef.current);
-          launchingTimerRef.current = null;
-        }
-        setLaunchingApp(null);
+    const handleVisibilityHidden = () => {
+      if (document.hidden || document.visibilityState === 'hidden') {
+        clearLaunchingIntro();
       }
     };
-    window.addEventListener('blur', handleVisibilityOrBlur);
-    document.addEventListener('visibilitychange', handleVisibilityOrBlur);
-    return () => {
-      window.removeEventListener('blur', handleVisibilityOrBlur);
-      document.removeEventListener('visibilitychange', handleVisibilityOrBlur);
+    const handleResumeOrHide = () => {
+      clearLaunchingIntro();
     };
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityHidden);
+    window.addEventListener('pagehide', handleResumeOrHide);
+    window.addEventListener('voraTvResume', handleResumeOrHide);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityHidden);
+      window.removeEventListener('pagehide', handleResumeOrHide);
+      window.removeEventListener('voraTvResume', handleResumeOrHide);
+    };
+  }, [clearLaunchingIntro]);
+
+  useEffect(() => {
+    if (!launchingApp) return;
+    const handleCancelLaunchKey = (e: KeyboardEvent) => {
+      const code = e.keyCode;
+      if (
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key === 'BrowserBack' ||
+        e.key === 'GoBack' ||
+        code === 4
+      ) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearLaunchingIntro();
+      }
+    };
+    window.addEventListener('keydown', handleCancelLaunchKey, true);
+    return () => {
+      window.removeEventListener('keydown', handleCancelLaunchKey, true);
+    };
+  }, [launchingApp, clearLaunchingIntro]);
 
   useEffect(() => {
     const handleActivity = () => {
@@ -676,7 +717,12 @@ export default function App() {
   );
 
   useSpatialNavigation({
-    enabled: overlay === 'none' && !isBootIntroActive && !isScreensaverActive && !showCreatorAdmin,
+    enabled:
+      overlay === 'none' &&
+      !isBootIntroActive &&
+      !isScreensaverActive &&
+      !showCreatorAdmin &&
+      !launchingApp,
     onBack: () => {
       setTopBarVisible(true);
       if (activeTab !== 'inicio') {
@@ -710,30 +756,39 @@ export default function App() {
     [effectiveAppsOnly, loadLiveCatalog]
   );
 
+  const startLaunchingIntro = useCallback(
+    (name: string, icon?: string) => {
+      clearLaunchingIntro();
+      setLaunchingApp({ name, icon });
+      setLaunchingExtended(false);
+      launchingStageTimerRef.current = window.setTimeout(() => {
+        setLaunchingExtended(true);
+      }, APP_LAUNCH_LOADING_HINT_MS);
+      const safetyTimeoutMs = isNative
+        ? APP_LAUNCH_SAFETY_TIMEOUT_NATIVE_MS
+        : APP_LAUNCH_SAFETY_TIMEOUT_WEB_MS;
+      launchingTimerRef.current = window.setTimeout(() => {
+        clearLaunchingIntro();
+      }, safetyTimeoutMs);
+    },
+    [clearLaunchingIntro, isNative]
+  );
+
   const handleLaunchPackage = useCallback(
     async (packageName: string, displayName: string, icon?: string) => {
-      if (launchingTimerRef.current) {
-        window.clearTimeout(launchingTimerRef.current);
-        launchingTimerRef.current = null;
-      }
-      setLaunchingApp({ name: displayName, icon });
-      launchingTimerRef.current = window.setTimeout(() => setLaunchingApp(null), 3500);
+      startLaunchingIntro(displayName, icon);
 
       const result = await launchAndroidApp(packageName);
       if (!result.isNative) {
         showToast(`Iniciando ${displayName} (${packageName}) en Android TV`);
       } else if (!result.ok) {
-        if (launchingTimerRef.current) {
-          window.clearTimeout(launchingTimerRef.current);
-          launchingTimerRef.current = null;
-        }
-        setLaunchingApp(null);
+        clearLaunchingIntro();
         showToast(
           result.error || `${displayName} (${packageName}) no está instalada en este TV.`
         );
       }
     },
-    [showToast]
+    [startLaunchingIntro, clearLaunchingIntro, showToast]
   );
 
   const handleLaunchApp = useCallback(
@@ -746,12 +801,7 @@ export default function App() {
   const handleLaunchSuggestion = useCallback(
     async (suggestion: AppSuggestion) => {
       const matchedApp = apps.find((a) => a.packageName === suggestion.packageName);
-      if (launchingTimerRef.current) {
-        window.clearTimeout(launchingTimerRef.current);
-        launchingTimerRef.current = null;
-      }
-      setLaunchingApp({ name: `${suggestion.tag} · ${suggestion.title}`, icon: matchedApp?.icon });
-      launchingTimerRef.current = window.setTimeout(() => setLaunchingApp(null), 3500);
+      startLaunchingIntro(`${suggestion.tag} · ${suggestion.title}`, matchedApp?.icon);
 
       const res = await launchSuggestionUri(suggestion.deepLinkUrl, suggestion.packageName);
       if (!res.isNative) {
@@ -759,15 +809,11 @@ export default function App() {
       } else if (res.openedStore) {
         showToast(`Abriendo Play Store para instalar ${suggestion.appName}`);
       } else if (!res.ok) {
-        if (launchingTimerRef.current) {
-          window.clearTimeout(launchingTimerRef.current);
-          launchingTimerRef.current = null;
-        }
-        setLaunchingApp(null);
+        clearLaunchingIntro();
         showToast(res.error || `No se pudo abrir ${suggestion.appName}`);
       }
     },
-    [apps, showToast]
+    [apps, startLaunchingIntro, clearLaunchingIntro, showToast]
   );
 
   const handleToggleFavorite = useCallback(
@@ -804,7 +850,7 @@ export default function App() {
           accessibility: 'Accesibilidad',
           account: 'Cuenta y perfil',
           screensaver: 'Salvapantallas del sistema',
-          home: 'Launcher principal',
+          home: 'Selector de launcher predeterminado',
           unknown_sources: 'Orígenes desconocidos',
           settings: 'Ajustes de Android TV',
         };
@@ -894,6 +940,8 @@ export default function App() {
     return () => {
       if (cleanupUpdateRef.current) cleanupUpdateRef.current();
       if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+      if (launchingTimerRef.current) window.clearTimeout(launchingTimerRef.current);
+      if (launchingStageTimerRef.current) window.clearTimeout(launchingStageTimerRef.current);
     };
   }, []);
 
@@ -1030,28 +1078,49 @@ export default function App() {
         )}
       </div>
 
-      {/* Animación cinematográfica al abrir una aplicación */}
+      {/* Animación cinematográfica ligera en GPU (solo transform y opacity) al abrir una aplicación */}
       <AnimatePresence>
         {launchingApp && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="fixed inset-0 z-50 bg-[#080B12]/85 backdrop-blur-2xl flex flex-col items-center justify-center gap-6 pointer-events-none"
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              background:
+                'radial-gradient(circle at 50% 42%, rgba(28, 39, 62, 0.94) 0%, rgba(7, 10, 16, 0.98) 72%)',
+            }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 pointer-events-none will-change-[opacity]"
           >
-            {/* Glowing background aura */}
-            <div className="absolute w-96 h-96 rounded-full bg-amber-500/10 blur-[120px] pointer-events-none animate-pulse" />
+            {/* Resplandor ambiental estático mediante gradiente radial (cero blur costoso) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                background:
+                  'radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, rgba(99, 102, 241, 0.08) 44%, transparent 70%)',
+              }}
+              className="absolute w-[420px] h-[420px] rounded-full pointer-events-none will-change-[transform,opacity]"
+            />
 
             <motion.div
-              initial={{ scale: 0.8, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex flex-col items-center gap-5 z-10"
+              initial={{ scale: 0.88, y: 14, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex flex-col items-center gap-5 z-10 px-8 max-w-lg text-center will-change-[transform,opacity]"
             >
               {launchingApp.icon ? (
                 <div className="relative">
-                  <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-amber-500/40 to-indigo-500/40 blur-xl opacity-75 animate-pulse" />
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(245, 158, 11, 0.32) 0%, rgba(99, 102, 241, 0.18) 55%, transparent 74%)',
+                    }}
+                    className="absolute -inset-5 rounded-[36px] pointer-events-none"
+                  />
                   <img
                     src={launchingApp.icon}
                     alt=""
@@ -1072,15 +1141,21 @@ export default function App() {
                   {launchingApp.name}
                 </h2>
                 <p className="text-xs font-medium text-amber-400 tracking-wider uppercase">
-                  Iniciando aplicación...
+                  {launchingExtended
+                    ? 'Cargando aplicación, espera un momento...'
+                    : 'Abriendo aplicación...'}
                 </p>
               </div>
 
-              {/* Elegant loading dots */}
-              <div className="flex items-center gap-1.5 mt-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" />
+              {/* Barra ligera GPU (transform y opacity) + puntos de espera */}
+              <div className="w-44 h-1 rounded-full bg-white/12 overflow-hidden">
+                <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 vora-indeterminate-bar" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 vora-dot-wave [animation-delay:-0.32s]" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 vora-dot-wave [animation-delay:-0.16s]" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 vora-dot-wave" />
               </div>
             </motion.div>
           </motion.div>

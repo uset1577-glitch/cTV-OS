@@ -23,6 +23,7 @@ import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.app.Activity;
+import android.app.role.RoleManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -309,7 +310,11 @@ public class LauncherPlugin extends Plugin {
                     intent = new Intent(Settings.ACTION_SETTINGS);
                 }
             } else if ("home".equals(section)) {
-                intent = new Intent(Settings.ACTION_HOME_SETTINGS);
+                boolean openedHome = openDefaultLauncherSettings(context);
+                JSObject res = new JSObject();
+                res.put("opened", openedHome);
+                call.resolve(res);
+                return;
             } else if ("accessibility".equals(section)) {
                 intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             } else if ("screensaver".equals(section)) {
@@ -343,6 +348,87 @@ public class LauncherPlugin extends Plugin {
             } catch (Exception ex) {
                 call.reject("No se pudo abrir la configuración de Android TV", ex);
             }
+        }
+    }
+
+    private boolean openDefaultLauncherSettings(Context context) {
+        if (context == null) return false;
+        PackageManager pm = context.getPackageManager();
+
+        // 1. Intent directo al selector de aplicación de inicio del sistema
+        try {
+            Intent homeSettingsIntent = new Intent(Settings.ACTION_HOME_SETTINGS);
+            if (homeSettingsIntent.resolveActivity(pm) != null) {
+                homeSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(homeSettingsIntent);
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 2. Ajustes de aplicaciones predeterminadas (Android 7+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                Intent defaultAppsIntent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
+                if (defaultAppsIntent.resolveActivity(pm) != null) {
+                    defaultAppsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(defaultAppsIntent);
+                    return true;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 3. Solicitud de rol HOME del sistema (Android 10+) si aún no está fijado como predeterminado
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
+                Activity activity = getActivity();
+                if (roleManager != null
+                    && activity != null
+                    && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)
+                    && !roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                    Intent roleIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME);
+                    if (roleIntent != null && roleIntent.resolveActivity(pm) != null) {
+                        activity.startActivityForResult(roleIntent, 9401);
+                        return true;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 4. Selector nativo de aplicaciones de inicio (CATEGORY_HOME)
+        try {
+            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+            homeIntent.addCategory(Intent.CATEGORY_HOME);
+            if (homeIntent.resolveActivity(pm) != null) {
+                Intent chooser = Intent.createChooser(homeIntent, "Seleccionar launcher principal");
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(chooser);
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 5. Respaldo final: lista de aplicaciones o ajustes generales de Android TV
+        try {
+            Intent appsIntent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+            if (appsIntent.resolveActivity(pm) != null) {
+                appsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(appsIntent);
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Intent fallback = new Intent(Settings.ACTION_SETTINGS);
+            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(fallback);
+            return true;
+        } catch (Exception ignored) {
+            return false;
         }
     }
 

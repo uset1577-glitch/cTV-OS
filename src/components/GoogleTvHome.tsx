@@ -833,7 +833,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                 Modo solo apps
               </h1>
               <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
-                Acceso directo a tus aplicaciones · Mantén OK o pulsa M para fijar favoritas
+                Acceso directo a tus aplicaciones · Mantén pulsado OK con el mando para fijar favoritas
               </p>
             </div>
           </div>
@@ -1055,7 +1055,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               Tus aplicaciones
             </h2>
             <span className="apps-hint text-xs text-slate-600 dark:text-zinc-400">
-              Mantén OK o pulsa M para fijar o quitar de esta fila
+              Mantén pulsado OK con el mando para fijar o quitar de esta fila
             </span>
           </div>
 

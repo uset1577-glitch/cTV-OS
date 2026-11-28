@@ -97,8 +97,8 @@ export function NavaAppsDrawer({
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                 {apps.length} aplicaciones ·{' '}
                 {isNative
-                  ? 'Detectadas en este Android TV'
-                  : 'Vista previa web · En Android TV lee tus apps reales'}
+                  ? 'Instaladas en tu TV · Mantén pulsado OK con el mando para fijar en Inicio'
+                  : 'Mantén pulsado OK con el mando para fijar en Inicio'}
               </p>
             </div>
 

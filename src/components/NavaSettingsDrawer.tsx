@@ -407,6 +407,33 @@ export function NavaSettingsDrawer({
 
               </div>
 
+            {/* 3b. Acceso directo para fijar VORA TV OS como launcher predeterminado */}
+            <div data-tv-row="quick-default-launcher" className="shrink-0">
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="quick-default-launcher-btn"
+                onClick={() => {
+                  onClose();
+                  onOpenAndroidSettings('home');
+                }}
+                className="tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.08] border border-white/12 text-left text-zinc-100 hover:bg-white/[0.14] hover:border-white/20 focus:bg-white focus:text-black focus:border-white focus:scale-[1.02]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Home className="w-4.5 h-4.5 shrink-0 text-zinc-200 group-focus:text-black" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold tracking-tight truncate">
+                      Launcher predeterminado
+                    </div>
+                    <div className="text-[11px] text-zinc-400 group-focus:text-zinc-700 truncate">
+                      Fijar VORA TV OS como pantalla de inicio
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 text-zinc-400 group-focus:text-black" />
+              </button>
+            </div>
+
             {/* Subpanel contextual limpio en escala de grises (solo visible al abrir Notificaciones o Perfil) */}
             {subPanel === 'notifications' && (
               <div
@@ -556,13 +583,14 @@ export function NavaSettingsDrawer({
                     type="button"
                     data-tv-focusable="true"
                     data-tv-id="quick-profile-home"
+                    aria-label="Launcher predeterminado"
                     onClick={() => {
                       onClose();
                       onOpenAndroidSettings('home');
                     }}
                     className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span className="truncate">Inicio TV</span>
+                    <span className="truncate">Launcher principal</span>
                     <Home className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>

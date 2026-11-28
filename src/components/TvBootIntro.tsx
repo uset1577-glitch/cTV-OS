@@ -72,9 +72,9 @@ export const TvBootIntro = memo(function TvBootIntro({
           <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: phase === 'exit' ? 0 : 0.45, scale: 1 }}
-              transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-radial from-slate-400/14 via-slate-600/5 to-transparent blur-[110px]"
+              animate={{ opacity: phase === 'exit' ? 0 : 0.6, scale: 1 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-radial from-slate-300/14 via-slate-500/5 to-transparent will-change-[transform,opacity]"
             />
           </div>
 
@@ -88,16 +88,16 @@ export const TvBootIntro = memo(function TvBootIntro({
               scale: phase === 'exit' ? 1.03 : 1,
             }}
             transition={{
-              duration: phase === 'exit' ? 0.6 : 1.15,
+              duration: phase === 'exit' ? 0.55 : 1.05,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="relative flex flex-col items-center justify-center text-center"
+            className="relative flex flex-col items-center justify-center text-center will-change-[transform,opacity]"
           >
             <svg
               viewBox="0 0 36 36"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="w-20 h-20 text-white drop-shadow-[0_0_24px_rgba(255,255,255,0.22)]"
+              className="w-20 h-20 text-white"
               aria-hidden="true"
             >
               <path

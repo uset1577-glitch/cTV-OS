@@ -207,7 +207,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
   return (
     <div className="fixed inset-0 z-50 bg-[#0A0D14] text-zinc-100 overflow-y-auto selection:bg-amber-500 selection:text-black flex flex-col font-sans">
       {/* Barra superior del panel */}
-      <header className="sticky top-0 z-20 bg-[#0E121B]/95 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-20 bg-[#0E121B]/98 border-b border-white/10 px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-zinc-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
             <Shield className="w-5 h-5 stroke-[2.5]" />
@@ -232,10 +232,10 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
             <span
               className={`w-2.5 h-2.5 rounded-full ${
                 isFirebaseConnected === true
-                  ? 'bg-emerald-400 animate-pulse'
+                  ? 'bg-emerald-400'
                   : isFirebaseConnected === false
                     ? 'bg-amber-400'
-                    : 'bg-zinc-500 animate-pulse'
+                    : 'bg-zinc-500'
               }`}
             />
             <span className="text-zinc-300 font-medium">
@@ -308,7 +308,7 @@ export function CreatorAdminPanel({ onExit }: CreatorAdminPanelProps) {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10">
-                <Radio className={`w-3.5 h-3.5 ${isMaintActive ? 'text-amber-400 animate-pulse' : 'text-zinc-500'}`} />
+                <Radio className={`w-3.5 h-3.5 ${isMaintActive ? 'text-amber-400' : 'text-zinc-500'}`} />
                 <span>Estado Global de Mantenimiento</span>
               </div>
               <h2 className="text-2xl md:text-3xl font-display font-bold text-white">

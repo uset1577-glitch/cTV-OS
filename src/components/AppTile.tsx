@@ -48,7 +48,7 @@ export function AppTile({
     >
       <div
         data-tv-focus-box="true"
-        className="relative w-24 h-24 rounded-[22px] bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden p-1.5 flex items-center justify-center shrink-0 transition-all duration-200 shadow-lg"
+        className="relative w-24 h-24 rounded-[22px] bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden p-1.5 flex items-center justify-center shrink-0 transition-[transform,border-color,background-color] duration-150 ease-out shadow-lg"
       >
         {app.icon && !iconError ? (
           <img

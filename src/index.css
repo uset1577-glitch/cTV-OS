@@ -39,14 +39,56 @@
 /* Android TV focus transitions: smooth compositor-only synchronized with container scroll */
 .tv-focusable {
   outline: none;
-  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 110ms ease,
-    background-color 110ms ease,
-    color 110ms ease;
+  transition: transform 115ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 115ms ease,
+    border-color 100ms ease,
+    background-color 100ms ease,
+    color 100ms ease;
+}
+
+.tv-focusable:focus {
+  will-change: transform;
 }
 
 .tv-focusable:focus-visible {
   outline: none;
+}
+
+@keyframes vora-dot-wave {
+  0%,
+  80%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.82);
+    opacity: 0.45;
+  }
+  40% {
+    transform: translate3d(0, -5px, 0) scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes vora-indeterminate {
+  0% {
+    transform: translate3d(-110%, 0, 0) scaleX(0.42);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(230%, 0, 0) scaleX(0.55);
+    opacity: 0.6;
+  }
+}
+
+.vora-dot-wave {
+  animation: vora-dot-wave 1.15s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.vora-indeterminate-bar {
+  animation: vora-indeterminate 1.45s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  will-change: transform, opacity;
 }
 
 [data-tv-scroll-container="true"],
@@ -130,5 +172,10 @@
   .apps-all-circle {
     transition: none !important;
     transform: none !important;
+  }
+
+  .vora-dot-wave,
+  .vora-indeterminate-bar {
+    animation: none !important;
   }
 }
