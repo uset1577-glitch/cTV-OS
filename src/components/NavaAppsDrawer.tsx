@@ -112,7 +112,7 @@ export function NavaAppsDrawer({
                   pinMode
                     ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                     : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200'
-                } focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
+                } focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105`}
               >
                 <Star className={`w-4 h-4 ${pinMode ? 'fill-current' : ''}`} />
                 <span>{pinMode ? 'Terminar de fijar' : 'Fijar en Inicio'}</span>
@@ -123,7 +123,7 @@ export function NavaAppsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="drawer-refresh"
                 onClick={onRefresh}
-                className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 whitespace-nowrap shrink-0"
+                className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span>Recargar</span>
@@ -135,14 +135,14 @@ export function NavaAppsDrawer({
                 data-tv-id="drawer-close"
                 onClick={onClose}
                 aria-label="Volver al inicio"
-                className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
+                className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div data-tv-row="drawer-filters" className="flex items-center gap-2 mb-6 shrink-0">
+          <div data-tv-row="drawer-filters" className="flex items-center gap-2 mb-5 shrink-0 py-1 px-1 -mx-1">
             {filterOptions.map((opt) => {
               const active = filter === opt.id;
               return (
@@ -156,7 +156,7 @@ export function NavaAppsDrawer({
                     active
                       ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                       : 'bg-zinc-900/10 dark:bg-white/8 text-zinc-700 dark:text-zinc-300'
-                  } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
+                  } focus:scale-105`}
                 >
                   {opt.label}
                 </button>
@@ -194,7 +194,7 @@ export function NavaAppsDrawer({
                   data-tv-initial="true"
                   data-tv-id="drawer-reset-filter"
                   onClick={() => setFilter('all')}
-                  className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
+                  className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
                 >
                   Ver todas
                 </button>
@@ -203,7 +203,7 @@ export function NavaAppsDrawer({
               <div
                 data-tv-row="drawer-grid"
                 data-tv-row-type="grid"
-                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4 pb-10"
+                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4 px-2 pb-10"
               >
                 {filteredApps.map((app, index) => (
                   <div

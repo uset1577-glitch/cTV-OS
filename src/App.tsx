@@ -136,7 +136,9 @@ export default function App() {
     packageName: 'com.vora.tv',
   });
   const [isVersionLoaded, setIsVersionLoaded] = useState(false);
-  const [topBarVisible, setTopBarVisible] = useState(true);
+  const setTopBarVisible = useCallback((visible: boolean) => {
+    window.dispatchEvent(new CustomEvent('voraTopBarVisibility', { detail: visible }));
+  }, []);
   const [topBarFocusRequest, setTopBarFocusRequest] = useState<TopBarFocusRequest | null>(null);
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
   const lastCatalogFetchRef = useRef<number>(0);
@@ -1032,7 +1034,7 @@ export default function App() {
           themeMode={settings.themeMode}
           use24HourClock={settings.use24HourClock}
           hasAvailableUpdate={hasAvailableUpdate}
-          isVisible={topBarVisible}
+          isVisible
           isOverHero={activeTab === 'inicio' && !effectiveAppsOnly}
           appsOnlyMode={effectiveAppsOnly}
           focusRequest={topBarFocusRequest}

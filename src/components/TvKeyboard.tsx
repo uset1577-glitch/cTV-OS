@@ -24,10 +24,10 @@ const SYMBOL_ROW_2 = ['!', ':', ';', "'", '"', '(', ')', '/', '+', '_'];
 const SYMBOL_ROW_3 = ['¿', '¡', '*', '%', '=', ',', '$', '-', '.'];
 
 const KEY_BASE_CLASS =
-  'tv-focusable min-h-[44px] h-11 rounded-xl flex items-center justify-center font-display text-[15px] font-semibold select-none border transition-colors bg-white/85 dark:bg-white/[0.08] border-zinc-900/10 dark:border-white/10 text-zinc-900 dark:text-zinc-100 hover:bg-white dark:hover:bg-white/[0.15] focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-transparent focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.06] active:scale-95';
+  'tv-focusable min-h-[44px] h-11 rounded-xl flex items-center justify-center font-display text-[15px] font-semibold select-none border bg-white/85 dark:bg-white/[0.08] border-zinc-900/10 dark:border-white/10 text-zinc-900 dark:text-zinc-100 hover:bg-white dark:hover:bg-white/[0.15] focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-transparent focus:scale-[1.06] active:scale-95';
 
 const ACTION_KEY_CLASS =
-  'tv-focusable min-h-[44px] h-11 rounded-xl flex items-center justify-center gap-1.5 px-3 font-sans text-xs font-semibold select-none border transition-colors bg-zinc-300/80 dark:bg-white/[0.12] border-zinc-900/10 dark:border-white/12 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-white/[0.18] focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-transparent focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.05] active:scale-95 whitespace-nowrap';
+  'tv-focusable min-h-[44px] h-11 rounded-xl flex items-center justify-center gap-1.5 px-3 font-sans text-xs font-semibold select-none border bg-zinc-300/80 dark:bg-white/[0.12] border-zinc-900/10 dark:border-white/12 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-white/[0.18] focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-transparent focus:scale-[1.05] active:scale-95 whitespace-nowrap';
 
 export const TvKeyboard = memo(function TvKeyboard({
   query,
@@ -266,7 +266,7 @@ export const TvKeyboard = memo(function TvKeyboard({
           data-tv-focusable="true"
           data-tv-id="kb-submit"
           onClick={onSubmit}
-          className="tv-focusable min-h-[44px] h-11 col-span-3 rounded-xl flex items-center justify-center gap-1.5 px-3 font-sans text-xs font-bold select-none bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:ring-offset-2 focus:ring-offset-zinc-200 dark:focus:ring-offset-zinc-950 focus:scale-[1.05] active:scale-95 whitespace-nowrap"
+          className="tv-focusable min-h-[44px] h-11 col-span-3 rounded-xl flex items-center justify-center gap-1.5 px-3 font-sans text-xs font-bold select-none bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 focus:scale-[1.05] active:scale-95 whitespace-nowrap"
         >
           <span>Ir</span>
           <CornerDownLeft className="w-3.5 h-3.5 shrink-0" />
@@ -292,7 +292,7 @@ export const TvKeyboard = memo(function TvKeyboard({
                 data-tv-focusable="true"
                 data-tv-id={`kb-recent-${term}`}
                 onClick={() => onSelectRecent(term)}
-                className="tv-focusable min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium bg-white/75 dark:bg-white/[0.07] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 truncate max-w-[140px]"
+                className="tv-focusable min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium bg-white/75 dark:bg-white/[0.07] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 truncate max-w-[140px]"
               >
                 {term}
               </button>

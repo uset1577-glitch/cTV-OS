@@ -100,7 +100,7 @@ export function LivePlatformsView({
           data-tv-initial={platformTabs.length === 0 && filteredItems.length === 0 ? 'true' : undefined}
           data-tv-id="live-refresh-btn"
           onClick={onRefreshFeed}
-          className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 whitespace-nowrap shrink-0"
+          className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Actualizar catálogo</span>
@@ -110,7 +110,7 @@ export function LivePlatformsView({
       {platformTabs.length > 1 && (
         <div
           data-tv-row="live-filters"
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-1 -mx-1 mb-6"
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2.5 px-3 -mx-3 mb-4"
         >
           {platformTabs.map((tab, idx) => {
             const active = selectedPlatform === tab.id;
@@ -126,7 +126,7 @@ export function LivePlatformsView({
                   active
                     ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                     : 'bg-zinc-900/10 dark:bg-white/10 text-zinc-700 dark:text-zinc-300'
-                } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
+                } focus:scale-105`}
               >
                 {tab.label}
               </button>
@@ -151,7 +151,7 @@ export function LivePlatformsView({
                 data-tv-focusable="true"
                 data-tv-id="live-show-all"
                 onClick={() => setSelectedPlatform('all')}
-                className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105"
+                className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
               >
                 Ver todas las plataformas
               </button>
@@ -189,7 +189,7 @@ export function LivePlatformsView({
         <div
           data-tv-row="live-grid"
           data-tv-row-type="grid"
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 py-2 px-1"
         >
           {filteredItems.map((item, idx) => {
             const resolvedPkg = resolvePackageAlias(item.packageName, allApps);
@@ -201,14 +201,15 @@ export function LivePlatformsView({
                 key={item.id}
                 type="button"
                 data-tv-focusable="true"
+                data-tv-focus-wrapper="true"
                 data-tv-initial={platformTabs.length <= 1 && idx === 0 ? 'true' : undefined}
                 data-tv-id={`live-card-${item.id}`}
                 onClick={() => onLaunchSuggestion({ ...item, packageName: resolvedPkg })}
-                className="tv-focusable group text-left rounded-2xl focus:outline-none focus:scale-[1.04] scroll-my-12"
+                className="tv-card-contain group text-left rounded-2xl focus:outline-none scroll-my-12"
               >
                 <div
                   data-tv-focus-box="true"
-                  className="relative aspect-video w-full rounded-2xl overflow-hidden bg-zinc-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-zinc-900 dark:group-focus:border-white shadow-md"
+                  className="tv-focusable transform-gpu relative aspect-video w-full rounded-2xl overflow-hidden bg-zinc-300 dark:bg-zinc-900 border border-black/15 dark:border-white/15 group-focus:scale-[1.04] shadow-md"
                 >
                   <img
                     src={landscapeImage}

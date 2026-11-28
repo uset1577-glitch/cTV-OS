@@ -99,7 +99,7 @@ export function MaintenanceNoticeModal({
                 data-tv-initial="true"
                 data-tv-id="maintenance-ack-btn"
                 onClick={onAcknowledge}
-                className="tv-focusable inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 shadow-md"
+                className="tv-focusable inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105 shadow-md"
               >
                 <AppWindow className="w-4 h-4 shrink-0" />
                 <span>Entendido · Activar modo solo apps</span>

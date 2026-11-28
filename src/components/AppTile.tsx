@@ -41,14 +41,15 @@ export function AppTile({
       ref={buttonRef}
       type="button"
       data-tv-focusable="true"
+      data-tv-focus-wrapper="true"
       data-tv-supports-longpress="true"
       data-tv-id={focusId}
       onClick={() => onLaunch(app)}
-      className="tv-focusable group relative w-full py-3 px-2 rounded-3xl flex flex-col items-center justify-start gap-3 text-center focus:scale-[1.08]"
+      className="tv-card-contain group relative w-full py-3 px-2 rounded-3xl flex flex-col items-center justify-start gap-3 text-center focus:outline-none"
     >
       <div
         data-tv-focus-box="true"
-        className="relative w-24 h-24 rounded-[22px] bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-zinc-900/10 dark:border-white/15 group-focus:border-zinc-900 dark:group-focus:border-white group-focus:ring-4 group-focus:ring-zinc-900/20 dark:group-focus:ring-white/25 overflow-hidden p-1.5 flex items-center justify-center shrink-0 transition-[transform,border-color,background-color] duration-150 ease-out shadow-lg"
+        className="tv-focusable transform-gpu relative w-24 h-24 rounded-[22px] bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-zinc-900/15 dark:border-white/20 group-focus:scale-[1.08] overflow-hidden p-1.5 flex items-center justify-center shrink-0 shadow-lg"
       >
         {app.icon && !iconError ? (
           <img

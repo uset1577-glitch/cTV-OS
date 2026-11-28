@@ -42,6 +42,17 @@ interface GoogleTvHomeProps {
   onRefreshCatalog?: () => void;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(clean)) {
+    const r = parseInt(clean.slice(1, 3), 16);
+    const g = parseInt(clean.slice(3, 5), 16);
+    const b = parseInt(clean.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return alpha >= 1 ? clean : `rgba(14, 16, 21, ${alpha})`;
+}
+
 const HeroBackdropImage = memo(function HeroBackdropImage({
   backdropUrl,
   accentGradient,
@@ -116,6 +127,7 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
     <button
       type="button"
       data-tv-focusable="true"
+      data-tv-focus-wrapper="true"
       data-tv-supports-longpress="true"
       data-tv-initial={isInitial ? 'true' : undefined}
       data-tv-id={`row-app-${app.packageName}`}
@@ -125,7 +137,7 @@ const CircularAppShortcut = memo(function CircularAppShortcut({
     >
       <div
         data-tv-focus-box="true"
-        className="tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-white/25 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white p-1.5 flex items-center justify-center shadow-sm"
+        className="tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 border-2 border-white/30 group-focus:scale-110 group-focus:border-white p-1.5 flex items-center justify-center shadow-sm"
       >
         {app.icon && !imgErr ? (
           <img
@@ -167,12 +179,9 @@ const AppsOnlyGridTile = memo(function AppsOnlyGridTile({
       data-tv-id={`apps-only-${app.packageName}`}
       data-tv-pkg={app.packageName}
       onClick={() => onLaunch(app)}
-      className="tv-focusable group rounded-2xl bg-[#EEF2F7]/85 dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-3.5 flex flex-col items-center gap-2.5 text-center focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:border-amber-500 focus:scale-[1.05] shadow-sm"
+      className="tv-focusable group rounded-2xl bg-[#EEF2F7]/85 dark:bg-white/[0.06] border border-slate-900/10 dark:border-white/10 p-3.5 flex flex-col items-center gap-2.5 text-center focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.05] shadow-sm"
     >
-      <div
-        data-tv-focus-box="true"
-        className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 p-1.5 flex items-center justify-center shrink-0"
-      >
+      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200/85 dark:bg-zinc-800/90 p-1.5 flex items-center justify-center shrink-0">
         {app.icon && !imgErr ? (
           <img
             src={app.icon}
@@ -211,6 +220,7 @@ const MoviePosterCard = memo(function MoviePosterCard({
     <button
       type="button"
       data-tv-focusable="true"
+      data-tv-focus-wrapper="true"
       data-tv-id={`movie-${movie.id}`}
       onClick={() => onLaunchSuggestion(movie)}
       className="tv-card-contain group w-[152px] shrink-0 text-left focus:outline-none"
@@ -218,7 +228,7 @@ const MoviePosterCard = memo(function MoviePosterCard({
       <div
         data-tv-focus-box="true"
         style={{ background: movie.accentGradient }}
-        className="tv-focusable transform-gpu relative w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.06]"
+        className="tv-focusable transform-gpu relative w-[152px] h-[228px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border border-black/15 dark:border-white/15 group-focus:scale-[1.06]"
       >
         {movie.posterUrl && !imgErr ? (
           <img
@@ -271,6 +281,7 @@ const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
     <button
       type="button"
       data-tv-focusable="true"
+      data-tv-focus-wrapper="true"
       data-tv-id={`series-${show.id}`}
       onClick={() => onLaunchSuggestion(show)}
       className="tv-card-contain group w-[248px] shrink-0 text-left focus:outline-none"
@@ -278,7 +289,7 @@ const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
       <div
         data-tv-focus-box="true"
         style={{ background: show.accentGradient }}
-        className="tv-focusable transform-gpu relative w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border-2 border-transparent group-focus:border-amber-500 dark:group-focus:border-white group-focus:scale-[1.05]"
+        className="tv-focusable transform-gpu relative w-[248px] h-[140px] rounded-2xl overflow-hidden bg-slate-300 dark:bg-zinc-900 border border-black/15 dark:border-white/15 group-focus:scale-[1.05]"
       >
         {landscapeImage && !imgErr ? (
           <img
@@ -337,7 +348,7 @@ const MoviesSection = memo(function MoviesSection({
 
       <div
         data-tv-row="movies"
-        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
+        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
       >
         {visibleMovies.map((movie, index) => (
           <MoviePosterCard
@@ -369,14 +380,14 @@ const SeriesSection = memo(function SeriesSection({
 
   return (
     <section className="tv-row-offscreen" aria-label="En tus plataformas">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-1.5">
         <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
           Series y emisiones en tus plataformas
         </h2>
 
         <div
           data-tv-row="series-filters"
-          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1"
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2.5 px-3 -mx-3"
         >
           {streamingFilters.map((f) => {
             const active = platformFilter === f.id;
@@ -402,7 +413,7 @@ const SeriesSection = memo(function SeriesSection({
 
       <div
         data-tv-row="series"
-        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3.5 px-3 -mx-3"
+        className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
       >
         {filteredSeries.length === 0 ? (
           <button
@@ -449,22 +460,17 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const [heroIdx, setHeroIdx] = useState(0);
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const backdropLayerRef = useRef<HTMLDivElement | null>(null);
-  const heroBannerRef = useRef<HTMLElement | null>(null);
-  const fadeVeilRef = useRef<HTMLDivElement | null>(null);
-  const appsSectionRef = useRef<HTMLElement | null>(null);
   const appsRowRef = useRef<HTMLDivElement | null>(null);
   const appsGridRef = useRef<HTMLDivElement | null>(null);
+  const heroBgRef = useRef<HTMLDivElement | null>(null);
+  const heroContentRef = useRef<HTMLElement | null>(null);
+  const appsSectionRef = useRef<HTMLElement | null>(null);
+  const lowerSectionRef = useRef<HTMLDivElement | null>(null);
+  const topVeilRef = useRef<HTMLDivElement | null>(null);
+  const scrollRafRef = useRef<number>(0);
   const atTopRef = useRef(true);
-  const appsOverHeroRef = useRef(true);
-  const maxTopRef = useRef<number>(0);
-  const heroAnimRafRef = useRef<number>(0);
-  const heroAnimLastTimeRef = useRef<number>(0);
-  const heroCollapseCurrentRef = useRef<number>(0);
-  const heroCollapseTargetRef = useRef<number>(0);
-  const rowMinProgressRef = useRef<number>(0);
-  const hasActiveHeroRef = useRef<boolean>(false);
-  const lastAppliedProgressRef = useRef<number>(-1);
+  const onScrollTopChangeRef = useRef(onScrollTopChange);
+  onScrollTopChangeRef.current = onScrollTopChange;
 
   // Fila de apps estilo Google TV: favoritos fijados y todas las apps instaladas
   const circularApps = useMemo(() => {
@@ -592,39 +598,89 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     return () => window.clearInterval(timer);
   }, [appsOnlyMode, spotlightList.length]);
 
-  hasActiveHeroRef.current = Boolean(activeHero);
+  const hasMoviesBelow = Boolean(!appsOnlyMode && showSuggestions && dedupedCatalog.movies.length > 0);
+  const hasActiveHero = Boolean(activeHero);
 
-  // Cachear maxTop fuera del evento onScroll para evitar forced reflows frame a frame
+  // Listener pasivo nativo + fade GPU ligero (solo opacity y translate3d, cero blur/reflow)
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const measureMaxTop = () => {
-      maxTopRef.current = Math.max(0, el.scrollHeight - el.clientHeight);
-    };
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-    measureMaxTop();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measureMaxTop);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [appsOnlyMode, showSuggestions, dedupedCatalog.movies.length, filteredSeries.length]);
+    const applyScrollVisuals = (top: number) => {
+      if (topVeilRef.current) {
+        const veilOpacity = Math.min(1, Math.max(0, top / 80));
+        topVeilRef.current.style.opacity = veilOpacity.toFixed(3);
+      }
 
-  useEffect(() => {
-    if (appsOnlyMode) {
-      rowMinProgressRef.current = 0;
-      heroCollapseCurrentRef.current = 0;
-      heroCollapseTargetRef.current = 0;
-    }
-  }, [appsOnlyMode]);
+      if (appsOnlyMode || !hasActiveHero) return;
 
-  useEffect(() => {
-    return () => {
-      if (heroAnimRafRef.current) {
-        window.cancelAnimationFrame(heroAnimRafRef.current);
+      if (reducedMotion) {
+        if (heroBgRef.current) {
+          heroBgRef.current.style.opacity = '1';
+        }
+        if (heroContentRef.current) {
+          heroContentRef.current.style.opacity = '1';
+        }
+        if (appsSectionRef.current) {
+          appsSectionRef.current.style.opacity = '1';
+        }
+        if (lowerSectionRef.current) {
+          lowerSectionRef.current.style.opacity = '1';
+        }
+        return;
+      }
+
+      if (heroBgRef.current) {
+        heroBgRef.current.style.opacity = Math.max(0, 1 - top / 260).toFixed(3);
+      }
+      if (heroContentRef.current) {
+        heroContentRef.current.style.opacity = Math.max(0, 1 - top / 180).toFixed(3);
+      }
+      if (appsSectionRef.current) {
+        appsSectionRef.current.style.opacity = Math.max(0, 1 - top / 260).toFixed(3);
+      }
+      if (lowerSectionRef.current && hasMoviesBelow) {
+        const reveal = 0.9 + Math.min(1, top / 90) * 0.1;
+        lowerSectionRef.current.style.opacity = reveal.toFixed(3);
       }
     };
-  }, []);
+
+    const syncAtTop = () => {
+      const top = el.scrollTop;
+      const atTop = top <= 32;
+      if (atTop !== atTopRef.current) {
+        atTopRef.current = atTop;
+        onScrollTopChangeRef.current(atTop);
+      }
+      return top;
+    };
+
+    const onNativeScroll = () => {
+      syncAtTop();
+      if (scrollRafRef.current) return;
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        scrollRafRef.current = 0;
+        if (el.isConnected) {
+          applyScrollVisuals(el.scrollTop);
+        }
+      });
+    };
+
+    const initialTop = syncAtTop();
+    applyScrollVisuals(initialTop);
+    el.addEventListener('scroll', onNativeScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onNativeScroll);
+      if (scrollRafRef.current) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = 0;
+      }
+    };
+  }, [appsOnlyMode, hasActiveHero, hasMoviesBelow]);
 
   // Pre-decodificar las primeras carátulas de Estrenos y Series en segundo plano
   // para que al bajar desde "Tus aplicaciones" aparezcan al instante sin pausas
@@ -675,135 +731,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     [onLaunchApp]
   );
 
-  // Solo propiedades compositor (opacity, translate3d) sin scale() pesado ni layout reads
-  const applyHeroVisualProgress = useCallback((p: number) => {
-    const clamped = Math.min(1, Math.max(0, p));
-    if (Math.abs(clamped - lastAppliedProgressRef.current) < 0.002) {
-      return;
-    }
-    lastAppliedProgressRef.current = clamped;
-
-    if (backdropLayerRef.current) {
-      backdropLayerRef.current.style.opacity = (1 - clamped).toFixed(3);
-      backdropLayerRef.current.style.transform = `translate3d(0, ${(-clamped * 40).toFixed(1)}px, 0)`;
-    }
-
-    if (heroBannerRef.current) {
-      const fg = Math.min(1, clamped * 1.25);
-      heroBannerRef.current.style.opacity = (1 - fg).toFixed(3);
-      heroBannerRef.current.style.transform = `translate3d(0, ${(-fg * 28).toFixed(1)}px, 0)`;
-    }
-
-    if (fadeVeilRef.current) {
-      fadeVeilRef.current.style.opacity = Math.min(1, clamped * 1.05).toFixed(3);
-    }
-
-    const overHero = Boolean(hasActiveHeroRef.current && clamped < 0.42);
-    if (overHero !== appsOverHeroRef.current && appsSectionRef.current) {
-      appsOverHeroRef.current = overHero;
-      appsSectionRef.current.setAttribute('data-apps-over-hero', overHero ? 'true' : 'false');
-    }
-  }, []);
-
-  const scheduleHeroCollapseUpdate = useCallback(
-    (targetProgress: number) => {
-      heroCollapseTargetRef.current = Math.min(1, Math.max(0, targetProgress));
-
-      const reduced =
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      if (reduced) {
-        if (heroAnimRafRef.current) {
-          window.cancelAnimationFrame(heroAnimRafRef.current);
-          heroAnimRafRef.current = 0;
-        }
-        heroCollapseCurrentRef.current = heroCollapseTargetRef.current;
-        applyHeroVisualProgress(heroCollapseCurrentRef.current);
-        return;
-      }
-
-      if (heroAnimRafRef.current) return;
-      heroAnimLastTimeRef.current = performance.now();
-
-      const step = (now: number) => {
-        const dt = Math.min(48, Math.max(4, now - heroAnimLastTimeRef.current));
-        heroAnimLastTimeRef.current = now;
-        const target = heroCollapseTargetRef.current;
-        const curr = heroCollapseCurrentRef.current;
-        const diff = target - curr;
-
-        if (Math.abs(diff) < 0.008) {
-          heroCollapseCurrentRef.current = target;
-          applyHeroVisualProgress(target);
-          heroAnimRafRef.current = 0;
-          return;
-        }
-
-        const factor = 1 - Math.exp(-dt / 42);
-        heroCollapseCurrentRef.current = curr + diff * factor;
-        applyHeroVisualProgress(heroCollapseCurrentRef.current);
-        heroAnimRafRef.current = window.requestAnimationFrame(step);
-      };
-
-      heroAnimRafRef.current = window.requestAnimationFrame(step);
-    },
-    [applyHeroVisualProgress]
-  );
-
-  // Sincronía directa 1:1 usando maxTop cacheado (cero forced reflow en scroll)
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const top = e.currentTarget.scrollTop;
-      const atTop = top <= 32;
-      if (atTop !== atTopRef.current) {
-        atTopRef.current = atTop;
-        onScrollTopChange(atTop);
-      }
-
-      if (!appsOnlyMode) {
-        const maxTop = maxTopRef.current;
-        if (maxTop >= 120) {
-          if (heroAnimRafRef.current) {
-            window.cancelAnimationFrame(heroAnimRafRef.current);
-            heroAnimRafRef.current = 0;
-          }
-          const span = Math.min(300, Math.max(160, maxTop * 0.8));
-          const scrollProgress = Math.min(1, Math.max(0, (top - 24) / span));
-          heroCollapseCurrentRef.current = scrollProgress;
-          heroCollapseTargetRef.current = scrollProgress;
-          applyHeroVisualProgress(scrollProgress);
-        } else {
-          const scrollProgress = Math.min(1, Math.max(0, (top - 24) / 340));
-          scheduleHeroCollapseUpdate(Math.max(scrollProgress, rowMinProgressRef.current));
-        }
-      }
-    },
-    [appsOnlyMode, applyHeroVisualProgress, onScrollTopChange, scheduleHeroCollapseUpdate]
-  );
-
-  const handleFocusCapture = useCallback(
-    (e: React.FocusEvent<HTMLDivElement>) => {
-      if (appsOnlyMode || maxTopRef.current >= 120) return;
-
-      const rowEl = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tv-row]');
-      const rowKey = rowEl?.dataset.tvRow;
-      if (!rowKey) return;
-
-      if (rowKey === 'hero' || rowKey === 'apps') {
-        rowMinProgressRef.current = 0;
-      } else if (rowKey === 'movies') {
-        rowMinProgressRef.current = 0.72;
-      } else if (rowKey === 'series-filters' || rowKey === 'series') {
-        rowMinProgressRef.current = 1;
-      }
-
-      const top = scrollRef.current?.scrollTop ?? 0;
-      const scrollProgress = Math.min(1, Math.max(0, (top - 24) / 340));
-      scheduleHeroCollapseUpdate(Math.max(scrollProgress, rowMinProgressRef.current));
-    },
-    [appsOnlyMode, scheduleHeroCollapseUpdate]
-  );
-
   const formattedUpdatedTime = useMemo(() => {
     try {
       const dt = new Date(liveCatalog.updatedAt);
@@ -814,6 +741,15 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     }
   }, [liveCatalog.updatedAt]);
 
+  const topVeilGradient = useMemo(
+    () =>
+      `linear-gradient(to bottom, ${hexToRgba(heroFadeColor, 0.94)} 0%, ${hexToRgba(
+        heroFadeColor,
+        0.56
+      )} 42%, ${hexToRgba(heroFadeColor, 0.16)} 76%, ${hexToRgba(heroFadeColor, 0)} 100%)`,
+    [heroFadeColor]
+  );
+
   // MODO SOLO APPS: Sin recomendaciones ni fondos pesados, máxima fluidez en TV
   if (appsOnlyMode) {
     const isMaintenance = Boolean(maintenanceNotice?.maintenanceMode);
@@ -822,7 +758,6 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         ref={scrollRef}
         data-tv-scroll-container="true"
         data-tv-has-topbar="true"
-        onScroll={handleScroll}
         className="relative flex-1 overflow-y-auto no-scrollbar pb-14 pt-24 px-12 space-y-7"
       >
         {isMaintenance && (
@@ -877,7 +812,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
             ref={appsRowRef}
             data-tv-row="apps"
             data-tv-scroll-top="true"
-            className="flex items-start gap-4 overflow-x-auto no-scrollbar py-3 px-3 -mx-3"
+            className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
           >
             {circularApps.map((app, index) => (
               <CircularAppShortcut
@@ -891,13 +826,14 @@ export const GoogleTvHome = memo(function GoogleTvHome({
             <button
               type="button"
               data-tv-focusable="true"
+              data-tv-focus-wrapper="true"
               data-tv-id="row-all-apps"
               onClick={onOpenAllApps}
               className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
             >
               <div
                 data-tv-focus-box="true"
-                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
+                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/15 dark:border-white/20 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
               >
                 <LayoutGrid className="w-7 h-7" />
               </div>
@@ -935,202 +871,214 @@ export const GoogleTvHome = memo(function GoogleTvHome({
     );
   }
 
+  const heroMaskGradient = hasMoviesBelow
+    ? 'linear-gradient(to bottom, #000 0%, #000 48%, rgba(0, 0, 0, 0.88) 64%, rgba(0, 0, 0, 0.52) 78%, rgba(0, 0, 0, 0.14) 90%, transparent 98%)'
+    : 'linear-gradient(to bottom, #000 0%, #000 68%, rgba(0, 0, 0, 0.58) 86%, transparent 100%)';
+
   return (
-    <div
-      ref={scrollRef}
-      data-tv-scroll-container="true"
-      data-tv-has-topbar="true"
-      onScroll={handleScroll}
-      onFocusCapture={handleFocusCapture}
-      data-tv-native={isNative ? 'true' : 'false'}
-      className="relative flex-1 overflow-y-auto no-scrollbar pb-14"
-    >
-      {/* Fondo ambiental a PANTALLA COMPLETA optimizado por GPU (una sola capa scrim + translate3d) */}
-      {activeHero && (
-        <div
-          aria-hidden="true"
-          className="sticky top-0 left-0 right-0 h-screen w-full -mb-[100vh] pointer-events-none overflow-hidden z-0 bg-[#0E1015] [contain:strict]"
-        >
+    <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+      {/* Velo superior ligero al desplazarse: suaviza la salida en el borde superior sin tapar el título de Estrenos */}
+      <div
+        ref={topVeilRef}
+        aria-hidden="true"
+        style={{ opacity: 0, backgroundImage: topVeilGradient }}
+        className="pointer-events-none absolute top-0 left-0 right-0 h-16 z-20 will-change-[opacity]"
+      />
+
+      <div
+        ref={scrollRef}
+        data-tv-scroll-container="true"
+        data-tv-has-topbar="true"
+        data-tv-native={isNative ? 'true' : 'false'}
+        className="relative z-10 flex-1 overflow-y-auto no-scrollbar pb-14"
+      >
+        {/* Fondo ambiental Hero dentro del scroll: acompaña el desplazamiento 1:1 y se desvanece antes de invadir Estrenos */}
+        {activeHero && (
           <div
-            ref={backdropLayerRef}
-            className="absolute inset-0 transform-gpu will-change-[opacity,transform]"
+            ref={heroBgRef}
+            aria-hidden="true"
+            style={{
+              maskImage: heroMaskGradient,
+              WebkitMaskImage: heroMaskGradient,
+            }}
+            className={`absolute top-0 left-0 right-0 pointer-events-none overflow-hidden z-0 [contain:strict] will-change-[opacity] ${
+              hasMoviesBelow ? 'h-[82vh]' : 'h-screen'
+            }`}
           >
             <HeroBackdropImage
               backdropUrl={activeHero.backdropUrl}
               accentGradient={activeHero.accentGradient}
             />
 
-            {/* Un único scrim compuesto para evitar múltiples capas alfa de pantalla completa */}
+            {/* Scrim translúcido puro: sin franjas opacas para evitar cortes visibles */}
             <div
               className="absolute inset-0"
               style={{
                 backgroundImage:
-                  'linear-gradient(to bottom, rgba(8, 11, 18, 0.56) 0%, rgba(8, 11, 18, 0.16) 14%, transparent 28%), linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.26) 32%, transparent 56%), linear-gradient(to top, rgba(8, 11, 18, 0.68) 0%, rgba(8, 11, 18, 0.2) 18%, transparent 34%)',
+                  'linear-gradient(to bottom, rgba(8, 11, 18, 0.54) 0%, rgba(8, 11, 18, 0.12) 18%, transparent 34%), linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.24) 36%, transparent 60%), linear-gradient(to top, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.40) 28%, rgba(8, 11, 18, 0.12) 50%, transparent 68%)',
               }}
             />
           </div>
+        )}
 
-          {/* Velo progresivo al hacer scroll */}
-          <div
-            ref={fadeVeilRef}
-            className="absolute inset-0 transform-gpu will-change-[opacity]"
-            style={{ backgroundColor: heroFadeColor, opacity: 0 }}
-          />
-        </div>
-      )}
-
-      {/* Primer plano: Hero + Fila de Aplicaciones */}
-      <div
-        className={`relative z-10 px-12 ${
-          activeHero
-            ? showSuggestions && dedupedCatalog.movies.length > 0
-              ? 'min-h-[75vh] flex flex-col justify-end gap-4 pt-16 pb-3'
-              : 'min-h-screen flex flex-col justify-end gap-5 pt-20 pb-6'
-            : 'pt-24 space-y-8'
-        }`}
-      >
-        {/* 1. Contenido de recomendaciones Hero */}
-        {activeHero && (
-          <section
-            ref={heroBannerRef}
-            aria-label="Destacado de hoy"
-            data-tv-row="hero"
-            data-tv-scroll-top="true"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (spotlightList.length > 1) {
-                if (e.key === 'ArrowLeft') {
-                  e.preventDefault();
-                  setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length);
-                } else if (e.key === 'ArrowRight') {
-                  e.preventDefault();
-                  setHeroIdx((prev) => (prev + 1) % spotlightList.length);
+        {/* Primer plano: Hero + Fila de Aplicaciones */}
+        <div
+          className={`relative z-10 px-12 ${
+            activeHero
+              ? hasMoviesBelow
+                ? 'min-h-[72vh] flex flex-col justify-end gap-3.5 pt-16 pb-3'
+                : 'min-h-screen flex flex-col justify-end gap-5 pt-20 pb-6'
+              : 'pt-24 space-y-8'
+          }`}
+        >
+          {/* 1. Contenido de recomendaciones Hero */}
+          {activeHero && (
+            <section
+              ref={heroContentRef}
+              aria-label="Destacado de hoy"
+              data-tv-row="hero"
+              data-tv-scroll-top="true"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (spotlightList.length > 1) {
+                  if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    setHeroIdx((prev) => (prev - 1 + spotlightList.length) % spotlightList.length);
+                  } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    setHeroIdx((prev) => (prev + 1) % spotlightList.length);
+                  }
                 }
-              }
-            }}
-            className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 will-change-[opacity,transform] origin-top-left outline-none"
+              }}
+              className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 outline-none will-change-[transform,opacity]"
+            >
+              <div className="max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+                  <span className="font-semibold text-white">{heroAppName}</span>
+                  {(activeHero.genre || (activeHero.tag && activeHero.tag !== heroAppName)) && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span>{activeHero.genre || activeHero.tag}</span>
+                    </>
+                  )}
+                  {activeHero.releaseDate && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="tabular-nums">{activeHero.releaseDate}</span>
+                    </>
+                  )}
+                  {activeHero.imdbRating && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="tabular-nums text-amber-400 font-semibold">
+                        ★ {activeHero.imdbRating}
+                      </span>
+                    </>
+                  )}
+                  <span aria-hidden="true">·</span>
+                  <span>Actualizado {formattedUpdatedTime}</span>
+                </div>
+
+                <div>
+                  <HeroLogoOrTitle logoUrl={activeHero.logoUrl} title={activeHero.title} />
+                  <p className="mt-1.5 text-sm lg:text-base text-zinc-100/95 line-clamp-2 max-w-xl leading-relaxed [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
+                    {activeHero.subtitle}
+                  </p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    data-tv-focusable="true"
+                    data-tv-id="hero-primary-cta"
+                    onClick={handleHeroLaunch}
+                    className="tv-focusable inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-zinc-950 text-sm font-bold focus:bg-amber-400 focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Ver en {heroAppName}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* 2. Fila distintiva Google TV: "Tus aplicaciones" */}
+          <section
+            ref={appsSectionRef}
+            data-apps-over-hero={activeHero ? 'true' : 'false'}
+            aria-label="Tus aplicaciones"
+            className="will-change-[opacity]"
           >
-            <div className="max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
-                <span className="font-semibold text-white">{heroAppName}</span>
-                {(activeHero.genre || (activeHero.tag && activeHero.tag !== heroAppName)) && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span>{activeHero.genre || activeHero.tag}</span>
-                  </>
-                )}
-                {activeHero.releaseDate && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span className="tabular-nums">{activeHero.releaseDate}</span>
-                  </>
-                )}
-                {activeHero.imdbRating && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span className="tabular-nums text-amber-400 font-semibold">
-                      ★ {activeHero.imdbRating}
-                    </span>
-                  </>
-                )}
-                <span aria-hidden="true">·</span>
-                <span>Actualizado {formattedUpdatedTime}</span>
-              </div>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="apps-heading font-display text-lg font-semibold text-slate-900 dark:text-white">
+                Tus aplicaciones
+              </h2>
+              <span className="apps-hint text-xs text-slate-600 dark:text-zinc-400">
+                Mantén pulsado OK con el mando para fijar o quitar de esta fila
+              </span>
+            </div>
 
-              <div>
-                <HeroLogoOrTitle logoUrl={activeHero.logoUrl} title={activeHero.title} />
-                <p className="mt-1.5 text-sm lg:text-base text-zinc-100/95 line-clamp-2 max-w-xl leading-relaxed [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
-                  {activeHero.subtitle}
-                </p>
-              </div>
+            <div
+              ref={appsRowRef}
+              data-tv-row="apps"
+              data-tv-scroll-top="true"
+              className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
+            >
+              {circularApps.map((app, index) => (
+                <CircularAppShortcut
+                  key={app.packageName}
+                  app={app}
+                  isInitial={index === 0}
+                  onLaunch={handleCircleLaunch}
+                />
+              ))}
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  data-tv-focusable="true"
-                  data-tv-id="hero-primary-cta"
-                  onClick={handleHeroLaunch}
-                  className="tv-focusable inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-zinc-950 text-sm font-bold focus:bg-amber-400 focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-focus-wrapper="true"
+                data-tv-id="row-all-apps"
+                onClick={onOpenAllApps}
+                className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
+              >
+                <div
+                  data-tv-focus-box="true"
+                  className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/15 dark:border-white/20 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
                 >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>Ver en {heroAppName}</span>
-                </button>
-
-              </div>
+                  <LayoutGrid className="w-7 h-7" />
+                </div>
+                <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
+                  Ver todas
+                </span>
+              </button>
             </div>
           </section>
-        )}
+        </div>
 
-        {/* 2. Fila distintiva Google TV: "Tus aplicaciones" */}
-        <section
-          ref={appsSectionRef}
-          data-apps-over-hero={activeHero ? 'true' : 'false'}
-          aria-label="Tus aplicaciones"
+        {/* Filas inferiores con revelado gradual por opacidad al bajar */}
+        <div
+          ref={lowerSectionRef}
+          style={{ opacity: activeHero && hasMoviesBelow ? 0.9 : 1 }}
+          className="relative z-10 px-12 pt-5 space-y-8 will-change-[opacity]"
         >
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="apps-heading font-display text-lg font-semibold text-slate-900 dark:text-white">
-              Tus aplicaciones
-            </h2>
-            <span className="apps-hint text-xs text-slate-600 dark:text-zinc-400">
-              Mantén pulsado OK con el mando para fijar o quitar de esta fila
-            </span>
-          </div>
+          {showSuggestions && (
+            <MoviesSection
+              movies={dedupedCatalog.movies}
+              formattedUpdatedTime={formattedUpdatedTime}
+              onLaunchSuggestion={onLaunchSuggestion}
+            />
+          )}
 
-          <div
-            ref={appsRowRef}
-            data-tv-row="apps"
-            data-tv-scroll-top="true"
-            className="flex items-start gap-4 overflow-x-auto no-scrollbar py-2.5 px-3 -mx-3"
-          >
-            {circularApps.map((app, index) => (
-              <CircularAppShortcut
-                key={app.packageName}
-                app={app}
-                isInitial={index === 0}
-                onLaunch={handleCircleLaunch}
-              />
-            ))}
-
-            <button
-              type="button"
-              data-tv-focusable="true"
-              data-tv-id="row-all-apps"
-              onClick={onOpenAllApps}
-              className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
-            >
-              <div
-                data-tv-focus-box="true"
-                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/12 dark:border-white/15 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-amber-400 dark:group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
-              >
-                <LayoutGrid className="w-7 h-7" />
-              </div>
-              <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
-                Ver todas
-              </span>
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* Filas inferiores con memoización por tarjeta e imágenes ligeras */}
-      <div className="relative z-10 px-12 pt-4 space-y-8">
-        {showSuggestions && (
-          <MoviesSection
-            movies={dedupedCatalog.movies}
-            formattedUpdatedTime={formattedUpdatedTime}
-            onLaunchSuggestion={onLaunchSuggestion}
-          />
-        )}
-
-        {showSuggestions && (
-          <SeriesSection
-            filteredSeries={filteredSeries}
-            streamingFilters={streamingFilters}
-            platformFilter={platformFilter}
-            onSelectFilter={handleSelectPlatformFilter}
-            onLaunchSuggestion={onLaunchSuggestion}
-          />
-        )}
+          {showSuggestions && (
+            <SeriesSection
+              filteredSeries={filteredSeries}
+              streamingFilters={streamingFilters}
+              platformFilter={platformFilter}
+              onSelectFilter={handleSelectPlatformFilter}
+              onLaunchSuggestion={onLaunchSuggestion}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

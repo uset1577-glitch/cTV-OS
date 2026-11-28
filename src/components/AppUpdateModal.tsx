@@ -253,7 +253,7 @@ export function AppUpdateModal({
                   data-tv-focusable="true"
                   data-tv-id="update-toggle-advanced"
                   onClick={() => setShowAdvanced((prev) => !prev)}
-                  className="tv-focusable inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:text-zinc-900 dark:focus:text-white"
+                  className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 -ml-3 rounded-full text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
                 >
                   <span>Servidor de descargas</span>
                   {showAdvanced ? (
@@ -281,7 +281,7 @@ export function AppUpdateModal({
                       placeholder="usuario/vora-tv-os"
                       data-tv-focusable="true"
                       data-tv-id="update-repo-input"
-                      className="tv-focusable flex-1 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-xs font-mono-tabular text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
+                      className="tv-focusable flex-1 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-900/10 dark:border-white/10 text-xs font-mono-tabular text-zinc-900 dark:text-white focus:outline-none"
                     />
                     <button
                       type="button"

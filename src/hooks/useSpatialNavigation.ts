@@ -700,8 +700,8 @@ function animateContainerAxis(
     existing.rafId = 0;
   }
 
-  // Transiciones rápidas y directas (~90-110 ms) para respuesta inmediata con mando
-  const duration = axis === 'top' ? (wasAnimating ? 90 : 110) : wasAnimating ? 90 : 108;
+  // Transiciones rápidas y fluidas (~105-170 ms) para que el desvanecido al bajar sea suave sin retrasos
+  const duration = axis === 'top' ? (wasAnimating ? 105 : 170) : wasAnimating ? 72 : 92;
   const now = performance.now();
 
   const anim: AxisScrollAnim = existing || {
@@ -837,11 +837,11 @@ function computeScrollPlan(
       const needsScrollUp = projectedTop < parentRect.top + topSafeMargin;
 
       if (needsScrollDown || needsScrollUp) {
-        const minInset = hasFixedTopbar ? 96 : 16;
-        const maxInset = hasFixedTopbar ? 190 : 96;
+        const minInset = hasFixedTopbar ? 112 : 24;
+        const maxInset = hasFixedTopbar ? 154 : 92;
         const desiredTop =
           parentRect.top +
-          Math.max(minInset, Math.min(maxInset, (parentRect.height - boxRect.height) * 0.34));
+          Math.max(minInset, Math.min(maxInset, (parentRect.height - boxRect.height) * 0.24));
         const deltaY = projectedTop - desiredTop;
         const rawNext = effectiveScrollTop + deltaY;
         nextScrollTop = Math.min(maxScrollTop, Math.max(0, rawNext < 24 ? 0 : rawNext));

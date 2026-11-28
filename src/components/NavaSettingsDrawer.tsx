@@ -539,7 +539,7 @@ export function NavaSettingsDrawer({
                           selected
                             ? 'border-white bg-white/15'
                             : 'border-white/10 bg-white/[0.04]'
-                        } focus:ring-2 focus:ring-white focus:scale-[1.03]`}
+                        } focus:scale-[1.03]`}
                       >
                         <div
                           className="h-7 w-full rounded-lg relative overflow-hidden mb-1 grayscale"

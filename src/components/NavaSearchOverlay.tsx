@@ -413,7 +413,7 @@ export function NavaSearchOverlay({
                   data-tv-focusable="true"
                   data-tv-id="search-bar-clear"
                   onClick={handleClear}
-                  className="tv-focusable min-h-[40px] px-4 py-2 rounded-full text-xs font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 whitespace-nowrap shrink-0"
+                  className="tv-focusable min-h-[40px] px-4 py-2 rounded-full text-xs font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
                 >
                   Limpiar
                 </button>
@@ -425,7 +425,7 @@ export function NavaSearchOverlay({
                 data-tv-id="search-close"
                 onClick={onClose}
                 aria-label="Cerrar buscador"
-                className="tv-focusable min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 flex items-center justify-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105 shrink-0"
+                className="tv-focusable min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 flex items-center justify-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -456,7 +456,7 @@ export function NavaSearchOverlay({
                 <div
                   data-tv-row="search-filters"
                   data-tv-allow-horizontal-exit="true"
-                  className="flex items-center gap-2 mb-4 shrink-0 flex-wrap"
+                  className="flex items-center gap-2 mb-3 py-1.5 px-1.5 -mx-1.5 shrink-0 flex-wrap"
                 >
                   {filterTabs.map((tab) => {
                     const active = filter === tab.id;
@@ -471,7 +471,7 @@ export function NavaSearchOverlay({
                           active
                             ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                             : 'bg-zinc-900/10 dark:bg-white/8 text-zinc-700 dark:text-zinc-300'
-                        } focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-105`}
+                        } focus:scale-105`}
                       >
                         {tab.label}
                       </button>
@@ -482,7 +482,7 @@ export function NavaSearchOverlay({
                 {/* Lista / Cuadrícula desplazable de resultados */}
                 <div
                   data-tv-scroll-container="true"
-                  className="flex-1 overflow-y-auto no-scrollbar pr-1 pb-6 space-y-6"
+                  className="flex-1 overflow-y-auto no-scrollbar px-2 py-1 pb-6 space-y-6"
                 >
                   {/* 1. Aplicaciones coincidentes o destacadas */}
                   {showAppsSection && (
@@ -503,7 +503,7 @@ export function NavaSearchOverlay({
                             data-tv-focusable="true"
                             data-tv-id={`search-app-${app.packageName}`}
                             onClick={() => handleSelectApp(app)}
-                            className="tv-focusable min-h-[56px] flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.02] group"
+                            className="tv-focusable min-h-[56px] flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02] group"
                           >
                             <div className="w-10 h-10 rounded-lg bg-zinc-300/70 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
                               {app.icon ? (
@@ -563,7 +563,7 @@ export function NavaSearchOverlay({
                               data-tv-focusable="true"
                               data-tv-id={`search-media-${item.id}`}
                               onClick={() => handleSelectSuggestion(item)}
-                              className="tv-focusable flex items-center gap-3 p-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.02] group"
+                              className="tv-focusable flex items-center gap-3 p-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02] group"
                             >
                               <SearchMediaThumb
                                 src={thumb}
@@ -605,7 +605,7 @@ export function NavaSearchOverlay({
                             data-tv-focusable="true"
                             data-tv-id={action.id}
                             onClick={() => handleSelectSuggestion(action)}
-                            className="tv-focusable min-h-[52px] flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:scale-[1.02] group"
+                            className="tv-focusable min-h-[52px] flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-200/80 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/10 text-left focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-[1.02] group"
                           >
                             <div
                               className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white"
