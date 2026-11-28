@@ -7,12 +7,14 @@ import {
   isValidImageUrl,
   resolvePackageAlias,
 } from '../data/suggestions';
-import type { AppSuggestion, InstalledApp } from '../types/launcher';
+import { getTranslations } from '../i18n/translations';
+import type { AppLanguage, AppSuggestion, InstalledApp } from '../types/launcher';
 
 interface LivePlatformsViewProps {
   allApps: InstalledApp[];
   favoritePackages?: string[];
   series: AppSuggestion[];
+  language: AppLanguage;
   catalogFeedUrl?: string;
   isLoading: boolean;
   onScrollTopChange: (atTop: boolean) => void;
@@ -25,6 +27,7 @@ export function LivePlatformsView({
   allApps,
   favoritePackages = [],
   series,
+  language,
   catalogFeedUrl = '',
   isLoading,
   onScrollTopChange,
@@ -32,6 +35,7 @@ export function LivePlatformsView({
   onOpenFeedSettings,
   onLaunchSuggestion,
 }: LivePlatformsViewProps) {
+  const t = getTranslations(language).live;
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
   const [failedIds, setFailedIds] = useState<Record<string, boolean>>({});
 
@@ -50,10 +54,10 @@ export function LivePlatformsView({
     const active = getCatalogPlatforms(validSeries, allApps, favoritePackages);
     if (active.length === 0) return [];
     return [
-      { id: 'all', label: 'Todas las plataformas' },
+      { id: 'all', label: t.allPlatforms },
       ...active.map((p) => ({ id: p.id, label: p.appName })),
     ];
-  }, [validSeries, allApps, favoritePackages]);
+  }, [validSeries, allApps, favoritePackages, t.allPlatforms]);
 
   useEffect(() => {
     if (
@@ -87,10 +91,10 @@ export function LivePlatformsView({
       >
         <div>
           <h1 className="font-display text-3xl font-bold text-zinc-900 dark:text-white">
-            En vivo y emisiones
+            {t.title}
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-            Catálogo conectado a tu fuente externa o puente nativo para abrir directo en la app
+            {t.subtitle}
           </p>
         </div>
 
@@ -103,7 +107,7 @@ export function LivePlatformsView({
           className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Actualizar catálogo</span>
+          <span>{t.refreshCatalog}</span>
         </button>
       </div>
 
@@ -144,7 +148,7 @@ export function LivePlatformsView({
             <>
               <Tv className="w-8 h-8 text-zinc-500 dark:text-zinc-400 mx-auto mb-3" />
               <p className="text-base font-medium text-zinc-700 dark:text-zinc-300">
-                No hay emisiones válidas para esta plataforma en este momento.
+                {t.noValidForPlatform}
               </p>
               <button
                 type="button"
@@ -153,21 +157,17 @@ export function LivePlatformsView({
                 onClick={() => setSelectedPlatform('all')}
                 className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
               >
-                Ver todas las plataformas
+                {t.showAllPlatforms}
               </button>
             </>
           ) : (
             <>
               <Database className="w-8 h-8 text-zinc-500 dark:text-zinc-400 mx-auto mb-3" />
               <p className="text-base font-semibold text-zinc-900 dark:text-white">
-                {catalogFeedUrl
-                  ? 'Sin emisiones válidas en la fuente externa'
-                  : 'Fuente de emisiones sin configurar'}
+                {catalogFeedUrl ? t.emptyInvalidSource : t.emptyNoSource}
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1.5 max-w-md mx-auto">
-                {catalogFeedUrl
-                  ? 'No se recibieron elementos con imagen válida desde la URL configurada.'
-                  : 'Conecta una URL JSON/API o el puente nativo en Ajustes para mostrar emisiones aquí.'}
+                {catalogFeedUrl ? t.emptyInvalidSourceDesc : t.emptyNoSourceDesc}
               </p>
               <div className="mt-5 flex items-center justify-center gap-3">
                 {onOpenFeedSettings && (
@@ -178,7 +178,7 @@ export function LivePlatformsView({
                     onClick={onOpenFeedSettings}
                     className="tv-focusable px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
                   >
-                    Configurar fuente
+                    {t.configureSource}
                   </button>
                 )}
               </div>

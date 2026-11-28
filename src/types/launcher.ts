@@ -1,8 +1,17 @@
-export type LauncherOverlay = 'none' | 'apps' | 'search' | 'settings' | 'update' | 'maintenance';
+export type LauncherOverlay =
+  | 'none'
+  | 'apps'
+  | 'search'
+  | 'settings'
+  | 'update'
+  | 'maintenance'
+  | 'default_launcher_guide';
 
 export type HomeTab = 'inicio' | 'envivo' | 'apps';
 
 export type ThemeMode = 'dark' | 'light';
+
+export type AppLanguage = 'es' | 'en' | 'pt' | 'fr';
 
 export type AppCategoryFilter = 'all' | 'tv' | 'games' | 'other';
 
@@ -63,6 +72,8 @@ export interface GoogleTvLiveCatalog {
 
 export interface LauncherSettings {
   themeMode: ThemeMode;
+  oledMode: boolean;
+  language: AppLanguage;
   backgroundId: string;
   use24HourClock: boolean;
   showPackageNames: boolean;

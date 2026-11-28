@@ -1,4 +1,5 @@
-import type { AppSuggestion, GoogleTvLiveCatalog, InstalledApp } from '../types/launcher';
+import type { AppLanguage, AppSuggestion, GoogleTvLiveCatalog, InstalledApp } from '../types/launcher';
+import { getTranslations } from '../i18n/translations';
 
 export interface ActiveStreamingPlatform {
   id: string;
@@ -1736,11 +1737,13 @@ export async function searchOnlineCatalog(
 export function buildPlatformSearchActions(
   query: string,
   installedApps: InstalledApp[] = [],
-  appsOnlyMode = false
+  appsOnlyMode = false,
+  language: AppLanguage = 'es'
 ): AppSuggestion[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
+  const t = getTranslations(language).search;
   const encoded = encodeURIComponent(trimmed);
   const youtubePkg = resolvePackageAlias('com.google.android.youtube.tv', installedApps);
   const actions: AppSuggestion[] = [
@@ -1748,15 +1751,14 @@ export function buildPlatformSearchActions(
       id: `search-action-youtube-${encoded}`,
       appName: 'YouTube',
       packageName: youtubePkg,
-      title: `Buscar "${trimmed}" en YouTube`,
-      subtitle: 'Videos, trailers, música y directos en YouTube TV',
+      title: t.searchInYoutubeTitle(trimmed),
+      subtitle: t.searchInYoutubeSubtitle,
       deepLinkUrl: `https://www.youtube.com/results?search_query=${encoded}`,
       posterUrl: '',
       accentGradient: 'linear-gradient(135deg, #3A0A14 0%, #991B1B 100%)',
       tag: 'YouTube',
     },
   ];
-
   if (appsOnlyMode) {
     return actions;
   }
@@ -1808,8 +1810,8 @@ export function buildPlatformSearchActions(
       id: `search-action-${plat.preferredPkg}-${encoded}`,
       appName: plat.appName,
       packageName: resolved,
-      title: `Buscar "${trimmed}" en ${plat.appName}`,
-      subtitle: `Abrir búsqueda dentro de ${plat.appName}`,
+      title: t.searchInAppTitle(trimmed, plat.appName),
+      subtitle: t.searchInAppSubtitle(plat.appName),
       deepLinkUrl: plat.buildUrl(encoded),
       posterUrl: '',
       accentGradient: plat.accentGradient,

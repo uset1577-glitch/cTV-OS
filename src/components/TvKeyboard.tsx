@@ -1,8 +1,11 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { ArrowUp, CornerDownLeft, Delete, Eraser, Space } from 'lucide-react';
+import { getTranslations } from '../i18n/translations';
+import type { AppLanguage } from '../types/launcher';
 
 interface TvKeyboardProps {
   query: string;
+  language?: AppLanguage;
   recentSearches?: string[];
   onAppendChar: (char: string) => void;
   onBackspace: () => void;
@@ -31,6 +34,7 @@ const ACTION_KEY_CLASS =
 
 export const TvKeyboard = memo(function TvKeyboard({
   query,
+  language = 'es',
   recentSearches = [],
   onAppendChar,
   onBackspace,
@@ -38,6 +42,7 @@ export const TvKeyboard = memo(function TvKeyboard({
   onSubmit,
   onSelectRecent,
 }: TvKeyboardProps) {
+  const tk = getTranslations(language).search.keyboard;
   const [mode, setMode] = useState<KeyboardMode>('letters');
   const [shift, setShift] = useState(false);
   const backspaceRef = useRef<HTMLButtonElement | null>(null);
@@ -71,7 +76,7 @@ export const TvKeyboard = memo(function TvKeyboard({
   return (
     <div
       className="flex flex-col gap-2 p-3.5 rounded-2xl bg-zinc-200/75 dark:bg-white/[0.04] border border-zinc-900/10 dark:border-white/10"
-      aria-label="Teclado en pantalla VORA"
+      aria-label={tk.ariaLabel}
     >
       {/* Fila 0: Números + Retroceso */}
       <div
@@ -100,8 +105,8 @@ export const TvKeyboard = memo(function TvKeyboard({
           data-tv-supports-longpress="true"
           data-tv-id="kb-backspace"
           onClick={onBackspace}
-          aria-label="Borrar carácter (mantén pulsado para limpiar)"
-          title="Borrar (mantén OK para limpiar todo)"
+          aria-label={tk.backspaceAria}
+          title={tk.backspaceTitle}
           className={`${ACTION_KEY_CLASS} col-span-2 px-2`}
         >
           <Delete className="w-4 h-4 shrink-0" />
@@ -181,9 +186,9 @@ export const TvKeyboard = memo(function TvKeyboard({
           aria-label={
             mode === 'letters'
               ? shift
-                ? 'Desactivar mayúsculas'
-                : 'Activar mayúsculas'
-              : 'Volver a letras'
+                ? tk.disableCaps
+                : tk.enableCaps
+              : tk.backToLetters
           }
           aria-pressed={mode === 'letters' ? shift : undefined}
           className={`${ACTION_KEY_CLASS} px-1 text-[11px] ${
@@ -239,11 +244,11 @@ export const TvKeyboard = memo(function TvKeyboard({
           data-tv-focusable="true"
           data-tv-id="kb-space"
           onClick={() => onAppendChar(' ')}
-          aria-label="Espacio"
+          aria-label={tk.space}
           className={`${KEY_BASE_CLASS} col-span-4 gap-1.5 text-xs`}
         >
           <Space className="w-4 h-4 shrink-0 opacity-75" />
-          <span>Espacio</span>
+          <span>{tk.space}</span>
         </button>
 
         <button
@@ -253,7 +258,7 @@ export const TvKeyboard = memo(function TvKeyboard({
           onClick={() => {
             if (query) onClear();
           }}
-          aria-label="Limpiar búsqueda"
+          aria-label={tk.clearAria}
           className={`${ACTION_KEY_CLASS} col-span-2 px-2 ${
             !query ? 'opacity-45' : ''
           }`}
@@ -268,7 +273,7 @@ export const TvKeyboard = memo(function TvKeyboard({
           onClick={onSubmit}
           className="tv-focusable min-h-[44px] h-11 col-span-3 rounded-xl flex items-center justify-center gap-1.5 px-3 font-sans text-xs font-bold select-none bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 focus:scale-[1.05] active:scale-95 whitespace-nowrap"
         >
-          <span>Ir</span>
+          <span>{tk.submit}</span>
           <CornerDownLeft className="w-3.5 h-3.5 shrink-0" />
         </button>
       </div>
@@ -277,7 +282,7 @@ export const TvKeyboard = memo(function TvKeyboard({
       {recentSearches.length > 0 && onSelectRecent && (
         <div className="pt-2 mt-0.5 border-t border-zinc-900/10 dark:border-white/10">
           <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">
-            Búsquedas recientes
+            {tk.recentSearches}
           </div>
           <div
             data-tv-row="kb-recent"

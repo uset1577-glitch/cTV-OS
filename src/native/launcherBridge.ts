@@ -19,9 +19,21 @@ export type TvSettingsSection =
   | 'inputs'
   | 'account'
   | 'home'
+  | 'apps'
+  | 'app_details'
   | 'screensaver'
   | 'accessibility'
   | 'unknown_sources';
+
+export interface OpenDefaultLauncherResult {
+  opened: boolean;
+  isNative: boolean;
+  alreadyDefault?: boolean;
+  needsGuide?: boolean;
+  method?: string;
+  currentDefaultPackage?: string;
+  currentDefaultLabel?: string;
+}
 
 export interface LauncherNativePlugin {
   getInstalledApps(): Promise<{ apps: InstalledApp[] }>;
@@ -30,7 +42,17 @@ export interface LauncherNativePlugin {
     url: string;
     packageName?: string;
   }): Promise<{ launched: boolean; openedStore?: boolean }>;
-  openSettings(options: { section: TvSettingsSection }): Promise<{ opened: boolean }>;
+  openSettings(options: {
+    section: TvSettingsSection;
+    packageName?: string;
+  }): Promise<{
+    opened: boolean;
+    alreadyDefault?: boolean;
+    needsGuide?: boolean;
+    method?: string;
+    currentDefaultPackage?: string;
+    currentDefaultLabel?: string;
+  }>;
   setKeepScreenOn(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getAppVersion(): Promise<AppVersionInfo>;
   checkOtaUpdate(options: { repo: string }): Promise<AppUpdateManifest>;
@@ -152,17 +174,49 @@ export async function getNativeRecommendationsFeed(url?: string): Promise<{
 }
 
 export async function openTvSettings(
-  section: TvSettingsSection
+  section: TvSettingsSection,
+  packageName?: string
 ): Promise<boolean> {
   if (isNativeAndroid()) {
     try {
-      const res = await LauncherNative.openSettings({ section });
+      const res = await LauncherNative.openSettings({ section, packageName });
       return Boolean(res.opened);
     } catch {
       return false;
     }
   }
   return false;
+}
+
+export async function openDefaultLauncherSettings(): Promise<OpenDefaultLauncherResult> {
+  if (isNativeAndroid()) {
+    try {
+      const res = await LauncherNative.openSettings({ section: 'home' });
+      return {
+        opened: Boolean(res.opened),
+        isNative: true,
+        alreadyDefault: Boolean(res.alreadyDefault),
+        needsGuide: Boolean(res.needsGuide),
+        method: res.method,
+        currentDefaultPackage: res.currentDefaultPackage,
+        currentDefaultLabel: res.currentDefaultLabel,
+      };
+    } catch {
+      return {
+        opened: false,
+        isNative: true,
+        needsGuide: true,
+        method: 'guide',
+      };
+    }
+  }
+
+  return {
+    opened: false,
+    isNative: false,
+    needsGuide: true,
+    method: 'web',
+  };
 }
 
 export async function setNativeKeepScreenOn(enabled: boolean): Promise<void> {

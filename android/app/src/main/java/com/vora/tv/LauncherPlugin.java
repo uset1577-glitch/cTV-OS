@@ -284,7 +284,12 @@ public class LauncherPlugin extends Plugin {
     @PluginMethod
     public void openSettings(PluginCall call) {
         String section = call.getString("section", "settings");
+        String targetPackage = call.getString("packageName", "");
         Context context = getContext();
+        if (context == null) {
+            call.reject("Contexto Android no disponible");
+            return;
+        }
 
         try {
             Intent intent;
@@ -310,11 +315,25 @@ public class LauncherPlugin extends Plugin {
                     intent = new Intent(Settings.ACTION_SETTINGS);
                 }
             } else if ("home".equals(section)) {
-                boolean openedHome = openDefaultLauncherSettings(context);
-                JSObject res = new JSObject();
-                res.put("opened", openedHome);
-                call.resolve(res);
+                JSObject homeRes = openDefaultLauncherSettings(context);
+                call.resolve(homeRes);
                 return;
+            } else if ("apps".equals(section)) {
+                intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_SETTINGS);
+                }
+            } else if ("app_details".equals(section)) {
+                String pkg = (targetPackage != null && !targetPackage.trim().isEmpty())
+                    ? targetPackage.trim()
+                    : context.getPackageName();
+                intent = new Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + pkg)
+                );
+                if (intent.resolveActivity(context.getPackageManager()) == null) {
+                    intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+                }
             } else if ("accessibility".equals(section)) {
                 intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             } else if ("screensaver".equals(section)) {
@@ -331,8 +350,7 @@ public class LauncherPlugin extends Plugin {
                 intent = new Intent(Settings.ACTION_SETTINGS);
             }
 
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
+            startIntentPreservingTask(context, intent);
 
             JSObject res = new JSObject();
             res.put("opened", true);
@@ -340,8 +358,7 @@ public class LauncherPlugin extends Plugin {
         } catch (Exception e) {
             try {
                 Intent fallback = new Intent(Settings.ACTION_SETTINGS);
-                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(fallback);
+                startIntentPreservingTask(context, fallback);
                 JSObject res = new JSObject();
                 res.put("opened", true);
                 call.resolve(res);
@@ -351,85 +368,162 @@ public class LauncherPlugin extends Plugin {
         }
     }
 
-    private boolean openDefaultLauncherSettings(Context context) {
-        if (context == null) return false;
-        PackageManager pm = context.getPackageManager();
+    private void startIntentPreservingTask(Context context, Intent intent) {
+        Activity activity = getActivity();
+        if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+            activity.startActivity(intent);
+        } else {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
+    }
 
-        // 1. Intent directo al selector de aplicación de inicio del sistema
+    private static boolean isSystemLauncherPackage(String pkg) {
+        if (pkg == null) return false;
+        String lower = pkg.toLowerCase(Locale.ROOT);
+        return lower.equals("com.google.android.apps.tv.launcherx")
+            || lower.equals("com.google.android.tvlauncher")
+            || lower.equals("com.google.android.leanbacklauncher")
+            || lower.equals("com.android.tv.launcher");
+    }
+
+    private static boolean isSafeSettingsTarget(PackageManager pm, Intent intent) {
+        if (pm == null || intent == null) return false;
+        ResolveInfo ri = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        if (ri == null || ri.activityInfo == null) return false;
+        String pkg = ri.activityInfo.packageName;
+        if (pkg == null || pkg.isEmpty()) return false;
+        return !isSystemLauncherPackage(pkg);
+    }
+
+    private JSObject openDefaultLauncherSettings(Context context) {
+        JSObject res = new JSObject();
+        if (context == null) {
+            res.put("opened", false);
+            res.put("needsGuide", true);
+            res.put("method", "guide");
+            return res;
+        }
+
+        PackageManager pm = context.getPackageManager();
+        String selfPkg = context.getPackageName();
+
+        // Consultar cuál es actualmente la app de inicio predeterminada en el TV
+        String currentHomePkg = "";
+        String currentHomeLabel = "";
         try {
-            Intent homeSettingsIntent = new Intent(Settings.ACTION_HOME_SETTINGS);
-            if (homeSettingsIntent.resolveActivity(pm) != null) {
-                homeSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(homeSettingsIntent);
-                return true;
+            Intent homeCheck = new Intent(Intent.ACTION_MAIN);
+            homeCheck.addCategory(Intent.CATEGORY_HOME);
+            homeCheck.addCategory(Intent.CATEGORY_DEFAULT);
+            ResolveInfo currentRi = pm.resolveActivity(homeCheck, PackageManager.MATCH_DEFAULT_ONLY);
+            if (currentRi != null && currentRi.activityInfo != null) {
+                currentHomePkg = currentRi.activityInfo.packageName != null
+                    ? currentRi.activityInfo.packageName
+                    : "";
+                if (!currentHomePkg.isEmpty() && !"android".equals(currentHomePkg)) {
+                    CharSequence lbl = currentRi.loadLabel(pm);
+                    if (lbl != null) {
+                        currentHomeLabel = lbl.toString().trim();
+                    }
+                }
             }
         } catch (Exception ignored) {
         }
 
-        // 2. Ajustes de aplicaciones predeterminadas (Android 7+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                Intent defaultAppsIntent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
-                if (defaultAppsIntent.resolveActivity(pm) != null) {
-                    defaultAppsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(defaultAppsIntent);
-                    return true;
-                }
-            } catch (Exception ignored) {
-            }
+        boolean isVoraDefault = selfPkg.equals(currentHomePkg);
+        res.put("currentDefaultPackage", currentHomePkg);
+        res.put("currentDefaultLabel", currentHomeLabel);
+        res.put("alreadyDefault", isVoraDefault);
+
+        // Si VORA ya es el launcher predeterminado (o tiene el rol HOME), evitar rebotes innecesarios
+        if (isVoraDefault) {
+            res.put("opened", true);
+            res.put("needsGuide", false);
+            res.put("method", "already_default");
+            return res;
         }
 
-        // 3. Solicitud de rol HOME del sistema (Android 10+) si aún no está fijado como predeterminado
+        // 1. Android 10+ (API 29+): Diálogo oficial de rol HOME encima de VORA sin salir de la tarea
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
                 RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
                 Activity activity = getActivity();
                 if (roleManager != null
                     && activity != null
-                    && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)
-                    && !roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                    && !activity.isFinishing()
+                    && !activity.isDestroyed()
+                    && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+                    if (roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                        res.put("alreadyDefault", true);
+                        res.put("opened", true);
+                        res.put("needsGuide", false);
+                        res.put("method", "already_default");
+                        return res;
+                    }
                     Intent roleIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME);
-                    if (roleIntent != null && roleIntent.resolveActivity(pm) != null) {
+                    if (roleIntent != null && isSafeSettingsTarget(pm, roleIntent)) {
                         activity.startActivityForResult(roleIntent, 9401);
-                        return true;
+                        res.put("opened", true);
+                        res.put("needsGuide", false);
+                        res.put("method", "role_manager");
+                        return res;
                     }
                 }
             } catch (Exception ignored) {
             }
         }
 
-        // 4. Selector nativo de aplicaciones de inicio (CATEGORY_HOME)
+        // 2. Selector directo de aplicación de inicio del sistema (manteniendo la pila de VORA)
         try {
-            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-            homeIntent.addCategory(Intent.CATEGORY_HOME);
-            if (homeIntent.resolveActivity(pm) != null) {
-                Intent chooser = Intent.createChooser(homeIntent, "Seleccionar launcher principal");
-                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(chooser);
-                return true;
+            Intent homeSettingsIntent = new Intent(Settings.ACTION_HOME_SETTINGS);
+            if (isSafeSettingsTarget(pm, homeSettingsIntent)) {
+                startIntentPreservingTask(context, homeSettingsIntent);
+                res.put("opened", true);
+                res.put("needsGuide", false);
+                res.put("method", "home_settings");
+                return res;
             }
         } catch (Exception ignored) {
         }
 
-        // 5. Respaldo final: lista de aplicaciones o ajustes generales de Android TV
-        try {
-            Intent appsIntent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
-            if (appsIntent.resolveActivity(pm) != null) {
-                appsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(appsIntent);
-                return true;
+        // 3. Ajustes de aplicaciones predeterminadas (Android 7+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                Intent defaultAppsIntent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
+                if (isSafeSettingsTarget(pm, defaultAppsIntent)) {
+                    startIntentPreservingTask(context, defaultAppsIntent);
+                    res.put("opened", true);
+                    res.put("needsGuide", false);
+                    res.put("method", "default_apps");
+                    return res;
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
 
-        try {
-            Intent fallback = new Intent(Settings.ACTION_SETTINGS);
-            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(fallback);
-            return true;
-        } catch (Exception ignored) {
-            return false;
+        // 4. Solo abrir chooser HOME si NO hay un launcher ya fijado (evita rebotar al launcher de Google)
+        if (currentHomePkg.isEmpty() || "android".equals(currentHomePkg)) {
+            try {
+                Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                homeIntent.addCategory(Intent.CATEGORY_HOME);
+                homeIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                if (homeIntent.resolveActivity(pm) != null) {
+                    Intent chooser = Intent.createChooser(homeIntent, "VORA TV OS");
+                    startIntentPreservingTask(context, chooser);
+                    res.put("opened", true);
+                    res.put("needsGuide", false);
+                    res.put("method", "chooser");
+                    return res;
+                }
+            } catch (Exception ignored) {
+            }
         }
+
+        // 5. En Google TV / dispositivos sin selector directo, guiar dentro de VORA sin cerrarse ni rebotar
+        res.put("opened", false);
+        res.put("needsGuide", true);
+        res.put("method", "guide");
+        return res;
     }
 
     @PluginMethod

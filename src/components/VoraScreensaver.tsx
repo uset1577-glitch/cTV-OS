@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Disc3 } from 'lucide-react';
-import type { SpotifyNowPlaying } from '../types/launcher';
+import type { AppLanguage, SpotifyNowPlaying } from '../types/launcher';
+import { getDateLocale, getTranslations } from '../i18n/translations';
 import { BrandLogo } from './BrandLogo';
 
 const SCREENSAVER_WALLPAPERS = [
@@ -14,6 +15,7 @@ const SCREENSAVER_WALLPAPERS = [
 
 interface VoraScreensaverProps {
   isActive: boolean;
+  language: AppLanguage;
   use24HourClock: boolean;
   spotify: SpotifyNowPlaying | null;
   onDismiss: () => void;
@@ -21,6 +23,7 @@ interface VoraScreensaverProps {
 
 export function VoraScreensaver({
   isActive,
+  language,
   use24HourClock,
   spotify,
   onDismiss,
@@ -107,13 +110,16 @@ export function VoraScreensaver({
   const currentWallpaper =
     SCREENSAVER_WALLPAPERS[currentBgIndex] || SCREENSAVER_WALLPAPERS[0];
 
-  const timeString = now.toLocaleTimeString('es-ES', {
+  const t = getTranslations(language).screensaver;
+  const dateLocale = getDateLocale(language);
+
+  const timeString = now.toLocaleTimeString(dateLocale, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: !use24HourClock,
   });
 
-  const dateString = now.toLocaleDateString('es-ES', {
+  const dateString = now.toLocaleDateString(dateLocale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -191,7 +197,7 @@ export function VoraScreensaver({
 
                   <div className="min-w-0">
                     <p className="text-base md:text-lg text-white/85 truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                      Estás escuchando:{' '}
+                      {t.nowPlayingPrefix}{' '}
                       <strong className="font-semibold text-white">{spotify.track}</strong>
                     </p>
                     {spotify.artist && (

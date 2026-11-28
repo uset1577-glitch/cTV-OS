@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { AppWindow, Star } from 'lucide-react';
 import type { InstalledApp } from '../types/launcher';
 
@@ -6,15 +6,17 @@ interface AppTileProps {
   app: InstalledApp;
   isFavorite: boolean;
   showPackageName?: boolean;
+  pinnedLabel?: string;
   focusId: string;
   onLaunch: (app: InstalledApp) => void;
   onToggleFavorite: (app: InstalledApp) => void;
 }
 
-export function AppTile({
+export const AppTile = memo(function AppTile({
   app,
   isFavorite,
   showPackageName = false,
+  pinnedLabel = 'Fijada en Inicio',
   focusId,
   onLaunch,
   onToggleFavorite,
@@ -65,7 +67,7 @@ export function AppTile({
 
         {isFavorite && (
           <span
-            aria-label="Fijada en Inicio"
+            aria-label={pinnedLabel}
             className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-zinc-950/90 text-white flex items-center justify-center border border-white/25"
           >
             <Star className="w-3.5 h-3.5 fill-white" />
@@ -85,4 +87,4 @@ export function AppTile({
       </div>
     </button>
   );
-}
+});

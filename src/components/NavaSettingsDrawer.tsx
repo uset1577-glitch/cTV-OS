@@ -7,7 +7,9 @@ import {
   Check,
   ChevronRight,
   CircleUserRound,
+  Contrast,
   Download,
+  Globe,
   HdmiPort,
   Home,
   Image as ImageIcon,
@@ -23,8 +25,14 @@ import {
 } from 'lucide-react';
 import { BACKGROUND_PRESETS, DEFAULT_FAVORITES } from '../data/presets';
 import { focusElementById, useSpatialNavigation } from '../hooks/useSpatialNavigation';
+import {
+  getDateLocale,
+  getLanguageLabel,
+  getTranslations,
+  SUPPORTED_LANGUAGES,
+} from '../i18n/translations';
 import type { TvSettingsSection } from '../native/launcherBridge';
-import type { AppVersionInfo, LauncherSettings, MusicServiceStatus } from '../types/launcher';
+import type { AppLanguage, AppVersionInfo, LauncherSettings, MusicServiceStatus } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
 
 interface NavaSettingsDrawerProps {
@@ -39,17 +47,20 @@ interface NavaSettingsDrawerProps {
   musicServiceStatus: MusicServiceStatus;
   initialSubPanel?: ActiveSubPanel;
   onUpdateSettings: (patch: Partial<LauncherSettings>) => void;
+  onToggleOledMode?: () => void;
   onOpenAndroidSettings: (section: TvSettingsSection) => void;
+  onOpenDefaultLauncher?: () => void;
   onCycleSleepTimer?: () => void;
   onOpenScreensaver?: () => void;
   onOpenAccessibilitySettings: () => void;
   onOpenNotificationSettings: () => void;
   onOpenUpdateModal: () => void;
   onOpenMaintenanceModal?: () => void;
+  onSelectLanguage?: (language: AppLanguage) => void;
   onClose: () => void;
 }
 
-export type SettingsSubPanel = 'none' | 'notifications' | 'profile';
+export type SettingsSubPanel = 'none' | 'notifications' | 'profile' | 'language';
 type ActiveSubPanel = SettingsSubPanel;
 
 export function NavaSettingsDrawer({
@@ -64,17 +75,23 @@ export function NavaSettingsDrawer({
   musicServiceStatus,
   initialSubPanel = 'none',
   onUpdateSettings,
+  onToggleOledMode,
   onOpenAndroidSettings,
+  onOpenDefaultLauncher,
   onCycleSleepTimer,
   onOpenScreensaver,
   onOpenAccessibilitySettings,
   onOpenNotificationSettings,
   onOpenUpdateModal,
   onOpenMaintenanceModal,
+  onSelectLanguage,
   onClose,
 }: NavaSettingsDrawerProps) {
   const [now, setNow] = useState(() => new Date());
   const [subPanel, setSubPanel] = useState<ActiveSubPanel>('none');
+  const t = getTranslations(settings.language).settings;
+  const dateLocale = getDateLocale(settings.language);
+  const currentLanguageName = getLanguageLabel(settings.language);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -91,6 +108,8 @@ export function NavaSettingsDrawer({
           focusElementById('quick-profile-theme');
         } else if (initialSubPanel === 'notifications') {
           focusElementById('quick-notif-update');
+        } else if (initialSubPanel === 'language') {
+          focusElementById(`quick-lang-${settings.language}`);
         } else {
           focusElementById('quick-screensaver');
         }
@@ -98,7 +117,7 @@ export function NavaSettingsDrawer({
     } else {
       setSubPanel('none');
     }
-  }, [isOpen, initialSubPanel]);
+  }, [isOpen, initialSubPanel, settings.language]);
 
   useSpatialNavigation({
     enabled: isOpen,
@@ -113,13 +132,13 @@ export function NavaSettingsDrawer({
     scopeSelector: '#vora-quick-panel',
   });
 
-  const formattedTime = now.toLocaleTimeString('es-ES', {
+  const formattedTime = now.toLocaleTimeString(dateLocale, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: !settings.use24HourClock,
   });
 
-  const formattedDate = now.toLocaleDateString('es-ES', {
+  const formattedDate = now.toLocaleDateString(dateLocale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -130,7 +149,7 @@ export function NavaSettingsDrawer({
   const quickTiles = [
     {
       id: 'quick-screensaver',
-      label: 'Salvapantallas',
+      label: t.tiles.screensaver,
       icon: ImageIcon,
       isInitial: true,
       onClick: () => {
@@ -144,7 +163,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-inputs',
-      label: 'Entradas',
+      label: t.tiles.inputs,
       icon: HdmiPort,
       onClick: () => {
         onClose();
@@ -153,7 +172,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-picture',
-      label: 'Imagen',
+      label: t.tiles.picture,
       icon: SlidersHorizontal,
       onClick: () => {
         onClose();
@@ -162,7 +181,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-sound',
-      label: 'Sonido',
+      label: t.tiles.sound,
       icon: Volume2,
       onClick: () => {
         onClose();
@@ -171,7 +190,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-wifi',
-      label: 'Wi-Fi',
+      label: t.tiles.wifi,
       icon: Wifi,
       onClick: () => {
         onClose();
@@ -180,7 +199,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-bluetooth',
-      label: 'Bluetooth',
+      label: t.tiles.bluetooth,
       icon: Bluetooth,
       onClick: () => {
         onClose();
@@ -189,7 +208,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-timer',
-      label: 'Temporizador',
+      label: t.tiles.timer,
       badge: sleepTimerMinutes !== null ? `${sleepTimerMinutes}m` : undefined,
       icon: Timer,
       onClick: () => {
@@ -198,7 +217,7 @@ export function NavaSettingsDrawer({
     },
     {
       id: 'quick-accessibility',
-      label: 'Accesibilidad',
+      label: t.tiles.accessibility,
       icon: Accessibility,
       onClick: () => {
         onClose();
@@ -230,20 +249,38 @@ export function NavaSettingsDrawer({
   };
 
   const featuredTitle = isMaintenanceForced
-    ? 'Aviso de mantenimiento activo'
+    ? t.featured.maintenanceTitle
     : hasAvailableUpdate
-      ? `Actualización v${remoteVersionName || ''}`.trim()
+      ? t.featured.updateTitle(remoteVersionName || '')
       : sleepTimerMinutes !== null
-        ? `Reposo programado · ${sleepTimerMinutes} min`
-        : 'Preferencias de VORA TV OS';
+        ? t.featured.timerTitle(sleepTimerMinutes)
+        : t.featured.prefsTitle;
+
+  const activeThemeLabel = settings.oledMode
+    ? t.oledCardTitle
+    : settings.themeMode === 'dark'
+      ? t.themeDark
+      : t.themeLight;
 
   const featuredSubtitle = isMaintenanceForced
-    ? 'Modo solo apps habilitado temporalmente'
+    ? t.featured.maintenanceSubtitle
     : hasAvailableUpdate
-      ? 'Nueva versión lista para instalar'
+      ? t.featured.updateSubtitle
       : sleepTimerMinutes !== null
-        ? 'Salvapantallas automático al finalizar'
-        : `Tema ${settings.themeMode === 'dark' ? 'Noche' : 'Día'} · Fondos · v${appVersion.versionName}`;
+        ? t.featured.timerSubtitle
+        : t.featured.prefsSubtitle(
+            activeThemeLabel,
+            currentLanguageName,
+            appVersion.versionName
+          );
+
+  const handleLanguageChoose = (lang: AppLanguage) => {
+    if (onSelectLanguage) {
+      onSelectLanguage(lang);
+    } else {
+      onUpdateSettings({ language: lang });
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -252,7 +289,7 @@ export function NavaSettingsDrawer({
           id="vora-quick-overlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Panel de configuración rápida de VORA TV OS"
+          aria-label={t.dialogAria}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -298,8 +335,8 @@ export function NavaSettingsDrawer({
                     onClose();
                     onOpenAndroidSettings('settings');
                   }}
-                  aria-label="Ajustes del sistema"
-                  title="Ajustes"
+                  aria-label={t.systemSettingsAria}
+                  title={t.systemSettingsTitle}
                   className="tv-focusable w-9 h-9 rounded-full bg-white/[0.08] border border-white/12 text-zinc-200 flex items-center justify-center hover:bg-white/[0.15] focus:bg-white focus:text-black focus:border-white focus:scale-105"
                 >
                   <Settings className="w-4 h-4 stroke-[2]" />
@@ -314,8 +351,8 @@ export function NavaSettingsDrawer({
                       prev === 'notifications' ? 'none' : 'notifications'
                     )
                   }
-                  aria-label="Notificaciones"
-                  title="Notificaciones"
+                  aria-label={t.notificationsAria}
+                  title={t.notificationsTitle}
                   className={`tv-focusable relative w-9 h-9 rounded-full border flex items-center justify-center focus:bg-white focus:text-black focus:border-white focus:scale-105 ${
                     subPanel === 'notifications'
                       ? 'bg-white text-black border-white'
@@ -338,8 +375,8 @@ export function NavaSettingsDrawer({
                   onClick={() =>
                     setSubPanel((prev) => (prev === 'profile' ? 'none' : 'profile'))
                   }
-                  aria-label="Cuenta y perfil"
-                  title="Cuenta y perfil"
+                  aria-label={t.accountAria}
+                  title={t.accountTitle}
                   className={`tv-focusable w-9 h-9 rounded-full border flex items-center justify-center focus:bg-white focus:text-black focus:border-white focus:scale-105 ${
                     subPanel === 'profile'
                       ? 'bg-white text-black border-white'
@@ -407,15 +444,101 @@ export function NavaSettingsDrawer({
 
               </div>
 
-            {/* 3b. Acceso directo para fijar VORA TV OS como launcher predeterminado */}
+            {/* 3b. Modo OLED activable/desactivable para televisores no-OLED */}
+            <div data-tv-row="quick-oled" className="shrink-0">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.oledMode}
+                data-tv-focusable="true"
+                data-tv-id="quick-oled-btn"
+                onClick={() => {
+                  if (onToggleOledMode) {
+                    onToggleOledMode();
+                  } else {
+                    onUpdateSettings({ oledMode: !settings.oledMode });
+                  }
+                }}
+                className={`tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-left focus:bg-white focus:text-black focus:border-white focus:scale-[1.02] ${
+                  settings.oledMode
+                    ? 'bg-white/14 border-white/35 text-white'
+                    : 'bg-white/[0.08] border-white/12 text-zinc-100 hover:bg-white/[0.14] hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Contrast className="w-4.5 h-4.5 shrink-0 text-zinc-200 group-focus:text-black" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold tracking-tight truncate">
+                      {t.oledCardTitle}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 group-focus:text-zinc-700 truncate">
+                      {t.oledCardSubtitle}
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 border ${
+                    settings.oledMode
+                      ? 'bg-white text-black border-white group-focus:bg-zinc-900 group-focus:text-white group-focus:border-zinc-900'
+                      : 'bg-white/[0.08] text-zinc-300 border-white/15 group-focus:bg-zinc-200 group-focus:text-zinc-900 group-focus:border-zinc-300'
+                  }`}
+                >
+                  {settings.oledMode ? t.oledOn : t.oledOff}
+                </span>
+              </button>
+            </div>
+
+            {/* 3c. Acceso directo para cambiar idioma en cualquier momento */}
+            <div data-tv-row="quick-language" className="shrink-0">
+              <button
+                type="button"
+                data-tv-focusable="true"
+                data-tv-id="quick-language-btn"
+                onClick={() =>
+                  setSubPanel((prev) => {
+                    const next = prev === 'language' ? 'none' : 'language';
+                    if (next === 'language') {
+                      window.requestAnimationFrame(() => {
+                        focusElementById(`quick-lang-${settings.language}`);
+                      });
+                    }
+                    return next;
+                  })
+                }
+                className={`tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-left focus:bg-white focus:text-black focus:border-white focus:scale-[1.02] ${
+                  subPanel === 'language'
+                    ? 'bg-white/16 border-white/30 text-white'
+                    : 'bg-white/[0.08] border-white/12 text-zinc-100 hover:bg-white/[0.14] hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Globe className="w-4.5 h-4.5 shrink-0 text-zinc-200 group-focus:text-black" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold tracking-tight truncate">
+                      {t.languageCardTitle}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 group-focus:text-zinc-700 truncate">
+                      {t.languageCardSubtitle(currentLanguageName)}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 text-zinc-400 group-focus:text-black" />
+              </button>
+            </div>
+
+            {/* 3d. Acceso directo para fijar VORA TV OS como launcher predeterminado */}
             <div data-tv-row="quick-default-launcher" className="shrink-0">
               <button
                 type="button"
                 data-tv-focusable="true"
                 data-tv-id="quick-default-launcher-btn"
                 onClick={() => {
-                  onClose();
-                  onOpenAndroidSettings('home');
+                  if (onOpenDefaultLauncher) {
+                    onOpenDefaultLauncher();
+                  } else {
+                    onClose();
+                    onOpenAndroidSettings('home');
+                  }
                 }}
                 className="tv-focusable group w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.08] border border-white/12 text-left text-zinc-100 hover:bg-white/[0.14] hover:border-white/20 focus:bg-white focus:text-black focus:border-white focus:scale-[1.02]"
               >
@@ -423,16 +546,66 @@ export function NavaSettingsDrawer({
                   <Home className="w-4.5 h-4.5 shrink-0 text-zinc-200 group-focus:text-black" />
                   <div className="min-w-0">
                     <div className="text-xs font-semibold tracking-tight truncate">
-                      Launcher predeterminado
+                      {t.defaultLauncherTitle}
                     </div>
                     <div className="text-[11px] text-zinc-400 group-focus:text-zinc-700 truncate">
-                      Fijar VORA TV OS como pantalla de inicio
+                      {t.defaultLauncherSubtitle}
                     </div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 shrink-0 text-zinc-400 group-focus:text-black" />
               </button>
             </div>
+
+            {/* Subpanel contextual limpio para cambiar idioma */}
+            {subPanel === 'language' && (
+              <div className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0">
+                <div className="px-0.5">
+                  <div className="text-xs font-semibold text-zinc-200">
+                    {t.languagePanelTitle}
+                  </div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5">
+                    {t.languagePanelHint}
+                  </div>
+                </div>
+
+                <div
+                  data-tv-row="quick-language-grid"
+                  data-tv-row-type="grid"
+                  className="grid grid-cols-2 gap-2"
+                >
+                  {SUPPORTED_LANGUAGES.map((lang) => {
+                    const selected = settings.language === lang.code;
+                    return (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        data-tv-focusable="true"
+                        data-tv-id={`quick-lang-${lang.code}`}
+                        onClick={() => handleLanguageChoose(lang.code)}
+                        className={`tv-focusable group flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-left focus:bg-white focus:text-black focus:border-white ${
+                          selected
+                            ? 'bg-white/15 border-white/45 text-white'
+                            : 'bg-white/[0.06] border-white/10 text-zinc-200'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold truncate">
+                            {lang.nativeName}
+                          </div>
+                          <div className="text-[10px] font-mono-tabular text-zinc-400 group-focus:text-zinc-600">
+                            {lang.shortCode}
+                          </div>
+                        </div>
+                        {selected && (
+                          <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.8]" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Subpanel contextual limpio en escala de grises (solo visible al abrir Notificaciones o Perfil) */}
             {subPanel === 'notifications' && (
@@ -441,7 +614,7 @@ export function NavaSettingsDrawer({
                 className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2 shrink-0"
               >
                 <div className="text-xs font-semibold text-zinc-300 px-0.5">
-                  Avisos y estado del sistema
+                  {t.notificationsPanelTitle}
                 </div>
 
                 <button
@@ -458,8 +631,8 @@ export function NavaSettingsDrawer({
                     <Download className="w-4 h-4 shrink-0" />
                     <span className="truncate">
                       {hasAvailableUpdate
-                        ? `Nueva versión v${remoteVersionName || ''}`
-                        : 'Buscar actualizaciones'}
+                        ? t.newVersionLabel(remoteVersionName || '')
+                        : t.checkUpdates}
                     </span>
                   </div>
                   <span className="font-mono-tabular text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
@@ -473,7 +646,7 @@ export function NavaSettingsDrawer({
               <div className="rounded-2xl bg-white/[0.06] border border-white/12 p-3.5 space-y-2.5 shrink-0">
                 <div className="flex items-center justify-between px-0.5">
                   <span className="text-xs font-semibold text-zinc-300">
-                    Perfil y apariencia
+                    {t.profilePanelTitle}
                   </span>
                   <span className="font-mono-tabular text-[11px] text-zinc-400">
                     v{appVersion.versionName}
@@ -498,10 +671,10 @@ export function NavaSettingsDrawer({
                       ) : (
                         <Sun className="w-3.5 h-3.5" />
                       )}
-                      <span>Tema</span>
+                      <span>{t.themeLabel}</span>
                     </span>
                     <span className="text-zinc-400 group-focus:text-zinc-700">
-                      {settings.themeMode === 'dark' ? 'Noche' : 'Día'}
+                      {settings.themeMode === 'dark' ? t.themeDark : t.themeLight}
                     </span>
                   </button>
 
@@ -514,7 +687,7 @@ export function NavaSettingsDrawer({
                     }
                     className="tv-focusable group flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span>Reloj</span>
+                    <span>{t.clockLabel}</span>
                     <span className="font-mono-tabular text-zinc-400 group-focus:text-zinc-700">
                       {settings.use24HourClock ? '24h' : '12h'}
                     </span>
@@ -528,6 +701,7 @@ export function NavaSettingsDrawer({
                 >
                   {BACKGROUND_PRESETS.map((preset) => {
                     const selected = settings.backgroundId === preset.id;
+                    const presetTitle = t.presetNames[preset.id] || preset.name;
                     return (
                       <button
                         key={preset.id}
@@ -557,7 +731,7 @@ export function NavaSettingsDrawer({
                           )}
                         </div>
                         <div className="text-[10px] font-medium text-zinc-200 truncate">
-                          {preset.name}
+                          {presetTitle}
                         </div>
                       </button>
                     );
@@ -575,7 +749,7 @@ export function NavaSettingsDrawer({
                     }}
                     className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span className="truncate">Cuentas TV</span>
+                    <span className="truncate">{t.accountsTv}</span>
                     <CircleUserRound className="w-3.5 h-3.5 shrink-0" />
                   </button>
 
@@ -583,14 +757,18 @@ export function NavaSettingsDrawer({
                     type="button"
                     data-tv-focusable="true"
                     data-tv-id="quick-profile-home"
-                    aria-label="Launcher predeterminado"
+                    aria-label={t.defaultLauncherTitle}
                     onClick={() => {
-                      onClose();
-                      onOpenAndroidSettings('home');
+                      if (onOpenDefaultLauncher) {
+                        onOpenDefaultLauncher();
+                      } else {
+                        onClose();
+                        onOpenAndroidSettings('home');
+                      }
                     }}
                     className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span className="truncate">Launcher principal</span>
+                    <span className="truncate">{t.mainLauncher}</span>
                     <Home className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>
@@ -607,9 +785,9 @@ export function NavaSettingsDrawer({
                     }}
                     className="tv-focusable group flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span className="truncate">Solo apps</span>
+                    <span className="truncate">{t.appsOnly}</span>
                     <span className="text-[11px] text-zinc-400 group-focus:text-zinc-700 shrink-0">
-                      {settings.appsOnlyMode ? 'Sí' : 'No'}
+                      {settings.appsOnlyMode ? t.yes : t.no}
                     </span>
                   </button>
 
@@ -622,7 +800,7 @@ export function NavaSettingsDrawer({
                     }
                     className="tv-focusable flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span className="truncate">Favoritos</span>
+                    <span className="truncate">{t.favoritesReset}</span>
                     <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>
@@ -638,7 +816,7 @@ export function NavaSettingsDrawer({
                     }}
                     className="tv-focusable w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-100 focus:bg-white focus:text-black focus:border-white"
                   >
-                    <span>Buscar actualizaciones OTA</span>
+                    <span>{t.checkOtaUpdates}</span>
                     <Monitor className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>
@@ -663,7 +841,7 @@ export function NavaSettingsDrawer({
                 className="tv-focusable inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/[0.08] border border-white/14 text-xs font-medium text-zinc-100 hover:bg-white/[0.15] focus:bg-white focus:text-black focus:border-white focus:scale-105 shrink-0"
               >
                 <Settings className="w-3.5 h-3.5 stroke-[2]" />
-                <span>Ajustes</span>
+                <span>{t.footerSettings}</span>
               </button>
             </div>
           </motion.aside>

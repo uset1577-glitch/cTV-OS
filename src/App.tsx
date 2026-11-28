@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Shield } from 'lucide-react';
 import { CreatorAdminPanel } from './components/CreatorAdminPanel';
+import { DefaultLauncherGuideModal } from './components/DefaultLauncherGuideModal';
 import { GoogleTvHome } from './components/GoogleTvHome';
+import { LanguageSetupScreen } from './components/LanguageSetupScreen';
 import { LivePlatformsView } from './components/LivePlatformsView';
 import { MaintenanceNoticeModal } from './components/MaintenanceNoticeModal';
 import { NavaAppsDrawer } from './components/NavaAppsDrawer';
@@ -38,6 +40,7 @@ import {
   isRemoteVersionNewer,
   launchAndroidApp,
   launchSuggestionUri,
+  openDefaultLauncherSettings,
   openSpotifyAccessibilitySettings,
   openSpotifyNotificationSettings,
   openTvSettings,
@@ -49,8 +52,15 @@ import {
   subscribeToLauncherStatus,
   testFirestoreConnection,
 } from './services/firebase';
+import {
+  detectDeviceLanguage,
+  getLanguageLabel,
+  getTranslations,
+  isValidAppLanguage,
+} from './i18n/translations';
 import type {
   AppDownloadProgress,
+  AppLanguage,
   AppSuggestion,
   AppUpdateManifest,
   AppUpdateModalStatus,
@@ -65,6 +75,7 @@ import type {
 } from './types/launcher';
 
 const SETTINGS_STORAGE_KEY = 'vora_launcher_settings_v2';
+const LANGUAGE_STORAGE_KEY = 'vora_launcher_language_v1';
 const DISMISSED_UPDATE_SESSION_KEY = 'vora_dismissed_update_version';
 const APP_LAUNCH_SAFETY_TIMEOUT_NATIVE_MS = 12_000;
 const APP_LAUNCH_SAFETY_TIMEOUT_WEB_MS = 5_500;
@@ -72,14 +83,42 @@ const APP_LAUNCH_LOADING_HINT_MS = 3_500;
 
 const REMOVED_LEGACY_PACKAGES = new Set(['com.mandoparty.tv', 'com.vora.arcade']);
 
+function getSavedLanguagePreference(): AppLanguage | null {
+  try {
+    const dedicated = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (isValidAppLanguage(dedicated)) {
+      return dedicated;
+    }
+    const rawSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (rawSettings) {
+      const parsed = JSON.parse(rawSettings) as Partial<LauncherSettings>;
+      if (isValidAppLanguage(parsed.language)) {
+        return parsed.language;
+      }
+    }
+  } catch {
+    // Ignorar errores de lectura
+  }
+  return null;
+}
+
 function loadSavedSettings(): LauncherSettings {
+  const savedLanguage = getSavedLanguagePreference();
+  const initialLanguage = savedLanguage || detectDeviceLanguage();
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
+    if (!raw) {
+      return {
+        ...DEFAULT_SETTINGS,
+        language: initialLanguage,
+      };
+    }
     const parsed = JSON.parse(raw) as Partial<LauncherSettings>;
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      oledMode: Boolean(parsed.oledMode),
+      language: isValidAppLanguage(parsed.language) ? parsed.language : initialLanguage,
       maintenanceMode: false,
       appsOnlyMode: false,
       updateRepo: parsed.updateRepo?.trim() ? parsed.updateRepo : DEFAULT_SETTINGS.updateRepo,
@@ -88,7 +127,10 @@ function loadSavedSettings(): LauncherSettings {
         : DEFAULT_SETTINGS.favoritePackages,
     };
   } catch {
-    return DEFAULT_SETTINGS;
+    return {
+      ...DEFAULT_SETTINGS,
+      language: initialLanguage,
+    };
   }
 }
 
@@ -105,6 +147,9 @@ function focusFirstHomeAppOrSettings() {
 
 export default function App() {
   const [settings, setSettings] = useState<LauncherSettings>(loadSavedSettings);
+  const [needsLanguageSetup, setNeedsLanguageSetup] = useState<boolean>(
+    () => !getSavedLanguagePreference()
+  );
   const [activeTab, setActiveTab] = useState<HomeTab>('inicio');
   const [overlay, setOverlay] = useState<LauncherOverlay>('none');
   const [isBootIntroActive, setIsBootIntroActive] = useState(true);
@@ -151,6 +196,12 @@ export default function App() {
   const catalogInitializedRef = useRef(false);
   const launchingTimerRef = useRef<number | null>(null);
   const launchingStageTimerRef = useRef<number | null>(null);
+  const suppressLaunchUntilRef = useRef<number>(0);
+  const isLaunchLockedRef = useRef<boolean>(false);
+  const [defaultLauncherGuideInfo, setDefaultLauncherGuideInfo] = useState<{
+    currentHomePackage?: string;
+    currentHomeLabel?: string;
+  }>({});
   appsRef.current = apps;
   favoritePackagesRef.current = settings.favoritePackages;
 
@@ -260,6 +311,7 @@ export default function App() {
       window.clearTimeout(launchingStageTimerRef.current);
       launchingStageTimerRef.current = null;
     }
+    isLaunchLockedRef.current = false;
     setLaunchingExtended(false);
     setLaunchingApp(null);
   }, []);
@@ -322,6 +374,8 @@ export default function App() {
     const idleCheckId = window.setInterval(() => {
       if (
         !isScreensaverActive &&
+        !isBootIntroActive &&
+        !needsLanguageSetup &&
         overlay === 'none' &&
         !showCreatorAdmin &&
         Date.now() - lastActivityAtRef.current >= 180_000
@@ -337,7 +391,7 @@ export default function App() {
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('pointerdown', handleActivity);
     };
-  }, [isScreensaverActive, overlay, showCreatorAdmin]);
+  }, [isScreensaverActive, isBootIntroActive, needsLanguageSetup, overlay, showCreatorAdmin]);
 
   // Mantener pantalla encendida en Android TV mientras VORA TV OS / Salvapantallas esté activo
   // para impedir que el salvapantallas de Google TV se superponga
@@ -481,15 +535,23 @@ export default function App() {
     ]
   );
 
-  // Sincronizar clase .dark en <html>
+  const tApp = useMemo(() => getTranslations(settings.language).app, [settings.language]);
+
+  // Sincronizar clase .dark, modo OLED y atributo lang en <html>
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.themeMode === 'dark') {
+    if (settings.oledMode || settings.themeMode === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-  }, [settings.themeMode]);
+    if (settings.oledMode) {
+      root.dataset.oled = 'true';
+    } else {
+      delete root.dataset.oled;
+    }
+    root.lang = settings.language;
+  }, [settings.themeMode, settings.oledMode, settings.language]);
 
   // Si se activa mantenimiento local o remoto, mostrar cartel obligatorio
   useEffect(() => {
@@ -534,6 +596,9 @@ export default function App() {
         const next = { ...prev, ...resolvedPatch };
         try {
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
+          if (resolvedPatch.language && isValidAppLanguage(resolvedPatch.language)) {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, resolvedPatch.language);
+          }
         } catch {
           // Ignorar si almacenamiento está lleno
         }
@@ -632,7 +697,7 @@ export default function App() {
 
   // Verificación automática al entrar a la app: solo notifica si la versión remota es realmente mayor
   useEffect(() => {
-    if (!isVersionLoaded) return;
+    if (!isVersionLoaded || isBootIntroActive || needsLanguageSetup) return;
     if (!settings.updateRepo || settings.updateRepo.startsWith('tu-usuario/')) return;
     let cancelled = false;
     checkAppUpdate(settings.updateRepo, appVersion.versionCode, appVersion.versionName)
@@ -660,10 +725,18 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [isVersionLoaded, settings.updateRepo, appVersion.versionCode, appVersion.versionName]);
+  }, [
+    isVersionLoaded,
+    isBootIntroActive,
+    needsLanguageSetup,
+    settings.updateRepo,
+    appVersion.versionCode,
+    appVersion.versionName,
+  ]);
 
   const closeOverlayToHome = useCallback(
     (focusTargetId?: string) => {
+      suppressLaunchUntilRef.current = performance.now() + 440;
       if (cleanupUpdateRef.current) {
         cleanupUpdateRef.current();
         cleanupUpdateRef.current = null;
@@ -692,11 +765,59 @@ export default function App() {
   );
 
   const handleBootIntroComplete = useCallback(() => {
+    suppressLaunchUntilRef.current = performance.now() + 440;
     setIsBootIntroActive(false);
-    window.requestAnimationFrame(() => {
-      focusFirstHomeAppOrSettings();
+    if (!needsLanguageSetup) {
+      window.requestAnimationFrame(() => {
+        focusFirstHomeAppOrSettings();
+      });
+    }
+  }, [needsLanguageSetup]);
+
+  const handleCompleteLanguageSetup = useCallback(
+    (selectedLanguage: AppLanguage) => {
+      suppressLaunchUntilRef.current = performance.now() + 480;
+      updateSettings({ language: selectedLanguage });
+      setNeedsLanguageSetup(false);
+      window.requestAnimationFrame(() => {
+        focusFirstHomeAppOrSettings();
+      });
+    },
+    [updateSettings]
+  );
+
+  const handleSelectLanguageFromSettings = useCallback(
+    (selectedLanguage: AppLanguage) => {
+      updateSettings({ language: selectedLanguage });
+      const nextToast = getTranslations(selectedLanguage).app.toast.languageChanged(
+        getLanguageLabel(selectedLanguage)
+      );
+      showToast(nextToast);
+    },
+    [updateSettings, showToast]
+  );
+
+  const handleToggleOledMode = useCallback(() => {
+    const nextOled = !settings.oledMode;
+    updateSettings({ oledMode: nextOled });
+    showToast(nextOled ? tApp.toast.oledEnabled : tApp.toast.oledDisabled);
+  }, [settings.oledMode, updateSettings, showToast, tApp]);
+
+  const handleOpenDefaultLauncher = useCallback(async () => {
+    const res = await openDefaultLauncherSettings();
+    if (res.alreadyDefault) {
+      showToast(tApp.toast.defaultLauncherAlready);
+      return;
+    }
+    if (res.opened && !res.needsGuide) {
+      return;
+    }
+    setDefaultLauncherGuideInfo({
+      currentHomePackage: res.currentDefaultPackage,
+      currentHomeLabel: res.currentDefaultLabel,
     });
-  }, []);
+    setOverlay('default_launcher_guide');
+  }, [showToast, tApp]);
 
   const handleReachTopBoundary = useCallback(
     ({ currentElement, centerX }: { currentElement: HTMLElement | null; centerX: number }) => {
@@ -722,6 +843,7 @@ export default function App() {
     enabled:
       overlay === 'none' &&
       !isBootIntroActive &&
+      !needsLanguageSetup &&
       !isScreensaverActive &&
       !showCreatorAdmin &&
       !launchingApp,
@@ -761,6 +883,7 @@ export default function App() {
   const startLaunchingIntro = useCallback(
     (name: string, icon?: string) => {
       clearLaunchingIntro();
+      isLaunchLockedRef.current = true;
       setLaunchingApp({ name, icon });
       setLaunchingExtended(false);
       launchingStageTimerRef.current = window.setTimeout(() => {
@@ -778,19 +901,20 @@ export default function App() {
 
   const handleLaunchPackage = useCallback(
     async (packageName: string, displayName: string, icon?: string) => {
+      if (performance.now() < suppressLaunchUntilRef.current || isLaunchLockedRef.current) {
+        return;
+      }
       startLaunchingIntro(displayName, icon);
 
       const result = await launchAndroidApp(packageName);
       if (!result.isNative) {
-        showToast(`Iniciando ${displayName} (${packageName}) en Android TV`);
+        showToast(tApp.toast.launchingWeb(displayName, packageName));
       } else if (!result.ok) {
         clearLaunchingIntro();
-        showToast(
-          result.error || `${displayName} (${packageName}) no está instalada en este TV.`
-        );
+        showToast(result.error || tApp.toast.notInstalled(displayName, packageName));
       }
     },
-    [startLaunchingIntro, clearLaunchingIntro, showToast]
+    [startLaunchingIntro, clearLaunchingIntro, showToast, tApp]
   );
 
   const handleLaunchApp = useCallback(
@@ -802,20 +926,23 @@ export default function App() {
 
   const handleLaunchSuggestion = useCallback(
     async (suggestion: AppSuggestion) => {
+      if (performance.now() < suppressLaunchUntilRef.current || isLaunchLockedRef.current) {
+        return;
+      }
       const matchedApp = apps.find((a) => a.packageName === suggestion.packageName);
       startLaunchingIntro(`${suggestion.tag} · ${suggestion.title}`, matchedApp?.icon);
 
       const res = await launchSuggestionUri(suggestion.deepLinkUrl, suggestion.packageName);
       if (!res.isNative) {
-        showToast(`Abriendo "${suggestion.title}" en ${suggestion.appName}`);
+        showToast(tApp.toast.openingSuggestionWeb(suggestion.title, suggestion.appName));
       } else if (res.openedStore) {
-        showToast(`Abriendo Play Store para instalar ${suggestion.appName}`);
+        showToast(tApp.toast.openingPlayStore(suggestion.appName));
       } else if (!res.ok) {
         clearLaunchingIntro();
-        showToast(res.error || `No se pudo abrir ${suggestion.appName}`);
+        showToast(res.error || tApp.toast.openFailed(suggestion.appName));
       }
     },
-    [apps, startLaunchingIntro, clearLaunchingIntro, showToast]
+    [apps, startLaunchingIntro, clearLaunchingIntro, showToast, tApp]
   );
 
   const handleToggleFavorite = useCallback(
@@ -830,36 +957,20 @@ export default function App() {
             : [app.packageName, ...prev.favoritePackages],
         };
       });
-      showToast(
-        removed
-          ? `${app.name} quitada de Tus aplicaciones`
-          : `${app.name} fijada en Tus aplicaciones`
-      );
+      showToast(removed ? tApp.toast.favRemoved(app.name) : tApp.toast.favAdded(app.name));
     },
-    [updateSettings, showToast]
+    [updateSettings, showToast, tApp]
   );
 
   const handleOpenAndroidSettings = useCallback(
-    async (section: TvSettingsSection) => {
-      const opened = await openTvSettings(section);
+    async (section: TvSettingsSection, packageName?: string) => {
+      const opened = await openTvSettings(section, packageName);
       if (!opened) {
-        const labels: Record<TvSettingsSection, string> = {
-          wifi: 'Wi-Fi',
-          bluetooth: 'Bluetooth',
-          display: 'Imagen y pantalla',
-          sound: 'Sonido',
-          inputs: 'Entradas HDMI / TV',
-          accessibility: 'Accesibilidad',
-          account: 'Cuenta y perfil',
-          screensaver: 'Salvapantallas del sistema',
-          home: 'Selector de launcher predeterminado',
-          unknown_sources: 'Orígenes desconocidos',
-          settings: 'Ajustes de Android TV',
-        };
-        showToast(`${labels[section]} · Disponible en Android TV`);
+        const label = tApp.tvSections[section] || section;
+        showToast(tApp.toast.tvSectionNativeOnly(label));
       }
     },
-    [showToast]
+    [showToast, tApp]
   );
 
   const handleCycleSleepTimer = useCallback(() => {
@@ -868,13 +979,11 @@ export default function App() {
       const idx = steps.indexOf(prev);
       const next = steps[(idx + 1) % steps.length];
       showToast(
-        next === null
-          ? 'Temporizador desactivado'
-          : `Temporizador: ${next} min para reposo`
+        next === null ? tApp.toast.sleepTimerOff : tApp.toast.sleepTimerSet(next)
       );
       return next;
     });
-  }, [showToast]);
+  }, [showToast, tApp]);
 
   const runUpdateCheck = useCallback(
     async (customRepo?: string) => {
@@ -930,13 +1039,13 @@ export default function App() {
         } else if (prog.status === 'installing' || prog.status === 'completed') {
           setUpdateStatus('installing');
         } else if (prog.status === 'error') {
-          setUpdateMessage(prog.message || 'Falló la descarga o instalación de la app.');
+          setUpdateMessage(prog.message || tApp.toast.downloadFailed);
           setUpdateStatus('error');
         }
       }
     );
     cleanupUpdateRef.current = cleanup;
-  }, [remoteManifest]);
+  }, [remoteManifest, tApp]);
 
   useEffect(() => {
     return () => {
@@ -967,8 +1076,12 @@ export default function App() {
     appVersion.versionName
   );
 
-  const isLight = settings.themeMode === 'light';
+  const isOled = Boolean(settings.oledMode);
+  const isLight = !isOled && settings.themeMode === 'light';
   const backgroundStyle = useMemo(() => {
+    if (isOled) {
+      return { backgroundColor: '#000000' };
+    }
     return isLight
       ? currentBackground.lightValue.startsWith('#')
         ? { backgroundColor: currentBackground.lightValue }
@@ -976,7 +1089,7 @@ export default function App() {
       : currentBackground.type === 'solid'
         ? { backgroundColor: currentBackground.value }
         : { backgroundImage: currentBackground.value };
-  }, [isLight, currentBackground]);
+  }, [isOled, isLight, currentBackground]);
 
   const handleLaunchSuggestionCb = useCallback(
     (sug: AppSuggestion) => {
@@ -1002,9 +1115,12 @@ export default function App() {
   }, [loadLiveCatalog]);
 
   const handleToggleTheme = useCallback(() => {
-    updateSettings((prev) => ({
-      themeMode: prev.themeMode === 'dark' ? 'light' : 'dark',
-    }));
+    updateSettings((prev) => {
+      if (prev.oledMode) {
+        return { oledMode: false, themeMode: 'light' };
+      }
+      return { themeMode: prev.themeMode === 'dark' ? 'light' : 'dark' };
+    });
   }, [updateSettings]);
 
   const handleOpenSearch = useCallback(() => setOverlay('search'), []);
@@ -1031,6 +1147,7 @@ export default function App() {
       >
         <NavaTopBar
           activeTab={overlay === 'apps' ? 'apps' : activeTab}
+          language={settings.language}
           themeMode={settings.themeMode}
           use24HourClock={settings.use24HourClock}
           hasAvailableUpdate={hasAvailableUpdate}
@@ -1052,11 +1169,19 @@ export default function App() {
             favoriteApps={favoriteApps}
             favoritePackages={settings.favoritePackages}
             liveCatalog={liveCatalog}
+            language={settings.language}
             isNative={isNative}
             showSuggestions={settings.showSuggestions}
             appsOnlyMode={effectiveAppsOnly}
+            oledMode={isOled}
             maintenanceNotice={isMaintenanceForced ? activeMaintenanceStatus : null}
-            heroFadeColor={isLight ? currentBackground.fadeLight : currentBackground.fadeDark}
+            heroFadeColor={
+              isOled
+                ? '#000000'
+                : isLight
+                  ? currentBackground.fadeLight
+                  : currentBackground.fadeDark
+            }
             onScrollTopChange={setTopBarVisible}
             onLaunchApp={handleLaunchApp}
             onLaunchSuggestion={handleLaunchSuggestionCb}
@@ -1070,6 +1195,7 @@ export default function App() {
             allApps={apps}
             favoritePackages={settings.favoritePackages}
             series={liveCatalog.series}
+            language={settings.language}
             catalogFeedUrl={settings.catalogFeedUrl}
             isLoading={isLoadingCatalog}
             onScrollTopChange={setTopBarVisible}
@@ -1089,8 +1215,9 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             style={{
-              background:
-                'radial-gradient(circle at 50% 42%, rgba(28, 39, 62, 0.94) 0%, rgba(7, 10, 16, 0.98) 72%)',
+              background: isOled
+                ? '#000000'
+                : 'radial-gradient(circle at 50% 42%, rgba(28, 39, 62, 0.94) 0%, rgba(7, 10, 16, 0.98) 72%)',
             }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 pointer-events-none will-change-[opacity]"
           >
@@ -1143,9 +1270,7 @@ export default function App() {
                   {launchingApp.name}
                 </h2>
                 <p className="text-xs font-medium text-amber-400 tracking-wider uppercase">
-                  {launchingExtended
-                    ? 'Cargando aplicación, espera un momento...'
-                    : 'Abriendo aplicación...'}
+                  {launchingExtended ? tApp.launchingExtended : tApp.launchingNormal}
                 </p>
               </div>
 
@@ -1167,6 +1292,7 @@ export default function App() {
       {/* Overlays */}
       <NavaAppsDrawer
         isOpen={overlay === 'apps'}
+        language={settings.language}
         apps={apps}
         favoritePackages={settings.favoritePackages}
         showPackageNames={settings.showPackageNames}
@@ -1180,6 +1306,7 @@ export default function App() {
 
       <NavaSearchOverlay
         isOpen={overlay === 'search'}
+        language={settings.language}
         apps={apps}
         liveCatalog={liveCatalog}
         favoritePackages={settings.favoritePackages}
@@ -1200,7 +1327,10 @@ export default function App() {
         sleepTimerMinutes={sleepTimerMinutes}
         musicServiceStatus={musicServiceStatus}
         onUpdateSettings={updateSettings}
+        onToggleOledMode={handleToggleOledMode}
+        onSelectLanguage={handleSelectLanguageFromSettings}
         onOpenAndroidSettings={(section) => void handleOpenAndroidSettings(section)}
+        onOpenDefaultLauncher={() => void handleOpenDefaultLauncher()}
         onCycleSleepTimer={handleCycleSleepTimer}
         onOpenScreensaver={() => {
           setOverlay('none');
@@ -1209,14 +1339,14 @@ export default function App() {
         onOpenAccessibilitySettings={() => {
           void openSpotifyAccessibilitySettings().then((opened) => {
             if (!opened) {
-              showToast('Accesibilidad · Disponible en Android TV');
+              showToast(tApp.toast.accessibilityNativeOnly);
             }
           });
         }}
         onOpenNotificationSettings={() => {
           void openSpotifyNotificationSettings().then((opened) => {
             if (!opened) {
-              showToast('Notificaciones · Disponible en Android TV');
+              showToast(tApp.toast.notificationsNativeOnly);
             }
           });
         }}
@@ -1227,6 +1357,7 @@ export default function App() {
 
       <AppUpdateModal
         isOpen={overlay === 'update'}
+        language={settings.language}
         updateRepo={settings.updateRepo}
         currentVersion={appVersion}
         remoteManifest={remoteManifest}
@@ -1243,8 +1374,21 @@ export default function App() {
 
       <MaintenanceNoticeModal
         isOpen={overlay === 'maintenance'}
+        language={settings.language}
         status={activeMaintenanceStatus}
         onAcknowledge={() => closeOverlayToHome()}
+      />
+
+      <DefaultLauncherGuideModal
+        isOpen={overlay === 'default_launcher_guide'}
+        language={settings.language}
+        currentHomePackage={defaultLauncherGuideInfo.currentHomePackage}
+        currentHomeLabel={defaultLauncherGuideInfo.currentHomeLabel}
+        onOpenCurrentLauncherDetails={() =>
+          void handleOpenAndroidSettings('app_details', defaultLauncherGuideInfo.currentHomePackage)
+        }
+        onOpenTvAppsSettings={() => void handleOpenAndroidSettings('apps')}
+        onClose={() => closeOverlayToHome('top-settings')}
       />
 
       {/* Toast minimalista */}
@@ -1267,25 +1411,33 @@ export default function App() {
       {/* Salvapantallas VORA TV OS (reemplaza salvapantallas de Google TV) */}
       <VoraScreensaver
         isActive={isScreensaverActive}
+        language={settings.language}
         use24HourClock={settings.use24HourClock}
         spotify={spotifyNowPlaying}
         onDismiss={() => setIsScreensaverActive(false)}
       />
 
       {/* Botón flotante para el creador en PC (SOLO en navegador web de escritorio, NUNCA en Android TV) */}
-      {!isNative && (
+      {!isNative && !needsLanguageSetup && (
         <button
           type="button"
           onClick={() => setShowCreatorAdmin(true)}
-          title="Panel de Control del Creador (Solo PC - Atajo: Ctrl+Shift+A)"
+          title={tApp.creatorAdminTitle}
           className="fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/95 dark:bg-zinc-900/95 border border-amber-500/35 text-amber-400 hover:text-zinc-950 hover:bg-amber-400 text-xs font-bold shadow-md transition-colors active:scale-95 cursor-pointer"
         >
           <Shield className="w-3.5 h-3.5" />
-          <span>Panel Creador (PC)</span>
+          <span>{tApp.creatorAdminBtn}</span>
         </button>
       )}
 
-      {/* Intro profesional de encendido de TV (4 segundos con logo VORA y logo oficial Google TV) */}
+      {/* Selector de idioma solo en el primer inicio tras la intro */}
+      <LanguageSetupScreen
+        isOpen={!isBootIntroActive && needsLanguageSetup}
+        initialLanguage={settings.language}
+        onSelectLanguage={handleCompleteLanguageSetup}
+      />
+
+      {/* Intro cinematográfica estilo A24 independiente de la carga para no cortarse */}
       <TvBootIntro
         isOpen={isBootIntroActive}
         onComplete={handleBootIntroComplete}

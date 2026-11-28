@@ -80,6 +80,8 @@ export const DEFAULT_FAVORITES = [
 
 export const DEFAULT_SETTINGS: LauncherSettings = {
   themeMode: 'dark',
+  oledMode: false,
+  language: 'es',
   backgroundId: 'gtv-cinema',
   use24HourClock: false,
   showPackageNames: false,

@@ -115,6 +115,186 @@
   will-change: transform, opacity;
 }
 
+/* Intro estilo A24 en GPU compositor (6.2s pausados, independiente de la carga JS) */
+@keyframes vora-intro-overlay {
+  0%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vora-intro-stage {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  72%,
+  88% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1.018);
+  }
+}
+
+@keyframes vora-intro-stroke {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0.12;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes vora-intro-amber-stroke {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.95;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.78;
+  }
+}
+
+@keyframes vora-intro-chroma-l {
+  0% {
+    opacity: 0;
+    transform: translate3d(-6px, 0, 0);
+  }
+  28% {
+    opacity: 0.44;
+    transform: translate3d(-3.5px, 0, 0);
+  }
+  66% {
+    opacity: 0.22;
+    transform: translate3d(-1.4px, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-chroma-r {
+  0% {
+    opacity: 0;
+    transform: translate3d(6px, 0, 0);
+  }
+  28% {
+    opacity: 0.44;
+    transform: translate3d(3.5px, 0, 0);
+  }
+  66% {
+    opacity: 0.22;
+    transform: translate3d(1.4px, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-glyph-v {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -108%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-glyph-o {
+  0% {
+    opacity: 0;
+    transform: translate3d(-108%, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-glyph-r {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 108%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-glyph-a {
+  0% {
+    opacity: 0;
+    transform: translate3d(108%, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-divider {
+  0% {
+    opacity: 0;
+    transform: scale3d(1, 0, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+@keyframes vora-intro-tvos {
+  0% {
+    opacity: 0;
+    transform: translate3d(-96%, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vora-intro-tvos-accent {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes vora-intro-bar {
+  0% {
+    opacity: 0;
+    transform: scale3d(0, 1, 1);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.86;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
 [data-tv-scroll-container="true"],
 [data-tv-row] {
   scroll-behavior: auto !important;
@@ -177,6 +357,72 @@ html:not(.dark) [data-apps-over-hero="true"] .apps-label {
 }
 .tv-drawer-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(148, 163, 184, 0.7);
+}
+
+/* Modo OLED para televisores no-OLED: negro puro #000000, grises atenuados y alto contraste ligero en GPU */
+html[data-oled="true"],
+html[data-oled="true"] body,
+html[data-oled="true"] #root,
+html[data-oled="true"] #gtv-home-shell {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #f4f4f5;
+}
+
+html[data-oled="true"] #nava-apps-drawer,
+html[data-oled="true"] #vora-language-setup {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+
+html[data-oled="true"] #nava-search-root {
+  background-color: rgba(0, 0, 0, 0.985) !important;
+}
+
+html[data-oled="true"] #vora-quick-overlay {
+  background-color: rgba(0, 0, 0, 0.68) !important;
+}
+
+html[data-oled="true"] #vora-quick-panel {
+  background-color: #030304 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html[data-oled="true"] #app-update-modal-root > div,
+html[data-oled="true"] #maintenance-notice-modal > div,
+html[data-oled="true"] #vora-default-launcher-modal > div {
+  background-color: #040406 !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+html[data-oled="true"] #vora-quick-panel [data-tv-focusable="true"]:not(:focus),
+html[data-oled="true"] #nava-search-root [data-tv-focusable="true"]:not(:focus),
+html[data-oled="true"] #gtv-home-shell [data-tv-row="apps-only-grid"] [data-tv-focusable="true"]:not(:focus),
+html[data-oled="true"] #gtv-home-shell [data-tv-row="maintenance-banner"],
+html[data-oled="true"] #gtv-home-shell [data-tv-row="live-empty"] {
+  background-color: #08080b !important;
+  border-color: rgba(255, 255, 255, 0.11) !important;
+}
+
+html[data-oled="true"] #gtv-home-shell [data-tv-focus-box="true"] {
+  background-color: #09090d !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+html[data-oled="true"] #app-update-modal-root [class*="bg-[#09090B]"],
+html[data-oled="true"] #maintenance-notice-modal [class*="bg-[#09090B]"],
+html[data-oled="true"] #vora-default-launcher-modal [class*="bg-[#09090B]"] {
+  background-color: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html[data-oled="true"] [data-tv-focusable="true"]:not([data-tv-focus-wrapper="true"]):focus,
+html[data-oled="true"] [data-tv-focusable="true"][data-tv-focus-wrapper="true"]:focus [data-tv-focus-box="true"] {
+  box-shadow:
+    0 0 0 2.5px #000000,
+    0 0 0 5.5px #ffffff,
+    0 0 0 7px rgba(255, 255, 255, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.88);
 }
 
 @media (prefers-reduced-motion: reduce) {

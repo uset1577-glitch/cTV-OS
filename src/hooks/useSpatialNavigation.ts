@@ -934,6 +934,9 @@ export function useSpatialNavigation({
 }: SpatialNavigationOptions) {
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
+  const pendingLongPressTargetRef = useRef<HTMLElement | null>(null);
+  const enabledAtRef = useRef<number>(0);
+  const lastActivationAtRef = useRef<number>(0);
   const onBackRef = useRef(onBack);
   onBackRef.current = onBack;
   const onReachTopBoundaryRef = useRef(onReachTopBoundary);
@@ -955,7 +958,19 @@ export function useSpatialNavigation({
   }, []);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      pendingLongPressTargetRef.current = null;
+      longPressTriggeredRef.current = false;
+      if (longPressTimerRef.current) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      return;
+    }
+
+    enabledAtRef.current = performance.now();
+    pendingLongPressTargetRef.current = null;
+    longPressTriggeredRef.current = false;
 
     const rememberTarget = (
       el: HTMLElement,
@@ -1139,6 +1154,7 @@ export function useSpatialNavigation({
 
       if (key === 'Escape' || key === 'BrowserBack' || key === 'GoBack' || code === 4) {
         e.preventDefault();
+        e.stopPropagation();
         if (isTextInput) {
           active.blur();
         }
@@ -1148,6 +1164,7 @@ export function useSpatialNavigation({
 
       if (key === 'Backspace' && !isTextInput) {
         e.preventDefault();
+        e.stopPropagation();
         onBackRef.current?.();
         return;
       }
@@ -1164,6 +1181,7 @@ export function useSpatialNavigation({
 
       if (direction) {
         e.preventDefault();
+        e.stopPropagation();
         const rectCache = new Map<HTMLElement, DOMRect>();
         const activeRow = active?.closest<HTMLElement>('[data-tv-row]');
         const activeIsGrid = activeRow?.dataset.tvRowType === 'grid';
@@ -1207,6 +1225,7 @@ export function useSpatialNavigation({
       if (key === 'ContextMenu' || key === 'F2' || key === 'm' || key === 'M') {
         if (active && active.dataset.tvFocusable === 'true') {
           e.preventDefault();
+          e.stopPropagation();
           active.dispatchEvent(new CustomEvent('tv-longpress', { bubbles: true }));
         }
         return;
@@ -1215,18 +1234,30 @@ export function useSpatialNavigation({
       if (key === 'Enter' || key === ' ' || key === 'NumpadEnter' || code === 23 || code === 66) {
         if (active && active.dataset.tvFocusable === 'true') {
           e.preventDefault();
+          e.stopPropagation();
           if (e.repeat) return;
+
+          const now = performance.now();
+          if (now - enabledAtRef.current < 160) {
+            pendingLongPressTargetRef.current = null;
+            return;
+          }
 
           longPressTriggeredRef.current = false;
           if (active.dataset.tvSupportsLongpress === 'true') {
+            pendingLongPressTargetRef.current = active;
             if (longPressTimerRef.current) {
               window.clearTimeout(longPressTimerRef.current);
             }
             longPressTimerRef.current = window.setTimeout(() => {
               longPressTriggeredRef.current = true;
+              pendingLongPressTargetRef.current = null;
               active.dispatchEvent(new CustomEvent('tv-longpress', { bubbles: true }));
             }, 480);
           } else {
+            pendingLongPressTargetRef.current = null;
+            if (now - lastActivationAtRef.current < 220) return;
+            lastActivationAtRef.current = now;
             active.click();
           }
         }
@@ -1241,16 +1272,36 @@ export function useSpatialNavigation({
           window.clearTimeout(longPressTimerRef.current);
           longPressTimerRef.current = null;
         }
+        const pressedTarget = pendingLongPressTargetRef.current;
+        pendingLongPressTargetRef.current = null;
+
         const active = document.activeElement as HTMLElement | null;
         if (
-          active &&
-          active.dataset.tvFocusable === 'true' &&
-          active.dataset.tvSupportsLongpress === 'true' &&
+          pressedTarget &&
+          active === pressedTarget &&
+          pressedTarget.isConnected &&
+          pressedTarget.dataset.tvFocusable === 'true' &&
+          pressedTarget.dataset.tvSupportsLongpress === 'true' &&
           !longPressTriggeredRef.current
         ) {
-          active.click();
+          e.preventDefault();
+          e.stopPropagation();
+          const now = performance.now();
+          if (now - lastActivationAtRef.current >= 220 && now - enabledAtRef.current >= 160) {
+            lastActivationAtRef.current = now;
+            pressedTarget.click();
+          }
         }
         longPressTriggeredRef.current = false;
+      }
+    };
+
+    const handleWindowBlur = () => {
+      pendingLongPressTargetRef.current = null;
+      longPressTriggeredRef.current = false;
+      if (longPressTimerRef.current) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
       }
     };
 
@@ -1258,6 +1309,7 @@ export function useSpatialNavigation({
     document.addEventListener('focusin', handleFocusIn);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
     return () => {
       window.cancelAnimationFrame(rafId);
       if (mutationRafId) {
@@ -1266,11 +1318,15 @@ export function useSpatialNavigation({
       observer?.disconnect();
       if (longPressTimerRef.current) {
         window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
       }
+      pendingLongPressTargetRef.current = null;
+      longPressTriggeredRef.current = false;
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
       lastRememberedElRef.current = null;
       gridPreferredXRef.current = null;
     };

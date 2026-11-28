@@ -1,37 +1,51 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AppWindow, ShieldAlert } from 'lucide-react';
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import type { LauncherRemoteStatus } from '../types/launcher';
+import { getTranslations } from '../i18n/translations';
+import type { AppLanguage, LauncherRemoteStatus } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
 
 interface MaintenanceNoticeModalProps {
   isOpen: boolean;
+  language: AppLanguage;
   status: LauncherRemoteStatus;
   onAcknowledge: () => void;
 }
 
 export function MaintenanceNoticeModal({
   isOpen,
+  language,
   status,
   onAcknowledge,
 }: MaintenanceNoticeModalProps) {
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const dismissedRef = useRef(false);
+
+  const handleAck = useCallback(() => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    onAcknowledge();
+  }, [onAcknowledge]);
 
   useSpatialNavigation({
     enabled: isOpen,
-    onBack: onAcknowledge,
+    onBack: handleAck,
     scopeSelector: '#maintenance-notice-modal',
   });
 
   useEffect(() => {
     if (isOpen) {
+      dismissedRef.current = false;
       const id = window.requestAnimationFrame(() => {
         confirmBtnRef.current?.focus();
       });
       return () => window.cancelAnimationFrame(id);
     }
+    dismissedRef.current = false;
   }, [isOpen]);
+
+  const t = getTranslations(language).maintenanceModal;
 
   return (
     <AnimatePresence>
@@ -57,7 +71,7 @@ export function MaintenanceNoticeModal({
             <div className="flex items-center justify-between gap-4 mb-6">
               <BrandLogo size="md" showWordmark />
               <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                Aviso obligatorio del sistema
+                {t.badge}
               </span>
             </div>
 
@@ -71,23 +85,20 @@ export function MaintenanceNoticeModal({
                     id="maintenance-modal-title"
                     className="font-display text-2xl font-bold text-zinc-900 dark:text-white leading-tight text-balance"
                   >
-                    {status.title || 'Mantenimiento · Próxima actualización'}
+                    {status.title || t.defaultTitle}
                   </h2>
                   <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mt-1.5">
-                    El modo solo apps será activado
+                    {t.appsOnlyHeading}
                   </p>
                 </div>
               </div>
 
               <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                {status.message ||
-                  'El modo solo apps será activado mientras preparamos la próxima actualización de VORA TV OS.'}
+                {status.message || t.defaultMessage}
               </p>
 
               <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.04] px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Durante este periodo permanecerán visibles únicamente tus aplicaciones instaladas,
-                búsqueda y ajustes. Cuando termine el mantenimiento, las recomendaciones volverán
-                automáticamente.
+                {t.explanation}
               </div>
             </div>
 
@@ -98,11 +109,11 @@ export function MaintenanceNoticeModal({
                 data-tv-focusable="true"
                 data-tv-initial="true"
                 data-tv-id="maintenance-ack-btn"
-                onClick={onAcknowledge}
+                onClick={handleAck}
                 className="tv-focusable inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105 shadow-md"
               >
                 <AppWindow className="w-4 h-4 shrink-0" />
-                <span>Entendido · Activar modo solo apps</span>
+                <span>{t.acknowledgeBtn}</span>
               </button>
             </div>
           </motion.div>

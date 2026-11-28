@@ -1,7 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Download, Monitor, Moon, Search, Settings, Sun } from 'lucide-react';
 import { focusClosestInRow } from '../hooks/useSpatialNavigation';
-import type { HomeTab, ThemeMode } from '../types/launcher';
+import { getDateLocale, getTranslations } from '../i18n/translations';
+import type { AppLanguage, HomeTab, ThemeMode } from '../types/launcher';
 import { BrandLogo } from './BrandLogo';
 
 export interface TopBarFocusRequest {
@@ -11,6 +12,7 @@ export interface TopBarFocusRequest {
 
 interface NavaTopBarProps {
   activeTab: HomeTab;
+  language: AppLanguage;
   themeMode: ThemeMode;
   use24HourClock: boolean;
   hasAvailableUpdate: boolean;
@@ -28,6 +30,7 @@ interface NavaTopBarProps {
 
 export const NavaTopBar = memo(function NavaTopBar({
   activeTab,
+  language,
   themeMode,
   use24HourClock,
   hasAvailableUpdate,
@@ -95,7 +98,8 @@ export const NavaTopBar = memo(function NavaTopBar({
     return () => window.cancelAnimationFrame(rafId);
   }, [effectiveVisible, focusRequest, activeTab]);
 
-  const formattedTime = now.toLocaleTimeString('es-ES', {
+  const t = getTranslations(language).topBar;
+  const formattedTime = now.toLocaleTimeString(getDateLocale(language), {
     hour: '2-digit',
     minute: '2-digit',
     hour12: !use24HourClock,
@@ -103,13 +107,13 @@ export const NavaTopBar = memo(function NavaTopBar({
 
   const tabs: Array<{ id: HomeTab; label: string }> = appsOnlyMode
     ? [
-        { id: 'inicio', label: 'Inicio' },
-        { id: 'apps', label: 'Aplicaciones' },
+        { id: 'inicio', label: t.home },
+        { id: 'apps', label: t.apps },
       ]
     : [
-        { id: 'inicio', label: 'Inicio' },
-        { id: 'envivo', label: 'En vivo' },
-        { id: 'apps', label: 'Aplicaciones' },
+        { id: 'inicio', label: t.home },
+        { id: 'envivo', label: t.live },
+        { id: 'apps', label: t.apps },
       ];
 
   const heroTone = isOverHero && !appsOnlyMode;
@@ -131,7 +135,7 @@ export const NavaTopBar = memo(function NavaTopBar({
       <div className="flex items-center gap-8">
         <BrandLogo size="md" showWordmark forceLightText={heroTone} />
 
-        <nav aria-label="Navegación principal" className="flex items-center gap-2">
+        <nav aria-label={t.navAria} className="flex items-center gap-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -167,8 +171,8 @@ export const NavaTopBar = memo(function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-search"
           onClick={onOpenSearch}
-          aria-label="Buscar aplicaciones y contenido"
-          title="Buscar"
+          aria-label={t.searchAria}
+          title={t.searchTitle}
           className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
               ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
@@ -184,8 +188,8 @@ export const NavaTopBar = memo(function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-theme"
           onClick={onToggleTheme}
-          aria-label={themeMode === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'}
-          title={themeMode === 'dark' ? 'Modo día' : 'Modo noche'}
+          aria-label={themeMode === 'dark' ? t.toLightAria : t.toDarkAria}
+          title={themeMode === 'dark' ? t.lightTitle : t.darkTitle}
           className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
               ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
@@ -201,8 +205,8 @@ export const NavaTopBar = memo(function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-screensaver"
           onClick={onOpenScreensaver}
-          aria-label="Activar salvapantallas"
-          title="Salvapantallas"
+          aria-label={t.screensaverAria}
+          title={t.screensaverTitle}
           className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
               ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'
@@ -219,12 +223,12 @@ export const NavaTopBar = memo(function NavaTopBar({
             data-tv-focusable="true"
             data-tv-id="top-update"
             onClick={onOpenUpdate}
-            aria-label="Nueva versión disponible para instalar"
-            title="Nueva versión disponible"
+            aria-label={t.updateAria}
+            title={t.updateTitle}
             className="tv-focusable h-10 px-4 rounded-full flex items-center gap-2 text-xs font-bold whitespace-nowrap shrink-0 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 focus:scale-105 shadow-md"
           >
             <Download className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
-            <span>Actualizar</span>
+            <span>{t.updateLabel}</span>
           </button>
         )}
 
@@ -234,8 +238,8 @@ export const NavaTopBar = memo(function NavaTopBar({
           data-tv-focusable="true"
           data-tv-id="top-settings"
           onClick={onOpenSettings}
-          aria-label="Ajustes del launcher"
-          title="Ajustes"
+          aria-label={t.settingsAria}
+          title={t.settingsTitle}
           className={`tv-focusable w-10 h-10 rounded-full flex items-center justify-center focus:scale-110 ${
             heroTone
               ? 'bg-white/14 text-white focus:bg-white focus:text-zinc-950'

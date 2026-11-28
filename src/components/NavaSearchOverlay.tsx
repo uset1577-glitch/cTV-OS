@@ -14,7 +14,9 @@ import {
   focusClosestInRow,
   useSpatialNavigation,
 } from '../hooks/useSpatialNavigation';
+import { getTranslations } from '../i18n/translations';
 import type {
+  AppLanguage,
   AppSuggestion,
   GoogleTvLiveCatalog,
   InstalledApp,
@@ -92,6 +94,7 @@ function SearchMediaThumb({ src, alt, mediaKind, accentGradient }: SearchMediaTh
 
 interface NavaSearchOverlayProps {
   isOpen: boolean;
+  language: AppLanguage;
   apps: InstalledApp[];
   liveCatalog: GoogleTvLiveCatalog;
   favoritePackages?: string[];
@@ -103,6 +106,7 @@ interface NavaSearchOverlayProps {
 
 export function NavaSearchOverlay({
   isOpen,
+  language,
   apps,
   liveCatalog,
   favoritePackages = [],
@@ -111,6 +115,7 @@ export function NavaSearchOverlay({
   onLaunchSuggestion,
   onClose,
 }: NavaSearchOverlayProps) {
+  const t = getTranslations(language).search;
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<SearchFilter>('all');
   const [onlineResults, setOnlineResults] = useState<AppSuggestion[]>([]);
@@ -282,8 +287,8 @@ export function NavaSearchOverlay({
   }, [appsOnlyMode, localMediaPool, onlineResults, query]);
 
   const directSearchActions = useMemo(() => {
-    return buildPlatformSearchActions(query, apps, appsOnlyMode);
-  }, [query, apps, appsOnlyMode]);
+    return buildPlatformSearchActions(query, apps, appsOnlyMode, language);
+  }, [query, apps, appsOnlyMode, language]);
 
   const handleAppendChar = useCallback((char: string) => {
     setQuery((prev) => prev + char);
@@ -341,11 +346,11 @@ export function NavaSearchOverlay({
     (filter === 'apps' || appsOnlyMode ? 0 : matchingMedia.length);
 
   const filterTabs: Array<{ id: SearchFilter; label: string }> = appsOnlyMode
-    ? [{ id: 'all', label: 'Aplicaciones' }]
+    ? [{ id: 'all', label: t.tabAppsOnly }]
     : [
-        { id: 'all', label: 'Todo' },
-        { id: 'apps', label: `Apps (${matchingApps.length})` },
-        { id: 'media', label: `Películas y Series (${matchingMedia.length})` },
+        { id: 'all', label: t.tabAll },
+        { id: 'apps', label: t.tabApps(matchingApps.length) },
+        { id: 'media', label: t.tabMedia(matchingMedia.length) },
       ];
 
   return (
@@ -355,7 +360,7 @@ export function NavaSearchOverlay({
           id="nava-search-root"
           role="dialog"
           aria-modal="true"
-          aria-label="Buscador universal VORA"
+          aria-label={t.dialogAria}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -386,7 +391,7 @@ export function NavaSearchOverlay({
                   <span className="truncate whitespace-pre">{query}</span>
                 ) : (
                   <span className="text-zinc-500 dark:text-zinc-500 font-normal text-xl md:text-2xl truncate">
-                    Busca aplicaciones, películas, series o lo que quieras...
+                    {t.placeholder}
                   </span>
                 )}
                 <span
@@ -397,13 +402,11 @@ export function NavaSearchOverlay({
 
               <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0 tabular-nums">
                 {isSearchingOnline ? (
-                  <span>Buscando en catálogo...</span>
+                  <span>{t.searchingCatalog}</span>
                 ) : hasQuery ? (
-                  <span>
-                    {totalCount} {totalCount === 1 ? 'resultado' : 'resultados'}
-                  </span>
+                  <span>{t.resultCount(totalCount)}</span>
                 ) : (
-                  <span>Teclado VORA</span>
+                  <span>{t.keyboardBadge}</span>
                 )}
               </div>
 
@@ -415,7 +418,7 @@ export function NavaSearchOverlay({
                   onClick={handleClear}
                   className="tv-focusable min-h-[40px] px-4 py-2 rounded-full text-xs font-semibold bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
                 >
-                  Limpiar
+                  {t.clear}
                 </button>
               )}
 
@@ -424,7 +427,7 @@ export function NavaSearchOverlay({
                 data-tv-focusable="true"
                 data-tv-id="search-close"
                 onClick={onClose}
-                aria-label="Cerrar buscador"
+                aria-label={t.closeAria}
                 className="tv-focusable min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 flex items-center justify-center focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 shrink-0"
               >
                 <X className="w-5 h-5" />
@@ -437,6 +440,7 @@ export function NavaSearchOverlay({
               <div data-tv-pane="keyboard" className="shrink-0 self-start w-full">
                 <TvKeyboard
                   query={query}
+                  language={language}
                   recentSearches={recentSearches}
                   onAppendChar={handleAppendChar}
                   onBackspace={handleBackspace}
@@ -488,7 +492,7 @@ export function NavaSearchOverlay({
                   {showAppsSection && (
                     <section>
                       <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2.5">
-                        {hasQuery ? 'Aplicaciones y juegos' : 'Aplicaciones frecuentes'}
+                        {hasQuery ? t.appsMatched : t.appsFrequent}
                       </h2>
                       <div
                         data-tv-row="search-apps"
@@ -522,7 +526,7 @@ export function NavaSearchOverlay({
                                 {app.name}
                               </div>
                               <div className="text-[11px] text-zinc-500 dark:text-zinc-400 group-focus:text-zinc-300 dark:group-focus:text-zinc-600">
-                                {app.category === 'games' ? 'Juego' : 'Aplicación'}
+                                {app.category === 'games' ? t.kindGame : t.kindApp}
                               </div>
                             </div>
                           </button>
@@ -535,7 +539,7 @@ export function NavaSearchOverlay({
                   {showMediaSection && (
                     <section>
                       <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2.5">
-                        {hasQuery ? 'Películas y series' : 'Tendencias de hoy'}
+                        {hasQuery ? t.mediaMatched : t.mediaTrending}
                       </h2>
                       <div
                         data-tv-row="search-media"
@@ -548,7 +552,7 @@ export function NavaSearchOverlay({
                             ? item.backdropUrl
                             : item.posterUrl;
                           const kindLabel =
-                            item.mediaKind === 'series' ? 'Serie' : 'Película';
+                            item.mediaKind === 'series' ? t.kindSeries : t.kindMovie;
                           const metaParts = [
                             item.releaseDate,
                             kindLabel,
@@ -590,7 +594,7 @@ export function NavaSearchOverlay({
                   {showActionsSection && (
                     <section>
                       <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2.5">
-                        Buscar directamente en
+                        {t.directSearchHeading}
                       </h2>
                       <div
                         data-tv-row="search-actions"
@@ -630,7 +634,7 @@ export function NavaSearchOverlay({
                   {/* Estado vacío si un filtro específico no tiene coincidencias */}
                   {!showAppsSection && !showMediaSection && !showActionsSection && (
                     <div className="py-12 text-center text-zinc-600 dark:text-zinc-400 text-base">
-                      No hay coincidencias para &ldquo;{query}&rdquo; en esta pestaña.
+                      {t.noMatches(query)}
                     </div>
                   )}
                 </div>

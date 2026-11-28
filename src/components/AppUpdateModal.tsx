@@ -12,8 +12,10 @@ import {
   X,
 } from 'lucide-react';
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
+import { getTranslations } from '../i18n/translations';
 import type {
   AppDownloadProgress,
+  AppLanguage,
   AppUpdateManifest,
   AppUpdateModalStatus,
   AppVersionInfo,
@@ -22,6 +24,7 @@ import { BrandLogo } from './BrandLogo';
 
 interface AppUpdateModalProps {
   isOpen: boolean;
+  language: AppLanguage;
   updateRepo: string;
   currentVersion: AppVersionInfo;
   remoteManifest: AppUpdateManifest | null;
@@ -44,6 +47,7 @@ function formatBytes(bytes?: number): string {
 
 export function AppUpdateModal({
   isOpen,
+  language,
   updateRepo,
   currentVersion,
   remoteManifest,
@@ -57,6 +61,7 @@ export function AppUpdateModal({
   onOpenUnknownSources,
   onClose,
 }: AppUpdateModalProps) {
+  const t = getTranslations(language).updateModal;
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [repoInput, setRepoInput] = useState(updateRepo);
@@ -115,10 +120,10 @@ export function AppUpdateModal({
                     id="app-update-modal-title"
                     className="font-display text-2xl font-bold text-zinc-900 dark:text-white leading-tight"
                   >
-                    Actualización de la app
+                    {t.title}
                   </h2>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                    Versión actual: v{currentVersion.versionName} (Build {currentVersion.versionCode}) {isNative ? '· Android TV' : '· Web'}
+                    {t.currentVersion(currentVersion.versionName, currentVersion.versionCode, isNative)}
                   </p>
                 </div>
               </div>
@@ -129,7 +134,7 @@ export function AppUpdateModal({
                 data-tv-focusable="true"
                 data-tv-id="update-close-x"
                 onClick={onClose}
-                aria-label="Cerrar ventana"
+                aria-label={t.closeAria}
                 className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-700 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
                 <X className="w-5 h-5" />
@@ -141,10 +146,10 @@ export function AppUpdateModal({
                 <RefreshCw className="w-7 h-7 text-zinc-800 dark:text-zinc-200 animate-spin shrink-0" />
                 <div>
                   <div className="text-base font-semibold text-zinc-900 dark:text-white">
-                    Comprobando versión...
+                    {t.checkingTitle}
                   </div>
                   <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Buscando si hay una nueva versión disponible para tu TV
+                    {t.checkingDesc}
                   </div>
                 </div>
               </div>
@@ -157,11 +162,10 @@ export function AppUpdateModal({
                 </div>
                 <div>
                   <div className="text-base font-bold text-zinc-900 dark:text-white">
-                    Tu aplicación está actualizada
+                    {t.upToDateTitle}
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-300 mt-0.5">
-                    {message ||
-                      `Tienes instalada la versión más reciente (v${currentVersion.versionName}).`}
+                    {message || t.upToDateDesc(currentVersion.versionName)}
                   </div>
                 </div>
               </div>
@@ -172,10 +176,10 @@ export function AppUpdateModal({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                     <Sparkles className="w-4 h-4" />
-                    <span>Nueva actualización disponible</span>
+                    <span>{t.availableBadge}</span>
                   </div>
                   <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                    No es obligatoria
+                    {t.optionalBadge}
                   </span>
                 </div>
 
@@ -191,13 +195,11 @@ export function AppUpdateModal({
                 </div>
 
                 <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.06] border border-zinc-900/10 dark:border-white/15 px-4 py-3 text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-snug">
-                  Actualización opcional: puedes omitirla si prefieres, pero esto podría mejorar tu
-                  calidad del launcher.
+                  {t.optionalNote}
                 </div>
 
                 <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.04] p-4 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed">
-                  {remoteManifest.releaseNotes ||
-                    '• Mejoras de fluidez y estabilidad en Android TV.\n• Corrección de errores y nueva experiencia en tu televisor.'}
+                  {remoteManifest.releaseNotes || t.defaultNotes}
                 </div>
               </div>
             )}
@@ -206,9 +208,7 @@ export function AppUpdateModal({
               <div className="rounded-2xl bg-white dark:bg-[#09090B] border border-zinc-900/10 dark:border-white/12 p-6 mb-6">
                 <div className="flex items-center justify-between text-sm mb-3">
                   <span className="font-semibold text-zinc-900 dark:text-white">
-                    {status === 'installing'
-                      ? 'Abriendo instalador del sistema...'
-                      : 'Descargando actualización...'}
+                    {status === 'installing' ? t.openingInstaller : t.downloading}
                   </span>
                   <span className="font-mono-tabular text-zinc-900 dark:text-white font-bold">
                     {progress.percent}%
@@ -225,8 +225,7 @@ export function AppUpdateModal({
                 </div>
 
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-3">
-                  {progress.message ||
-                    'Al finalizar la descarga se abrirá el instalador de Android TV automáticamente.'}
+                  {progress.message || t.installPromptNote}
                 </p>
               </div>
             )}
@@ -236,11 +235,10 @@ export function AppUpdateModal({
                 <ShieldAlert className="w-7 h-7 text-zinc-800 dark:text-zinc-200 shrink-0 mt-0.5" />
                 <div>
                   <div className="text-base font-bold text-zinc-900 dark:text-white">
-                    Permiso necesario en Android TV
+                    {t.permissionTitle}
                   </div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
-                    Para instalar la actualización, activa el permiso &ldquo;Instalar aplicaciones
-                    desconocidas&rdquo; para VORA TV OS en los ajustes de tu TV.
+                    {t.permissionDesc}
                   </p>
                 </div>
               </div>
@@ -255,7 +253,7 @@ export function AppUpdateModal({
                   onClick={() => setShowAdvanced((prev) => !prev)}
                   className="tv-focusable inline-flex items-center gap-1.5 px-3 py-1.5 -ml-3 rounded-full text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
                 >
-                  <span>Servidor de descargas</span>
+                  <span>{t.downloadServer}</span>
                   {showAdvanced ? (
                     <ChevronUp className="w-3.5 h-3.5" />
                   ) : (
@@ -270,7 +268,7 @@ export function AppUpdateModal({
                     htmlFor="update-repo-input"
                     className="block text-xs text-zinc-500 dark:text-zinc-400"
                   >
-                    Repositorio o servidor de compilación (opcional):
+                    {t.repoLabel}
                   </label>
                   <div data-tv-row="update-advanced-form" className="flex items-center gap-2">
                     <input
@@ -290,7 +288,7 @@ export function AppUpdateModal({
                       onClick={handleSaveAndCheck}
                       className="tv-focusable px-3 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold whitespace-nowrap focus:scale-105"
                     >
-                      Guardar
+                      {t.save}
                     </button>
                   </div>
                 </div>
@@ -307,7 +305,7 @@ export function AppUpdateModal({
                   onClick={onOpenUnknownSources}
                   className="tv-focusable px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105"
                 >
-                  Abrir permisos de Android
+                  {t.openAndroidPermissions}
                 </button>
               )}
 
@@ -321,7 +319,7 @@ export function AppUpdateModal({
                   className="tv-focusable inline-flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm focus:scale-105"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Actualizar ahora</span>
+                  <span>{t.updateNow}</span>
                 </button>
               )}
 
@@ -340,7 +338,7 @@ export function AppUpdateModal({
                   className="tv-focusable inline-flex items-center gap-2 px-5 py-3 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-semibold text-sm disabled:opacity-50 focus:scale-105"
                 >
                   <PackageCheck className="w-4 h-4" />
-                  <span>Buscar actualizaciones</span>
+                  <span>{t.checkForUpdates}</span>
                 </button>
               )}
 
@@ -351,7 +349,7 @@ export function AppUpdateModal({
                 onClick={onClose}
                 className="tv-focusable px-5 py-3 rounded-full bg-zinc-900/6 dark:bg-white/8 text-zinc-700 dark:text-zinc-300 font-semibold text-sm focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
-                {status === 'update_available' ? 'Más tarde' : 'Cerrar'}
+                {status === 'update_available' ? t.later : t.close}
               </button>
             </div>
           </motion.div>

@@ -11,7 +11,9 @@ import {
   getActiveStreamingPlatforms,
   resolvePackageAlias,
 } from '../data/suggestions';
+import { getDateLocale, getTranslations, type LauncherTranslations } from '../i18n/translations';
 import type {
+  AppLanguage,
   AppSuggestion,
   GoogleTvLiveCatalog,
   InstalledApp,
@@ -28,9 +30,11 @@ interface GoogleTvHomeProps {
   favoriteApps: InstalledApp[];
   favoritePackages?: string[];
   liveCatalog: GoogleTvLiveCatalog;
+  language: AppLanguage;
   isNative: boolean;
   showSuggestions: boolean;
   appsOnlyMode?: boolean;
+  oledMode?: boolean;
   maintenanceNotice?: LauncherRemoteStatus | null;
   heroFadeColor: string;
   onScrollTopChange: (atTop: boolean) => void;
@@ -56,27 +60,53 @@ function hexToRgba(hex: string, alpha: number): string {
 const HeroBackdropImage = memo(function HeroBackdropImage({
   backdropUrl,
   accentGradient,
+  oledMode = false,
 }: {
   backdropUrl?: string;
   accentGradient?: string;
+  oledMode?: boolean;
 }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const showImage = Boolean(backdropUrl && failedUrl !== backdropUrl);
 
   return (
     <div
-      className="w-full h-full"
-      style={{ background: accentGradient || 'linear-gradient(135deg, #141923 0%, #273244 100%)' }}
+      className="relative w-full h-full"
+      style={{
+        background: oledMode
+          ? '#000000'
+          : accentGradient || 'linear-gradient(135deg, #141923 0%, #273244 100%)',
+      }}
     >
       {showImage && (
-        <img
-          src={backdropUrl}
-          alt=""
-          decoding="async"
-          referrerPolicy="no-referrer"
-          onError={() => setFailedUrl(backdropUrl || null)}
-          className="w-full h-full object-cover object-center"
-        />
+        <>
+          <img
+            src={backdropUrl}
+            alt=""
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setFailedUrl(backdropUrl || null)}
+            className="w-full h-full object-cover object-center"
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              maskImage:
+                'linear-gradient(to bottom, transparent 48%, rgba(0, 0, 0, 0.72) 72%, #000 100%)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, transparent 48%, rgba(0, 0, 0, 0.72) 72%, #000 100%)',
+            }}
+            className="absolute inset-0 pointer-events-none overflow-hidden"
+          >
+            <img
+              src={backdropUrl}
+              alt=""
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover object-center blur-[3.5px] scale-[1.02]"
+            />
+          </div>
+        </>
       )}
     </div>
   );
@@ -326,23 +356,25 @@ const SeriesLandscapeCard = memo(function SeriesLandscapeCard({
 const MoviesSection = memo(function MoviesSection({
   movies,
   formattedUpdatedTime,
+  tHome,
   onLaunchSuggestion,
 }: {
   movies: AppSuggestion[];
   formattedUpdatedTime: string;
+  tHome: LauncherTranslations['home'];
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
 }) {
   const visibleMovies = useMemo(() => movies.slice(0, 14), [movies]);
   if (visibleMovies.length === 0) return null;
 
   return (
-    <section className="tv-row-offscreen" aria-label="Estrenos y películas populares">
+    <section className="tv-row-offscreen" aria-label={tHome.moviesTitle}>
       <div className="flex items-center justify-between mb-2">
         <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-          Estrenos y películas populares
+          {tHome.moviesTitle}
         </h2>
         <span className="text-xs text-slate-600 dark:text-zinc-400">
-          Actualizado hoy · {formattedUpdatedTime}
+          {tHome.updatedToday(formattedUpdatedTime)}
         </span>
       </div>
 
@@ -367,22 +399,24 @@ const SeriesSection = memo(function SeriesSection({
   filteredSeries,
   streamingFilters,
   platformFilter,
+  tHome,
   onSelectFilter,
   onLaunchSuggestion,
 }: {
   filteredSeries: AppSuggestion[];
   streamingFilters: StreamingFilterOption[];
   platformFilter: string;
+  tHome: LauncherTranslations['home'];
   onSelectFilter: (id: string) => void;
   onLaunchSuggestion: (suggestion: AppSuggestion) => void;
 }) {
   if (filteredSeries.length === 0 && platformFilter === 'all') return null;
 
   return (
-    <section className="tv-row-offscreen" aria-label="En tus plataformas">
+    <section className="tv-row-offscreen" aria-label={tHome.seriesSectionAria}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-1.5">
         <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-          Series y emisiones en tus plataformas
+          {tHome.seriesTitle}
         </h2>
 
         <div
@@ -423,7 +457,7 @@ const SeriesSection = memo(function SeriesSection({
             onClick={() => onSelectFilter('all')}
             className="tv-focusable px-5 py-3.5 rounded-2xl bg-slate-900/10 dark:bg-white/10 text-sm font-semibold text-slate-800 dark:text-zinc-200 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
           >
-            Sin emisiones para esta plataforma · Ver todas
+            {tHome.noSeriesForPlatform}
           </button>
         ) : (
           filteredSeries.map((show, index) => (
@@ -445,9 +479,11 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   favoriteApps,
   favoritePackages = [],
   liveCatalog,
+  language,
   isNative,
   showSuggestions,
   appsOnlyMode = false,
+  oledMode = false,
   maintenanceNotice = null,
   heroFadeColor,
   onScrollTopChange,
@@ -457,6 +493,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   onOpenAllApps,
   onOpenMaintenanceInfo,
 }: GoogleTvHomeProps) {
+  const tHome = getTranslations(language).home;
   const [heroIdx, setHeroIdx] = useState(0);
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -548,10 +585,10 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const streamingFilters = useMemo<StreamingFilterOption[]>(() => {
     const active = getActiveStreamingPlatforms(allApps, favoritePackages);
     return [
-      { id: 'all', label: 'Todas' },
+      { id: 'all', label: tHome.allPlatformsShort },
       ...active.map((p) => ({ id: p.packageName, label: p.appName })),
     ];
-  }, [allApps, favoritePackages]);
+  }, [allApps, favoritePackages, tHome.allPlatformsShort]);
 
   useEffect(() => {
     if (
@@ -635,7 +672,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
       }
 
       if (heroBgRef.current) {
-        heroBgRef.current.style.opacity = Math.max(0, 1 - top / 260).toFixed(3);
+        heroBgRef.current.style.opacity = Math.max(0, 1 - top / 250).toFixed(3);
       }
       if (heroContentRef.current) {
         heroContentRef.current.style.opacity = Math.max(0, 1 - top / 180).toFixed(3);
@@ -734,12 +771,12 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   const formattedUpdatedTime = useMemo(() => {
     try {
       const dt = new Date(liveCatalog.updatedAt);
-      if (Number.isNaN(dt.getTime())) return 'Hoy';
-      return dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      if (Number.isNaN(dt.getTime())) return tHome.today;
+      return dt.toLocaleTimeString(getDateLocale(language), { hour: '2-digit', minute: '2-digit' });
     } catch {
-      return 'Hoy';
+      return tHome.today;
     }
-  }, [liveCatalog.updatedAt]);
+  }, [liveCatalog.updatedAt, language, tHome.today]);
 
   const topVeilGradient = useMemo(
     () =>
@@ -770,87 +807,86 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                  {maintenanceNotice?.title || 'Mantenimiento · Próxima actualización'}
-                </div>
-                <div className="text-xs text-slate-600 dark:text-zinc-300 truncate mt-0.5">
-                  El modo solo apps está activado ·{' '}
-                  {maintenanceNotice?.message ||
-                    'Preparando la próxima actualización de VORA TV OS.'}
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {maintenanceNotice?.title || tHome.maintenanceTitleFallback}
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-zinc-300 truncate mt-0.5">
+                    {tHome.maintenanceStatusPrefix}{' '}
+                    {maintenanceNotice?.message || tHome.maintenanceMsgFallback}
+                  </div>
                 </div>
               </div>
+              {onOpenMaintenanceInfo && (
+                <button
+                  type="button"
+                  data-tv-focusable="true"
+                  data-tv-id="home-maintenance-info"
+                  onClick={onOpenMaintenanceInfo}
+                  className="tv-focusable px-4 py-2 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold whitespace-nowrap shrink-0 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                >
+                  {tHome.viewNotice}
+                </button>
+              )}
             </div>
-            {onOpenMaintenanceInfo && (
+          )}
+
+          {/* Fila rápida de favoritas */}
+          <section aria-label={tHome.appsOnlySectionAria} data-apps-over-hero="false">
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
+                  {tHome.appsOnlyTitle}
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
+                  {tHome.appsOnlyHint}
+                </p>
+              </div>
+            </div>
+
+            <div
+              ref={appsRowRef}
+              data-tv-row="apps"
+              data-tv-scroll-top="true"
+              className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
+            >
+              {circularApps.map((app, index) => (
+                <CircularAppShortcut
+                  key={app.packageName}
+                  app={app}
+                  isInitial={index === 0}
+                  onLaunch={handleCircleLaunch}
+                />
+              ))}
+
               <button
                 type="button"
                 data-tv-focusable="true"
-                data-tv-id="home-maintenance-info"
-                onClick={onOpenMaintenanceInfo}
-                className="tv-focusable px-4 py-2 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold whitespace-nowrap shrink-0 focus:bg-[#18202C] focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
+                data-tv-focus-wrapper="true"
+                data-tv-id="row-all-apps"
+                onClick={onOpenAllApps}
+                className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
               >
-                Ver aviso
+                <div
+                  data-tv-focus-box="true"
+                  className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/15 dark:border-white/20 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
+                >
+                  <LayoutGrid className="w-7 h-7" />
+                </div>
+                <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
+                  {tHome.seeAll}
+                </span>
               </button>
-            )}
-          </div>
-        )}
-
-        {/* Fila rápida de favoritas */}
-        <section aria-label="Tus aplicaciones fijadas" data-apps-over-hero="false">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
-                Modo solo apps
-              </h1>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">
-                Acceso directo a tus aplicaciones · Mantén pulsado OK con el mando para fijar favoritas
-              </p>
             </div>
-          </div>
+          </section>
 
-          <div
-            ref={appsRowRef}
-            data-tv-row="apps"
-            data-tv-scroll-top="true"
-            className="flex items-start gap-4 overflow-x-auto no-scrollbar py-4 px-4 -mx-4"
-          >
-            {circularApps.map((app, index) => (
-              <CircularAppShortcut
-                key={app.packageName}
-                app={app}
-                isInitial={index === 0}
-                onLaunch={handleCircleLaunch}
-              />
-            ))}
-
-            <button
-              type="button"
-              data-tv-focusable="true"
-              data-tv-focus-wrapper="true"
-              data-tv-id="row-all-apps"
-              onClick={onOpenAllApps}
-              className="group w-[108px] shrink-0 flex flex-col items-center gap-2 py-2 focus:outline-none scroll-my-12"
-            >
-              <div
-                data-tv-focus-box="true"
-                className="apps-all-circle tv-focusable w-[84px] h-[84px] lg:w-[88px] lg:h-[88px] rounded-[22px] border-2 bg-slate-900/10 dark:bg-white/10 border-slate-900/15 dark:border-white/20 text-slate-700 dark:text-zinc-200 group-focus:scale-110 group-focus:border-white group-focus:bg-[#18202C] group-focus:text-white dark:group-focus:bg-white dark:group-focus:text-zinc-950 flex items-center justify-center shadow-md"
-              >
-                <LayoutGrid className="w-7 h-7" />
-              </div>
-              <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
-                Ver todas
-              </span>
-            </button>
-          </div>
-        </section>
-
-        {/* Cuadrícula completa de aplicaciones instaladas */}
-        <section aria-label="Todas tus aplicaciones">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
-              Todas tus aplicaciones ({allAppsForGrid.length})
-            </h2>
-          </div>
+          {/* Cuadrícula completa de aplicaciones instaladas */}
+          <section aria-label={tHome.allAppsHeading(allAppsForGrid.length)}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+                {tHome.allAppsHeading(allAppsForGrid.length)}
+              </h2>
+            </div>
 
           <div
             ref={appsGridRef}
@@ -872,7 +908,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
   }
 
   const heroMaskGradient = hasMoviesBelow
-    ? 'linear-gradient(to bottom, #000 0%, #000 48%, rgba(0, 0, 0, 0.88) 64%, rgba(0, 0, 0, 0.52) 78%, rgba(0, 0, 0, 0.14) 90%, transparent 98%)'
+    ? 'linear-gradient(to bottom, #000 0%, #000 36%, rgba(0, 0, 0, 0.86) 54%, rgba(0, 0, 0, 0.50) 70%, rgba(0, 0, 0, 0.18) 84%, rgba(0, 0, 0, 0.04) 94%, transparent 100%)'
     : 'linear-gradient(to bottom, #000 0%, #000 68%, rgba(0, 0, 0, 0.58) 86%, transparent 100%)';
 
   return (
@@ -892,7 +928,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
         data-tv-native={isNative ? 'true' : 'false'}
         className="relative z-10 flex-1 overflow-y-auto no-scrollbar pb-14"
       >
-        {/* Fondo ambiental Hero dentro del scroll: acompaña el desplazamiento 1:1 y se desvanece antes de invadir Estrenos */}
+        {/* Fondo ambiental Hero a pantalla completa (100vh) dentro del scroll: ocupa todo el fondo, se desvanece suavemente y acompaña la bajada */}
         {activeHero && (
           <div
             ref={heroBgRef}
@@ -901,21 +937,21 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               maskImage: heroMaskGradient,
               WebkitMaskImage: heroMaskGradient,
             }}
-            className={`absolute top-0 left-0 right-0 pointer-events-none overflow-hidden z-0 [contain:strict] will-change-[opacity] ${
-              hasMoviesBelow ? 'h-[82vh]' : 'h-screen'
-            }`}
+            className="absolute top-0 left-0 right-0 h-screen pointer-events-none overflow-hidden z-0 [contain:strict] will-change-[opacity]"
           >
             <HeroBackdropImage
               backdropUrl={activeHero.backdropUrl}
               accentGradient={activeHero.accentGradient}
+              oledMode={oledMode}
             />
 
             {/* Scrim translúcido puro: sin franjas opacas para evitar cortes visibles */}
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage:
-                  'linear-gradient(to bottom, rgba(8, 11, 18, 0.54) 0%, rgba(8, 11, 18, 0.12) 18%, transparent 34%), linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.24) 36%, transparent 60%), linear-gradient(to top, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.40) 28%, rgba(8, 11, 18, 0.12) 50%, transparent 68%)',
+                backgroundImage: oledMode
+                  ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.16) 18%, transparent 34%), linear-gradient(to right, rgba(0, 0, 0, 0.80) 0%, rgba(0, 0, 0, 0.28) 36%, transparent 60%), linear-gradient(to top, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.50) 28%, rgba(0, 0, 0, 0.14) 50%, transparent 68%)'
+                  : 'linear-gradient(to bottom, rgba(8, 11, 18, 0.54) 0%, rgba(8, 11, 18, 0.12) 18%, transparent 34%), linear-gradient(to right, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.24) 36%, transparent 60%), linear-gradient(to top, rgba(8, 11, 18, 0.72) 0%, rgba(8, 11, 18, 0.40) 28%, rgba(8, 11, 18, 0.12) 50%, transparent 68%)',
               }}
             />
           </div>
@@ -935,7 +971,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           {activeHero && (
             <section
               ref={heroContentRef}
-              aria-label="Destacado de hoy"
+              aria-label={tHome.heroSectionAria}
               data-tv-row="hero"
               data-tv-scroll-top="true"
               tabIndex={0}
@@ -950,7 +986,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                   }
                 }
               }}
-              className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 outline-none will-change-[transform,opacity]"
+              className="flex items-end justify-between gap-8 max-w-full scroll-mt-24 outline-none will-change-[opacity]"
             >
               <div className="max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200/90 mb-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
@@ -976,7 +1012,9 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                     </>
                   )}
                   <span aria-hidden="true">·</span>
-                  <span>Actualizado {formattedUpdatedTime}</span>
+                  <span>
+                    {tHome.updatedPrefix} {formattedUpdatedTime}
+                  </span>
                 </div>
 
                 <div>
@@ -995,7 +1033,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                     className="tv-focusable inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-zinc-950 text-sm font-bold focus:bg-amber-400 focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0 shadow-md"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    <span>Ver en {heroAppName}</span>
+                    <span>{tHome.watchOn(heroAppName)}</span>
                   </button>
                 </div>
               </div>
@@ -1006,15 +1044,15 @@ export const GoogleTvHome = memo(function GoogleTvHome({
           <section
             ref={appsSectionRef}
             data-apps-over-hero={activeHero ? 'true' : 'false'}
-            aria-label="Tus aplicaciones"
+            aria-label={tHome.yourAppsTitle}
             className="will-change-[opacity]"
           >
             <div className="flex items-center justify-between mb-1">
               <h2 className="apps-heading font-display text-lg font-semibold text-slate-900 dark:text-white">
-                Tus aplicaciones
+                {tHome.yourAppsTitle}
               </h2>
               <span className="apps-hint text-xs text-slate-600 dark:text-zinc-400">
-                Mantén pulsado OK con el mando para fijar o quitar de esta fila
+                {tHome.yourAppsHint}
               </span>
             </div>
 
@@ -1048,7 +1086,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
                   <LayoutGrid className="w-7 h-7" />
                 </div>
                 <span className="apps-label w-full text-[13px] font-medium truncate text-center leading-tight text-slate-800 dark:text-zinc-200 group-focus:font-bold">
-                  Ver todas
+                  {tHome.seeAll}
                 </span>
               </button>
             </div>
@@ -1065,6 +1103,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
             <MoviesSection
               movies={dedupedCatalog.movies}
               formattedUpdatedTime={formattedUpdatedTime}
+              tHome={tHome}
               onLaunchSuggestion={onLaunchSuggestion}
             />
           )}
@@ -1074,6 +1113,7 @@ export const GoogleTvHome = memo(function GoogleTvHome({
               filteredSeries={filteredSeries}
               streamingFilters={streamingFilters}
               platformFilter={platformFilter}
+              tHome={tHome}
               onSelectFilter={handleSelectPlatformFilter}
               onLaunchSuggestion={onLaunchSuggestion}
             />

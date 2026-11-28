@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { RefreshCw, Star, X } from 'lucide-react';
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import type { AppCategoryFilter, InstalledApp } from '../types/launcher';
+import { getTranslations } from '../i18n/translations';
+import type { AppCategoryFilter, AppLanguage, InstalledApp } from '../types/launcher';
 import { AppTile } from './AppTile';
 
 interface NavaAppsDrawerProps {
   isOpen: boolean;
+  language: AppLanguage;
   apps: InstalledApp[];
   favoritePackages: string[];
   showPackageNames: boolean;
@@ -20,6 +22,7 @@ interface NavaAppsDrawerProps {
 
 export function NavaAppsDrawer({
   isOpen,
+  language,
   apps,
   favoritePackages,
   showPackageNames,
@@ -30,6 +33,7 @@ export function NavaAppsDrawer({
   onToggleFavorite,
   onClose,
 }: NavaAppsDrawerProps) {
+  const t = getTranslations(language).appsDrawer;
   const [filter, setFilter] = useState<AppCategoryFilter>('all');
   const [pinMode, setPinMode] = useState(false);
 
@@ -62,18 +66,21 @@ export function NavaAppsDrawer({
   }, [apps, filter]);
 
   const filterOptions: Array<{ id: AppCategoryFilter; label: string }> = [
-    { id: 'all', label: 'Todas' },
-    { id: 'tv', label: 'TV y Streaming' },
-    { id: 'games', label: 'Juegos' },
+    { id: 'all', label: t.filterAll },
+    { id: 'tv', label: t.filterTv },
+    { id: 'games', label: t.filterGames },
   ];
 
-  const handleTileAction = (app: InstalledApp) => {
-    if (pinMode) {
-      onToggleFavorite(app);
-    } else {
-      onLaunchApp(app);
-    }
-  };
+  const handleTileAction = useCallback(
+    (app: InstalledApp) => {
+      if (pinMode) {
+        onToggleFavorite(app);
+      } else {
+        onLaunchApp(app);
+      }
+    },
+    [pinMode, onToggleFavorite, onLaunchApp]
+  );
 
   return (
     <AnimatePresence>
@@ -82,7 +89,7 @@ export function NavaAppsDrawer({
           id="nava-apps-drawer"
           role="dialog"
           aria-modal="true"
-          aria-label="Todas las aplicaciones"
+          aria-label={t.dialogAria}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 18 }}
@@ -92,13 +99,10 @@ export function NavaAppsDrawer({
           <div data-tv-row="drawer-top" className="flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0">
             <div>
               <h1 className="font-display text-3xl font-bold text-zinc-900 dark:text-white">
-                Tus aplicaciones
+                {t.title}
               </h1>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                {apps.length} aplicaciones ·{' '}
-                {isNative
-                  ? 'Instaladas en tu TV · Mantén pulsado OK con el mando para fijar en Inicio'
-                  : 'Mantén pulsado OK con el mando para fijar en Inicio'}
+                {isNative ? t.countNative(apps.length) : t.countWeb(apps.length)}
               </p>
             </div>
 
@@ -115,7 +119,7 @@ export function NavaAppsDrawer({
                 } focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105`}
               >
                 <Star className={`w-4 h-4 ${pinMode ? 'fill-current' : ''}`} />
-                <span>{pinMode ? 'Terminar de fijar' : 'Fijar en Inicio'}</span>
+                <span>{pinMode ? t.pinModeActive : t.pinModeIdle}</span>
               </button>
 
               <button
@@ -126,7 +130,7 @@ export function NavaAppsDrawer({
                 className="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105 whitespace-nowrap shrink-0"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span>Recargar</span>
+                <span>{t.reload}</span>
               </button>
 
               <button
@@ -134,7 +138,7 @@ export function NavaAppsDrawer({
                 data-tv-focusable="true"
                 data-tv-id="drawer-close"
                 onClick={onClose}
-                aria-label="Volver al inicio"
+                aria-label={t.closeAria}
                 className="tv-focusable p-2.5 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 focus:bg-zinc-900 focus:text-white dark:focus:bg-white dark:focus:text-zinc-950 focus:scale-105"
               >
                 <X className="w-5 h-5" />
@@ -165,7 +169,7 @@ export function NavaAppsDrawer({
 
             {pinMode && (
               <span className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Pulsa OK en cualquier icono para fijarlo o quitarlo de Inicio
+                {t.pinInstruction}
               </span>
             )}
           </div>
@@ -186,7 +190,7 @@ export function NavaAppsDrawer({
             ) : filteredApps.length === 0 ? (
               <div data-tv-row="drawer-empty" className="py-16 text-center">
                 <p className="text-lg font-semibold text-zinc-900 dark:text-white">
-                  No hay aplicaciones en esta categoría
+                  {t.emptyCategory}
                 </p>
                 <button
                   type="button"
@@ -196,7 +200,7 @@ export function NavaAppsDrawer({
                   onClick={() => setFilter('all')}
                   className="tv-focusable mt-4 px-5 py-2.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-sm font-semibold focus:scale-105"
                 >
-                  Ver todas
+                  {t.seeAll}
                 </button>
               </div>
             ) : (
@@ -214,6 +218,7 @@ export function NavaAppsDrawer({
                       app={app}
                       isFavorite={favoritePackages.includes(app.packageName)}
                       showPackageName={showPackageNames}
+                      pinnedLabel={t.pinnedBadgeAria}
                       focusId={`drawer-app-${app.packageName}`}
                       onLaunch={handleTileAction}
                       onToggleFavorite={onToggleFavorite}
